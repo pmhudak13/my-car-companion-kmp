@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kotlin.multiplatform.library) // AGP 9+ KMP-compatible plugin
 }
 
 kotlin {
@@ -59,15 +59,13 @@ kotlin {
     }
 }
 
-@Suppress("DEPRECATION")
-android {
+// AGP 9+ KMP library DSL — replaces the old android {} block
+androidLibrary {
     namespace = "org.mycarcompanion.app.shared"
     compileSdk = 35
-
     defaultConfig {
         minSdk = 26
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
