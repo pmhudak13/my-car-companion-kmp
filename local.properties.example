@@ -1,0 +1,6 @@
+# Copy this file to local.properties and fill in your values
+# local.properties is gitignored — never commit it
+
+sdk.dir=/path/to/android/sdk
+SUPABASE_URL=https://eoqycogokelfmgwqydkj.supabase.co
+SUPABASE_ANON_KEY=your_supabase_anon_key_here

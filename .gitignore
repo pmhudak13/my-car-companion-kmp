@@ -1,0 +1,33 @@
+# Local configuration - NEVER commit
+local.properties
+
+# Gradle
+.gradle/
+build/
+*/build/
+
+# Android
+*.keystore
+*.jks
+*.apk
+*.aab
+
+# IDE
+.DS_Store
+*.iml
+.idea/
+!.idea/gradle.xml
+
+# Kotlin/Native
+*.klib
+cinterop/
+
+# macOS
+.DS_Store
+
+# Node (for any web tooling)
+node_modules/
+
+# Environment files
+.env
+.env.*
