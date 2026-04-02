@@ -1,6 +1,6 @@
 import java.util.Properties
 
-// Read from local.properties
+// Read Supabase credentials from local.properties
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
@@ -9,13 +9,8 @@ if (localPropertiesFile.exists()) {
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.kotlin.android)       // kotlin for Android — NOT multiplatform
     alias(libs.plugins.compose.compiler)
-}
-
-kotlin {
-    androidTarget()
 }
 
 android {
@@ -42,9 +37,14 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }
 
 dependencies {
     implementation(projects.shared)
     implementation(libs.koin.android)
+    implementation(libs.androidx.activity.compose)
 }
