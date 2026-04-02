@@ -5,13 +5,21 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.android.kotlin.multiplatform.library) // AGP 9+ KMP-compatible plugin
+    alias(libs.plugins.android.kotlin.multiplatform.library)
 }
 
 kotlin {
-    androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_1_8)
+    // Android target — configured via androidLibrary {} when using
+    // com.android.kotlin.multiplatform.library (AGP 9+).
+    // This replaces both androidTarget() and the separate android {} block.
+    androidLibrary {
+        namespace = "org.mycarcompanion.app.shared"
+        compileSdk = 35
+        minSdk = 26
+        compilations.configureEach {
+            compilerOptions.configure {
+                jvmTarget.set(JvmTarget.JVM_1_8)
+            }
         }
     }
 
@@ -56,19 +64,5 @@ kotlin {
                 implementation(libs.ktor.client.js)
             }
         }
-    }
-}
-
-// AGP 9+ KMP library — configure via explicit type to avoid name conflict
-// with KotlinMultiplatformExtension.androidLibrary()
-extensions.configure<com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension> {
-    namespace = "org.mycarcompanion.app.shared"
-    compileSdk = 35
-    defaultConfig {
-        minSdk = 26
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
     }
 }
