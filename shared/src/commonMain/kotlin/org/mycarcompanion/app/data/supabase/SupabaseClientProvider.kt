@@ -6,14 +6,16 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.realtime.Realtime
 
-val supabaseClient = createSupabaseClient(
-    supabaseUrl = SupabaseConfig.url,
-    supabaseKey = SupabaseConfig.anonKey
-) {
-    install(Auth) {
-        autoSaveToStorage = true
+val supabaseClient by lazy {
+    createSupabaseClient(
+        supabaseUrl = SupabaseConfig.url,
+        supabaseKey = SupabaseConfig.anonKey
+    ) {
+        install(Auth) {
+            autoSaveToStorage = true
+        }
+        install(Postgrest)
+        install(Storage)
+        install(Realtime)
     }
-    install(Postgrest)
-    install(Storage)
-    install(Realtime)
 }

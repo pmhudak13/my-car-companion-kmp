@@ -12,13 +12,15 @@ kotlin {
     // Android target — configured via androidLibrary {} when using
     // com.android.kotlin.multiplatform.library (AGP 9+).
     // This replaces both androidTarget() and the separate android {} block.
-    androidLibrary {
+    android {
         namespace = "org.mycarcompanion.app.shared"
         compileSdk = 35
         minSdk = 26
         compilations.configureEach {
-            compilerOptions.configure {
-                jvmTarget.set(JvmTarget.JVM_1_8)
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_1_8)
+                }
             }
         }
     }

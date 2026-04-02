@@ -9,7 +9,7 @@ plugins {
 kotlin {
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        moduleName = "webApp"
+        outputModuleName = "webApp"
         browser {
             commonWebpackConfig {
                 outputFileName = "webApp.js"

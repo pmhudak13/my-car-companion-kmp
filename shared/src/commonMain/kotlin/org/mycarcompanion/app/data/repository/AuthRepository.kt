@@ -28,8 +28,8 @@ class AuthRepository(private val client: SupabaseClient) {
                 }
             }
             is SessionStatus.NotAuthenticated -> AuthState.Unauthenticated
-            is SessionStatus.LoadingFromStorage -> AuthState.Loading
-            is SessionStatus.NetworkError -> AuthState.Unauthenticated
+            is SessionStatus.Initializing -> AuthState.Loading
+            is SessionStatus.RefreshFailure -> AuthState.Unauthenticated
         }
     }
 
