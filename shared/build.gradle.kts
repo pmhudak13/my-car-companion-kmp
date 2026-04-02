@@ -59,8 +59,9 @@ kotlin {
     }
 }
 
-// AGP 9+ KMP library DSL — replaces the old android {} block
-androidLibrary {
+// AGP 9+ KMP library — configure via explicit type to avoid name conflict
+// with KotlinMultiplatformExtension.androidLibrary()
+extensions.configure<com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension> {
     namespace = "org.mycarcompanion.app.shared"
     compileSdk = 35
     defaultConfig {
