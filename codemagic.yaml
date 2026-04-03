@@ -15,6 +15,8 @@ workflows:
         - google_play
         - supabase
       java: 21
+      vars:
+        PACKAGE_NAME: org.mycarcompanion.app
 
     scripts:
       - name: Write Supabase credentials to local.properties
@@ -22,13 +24,25 @@ workflows:
           echo "SUPABASE_URL=$SUPABASE_URL" >> local.properties
           echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> local.properties
 
+      - name: Bump version code
+        script: |
+          # Query Google Play for the latest published version code, then increment
+          LATEST=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" 2>/dev/null || echo "")
+          if [ -z "$LATEST" ]; then
+            NEW_VERSION_CODE=$((BUILD_NUMBER + 20))
+          else
+            NEW_VERSION_CODE=$((LATEST + 1))
+          fi
+          echo "Latest Play Store versionCode=$LATEST → new versionCode=$NEW_VERSION_CODE"
+
+          # Directly rewrite the file on disk (same approach as old Capacitor CI)
+          sed -i.bak "s/versionCode = [0-9]*/versionCode = $NEW_VERSION_CODE/" androidApp/build.gradle.kts
+          echo "=== Verify ==="
+          grep "versionCode" androidApp/build.gradle.kts
+
       - name: Build signed Android App Bundle (AAB)
         script: |
-          # Offset by 20 to exceed all old Capacitor version codes (which used BUILD_NUMBER + 11)
-          VERSION_CODE=$((BUILD_NUMBER + 20))
-          echo "BUILD_NUMBER=$BUILD_NUMBER → versionCode=$VERSION_CODE"
           ./gradlew :androidApp:bundleRelease \
-            -PversionCode=$VERSION_CODE \
             -Pandroid.injected.signing.store.file=$CM_KEYSTORE_PATH \
             -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
             -Pandroid.injected.signing.key.alias=$CM_KEY_ALIAS \

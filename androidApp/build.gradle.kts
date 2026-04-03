@@ -20,8 +20,7 @@ android {
         applicationId = "org.mycarcompanion.app"
         minSdk = 26
         targetSdk = 35
-        // CI passes -PversionCode=N; local builds default to 21
-        versionCode = (project.findProperty("versionCode") as? String)?.toIntOrNull() ?: 21
+        versionCode = 21
         versionName = "2.0.0"
 
         buildConfigField("String", "SUPABASE_URL", "\"${localProperties["SUPABASE_URL"] ?: ""}\"")
