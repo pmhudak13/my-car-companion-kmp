@@ -7,13 +7,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.mycarcompanion.app.data.models.MaintenanceLog
+import org.mycarcompanion.app.data.models.Reminder
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.data.repository.MaintenanceRepository
+import org.mycarcompanion.app.data.repository.ReminderRepository
 import org.mycarcompanion.app.data.repository.VehicleRepository
 
 data class VehicleDetailState(
     val vehicle: Vehicle? = null,
     val logs: List<MaintenanceLog> = emptyList(),
+    val reminders: List<Reminder> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null,
     val deleted: Boolean = false,
@@ -22,6 +25,7 @@ data class VehicleDetailState(
 class VehicleDetailScreenModel(
     private val vehicleRepository: VehicleRepository,
     private val maintenanceRepository: MaintenanceRepository,
+    private val reminderRepository: ReminderRepository,
 ) : ScreenModel {
 
     private val _state = MutableStateFlow(VehicleDetailState())
@@ -34,6 +38,7 @@ class VehicleDetailScreenModel(
                 .onSuccess { vehicle ->
                     _state.value = _state.value.copy(vehicle = vehicle, isLoading = false)
                     loadLogs(vehicleId)
+                    loadReminders(vehicleId)
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(
@@ -52,6 +57,29 @@ class VehicleDetailScreenModel(
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(error = e.message ?: "Failed to load logs")
+                }
+        }
+    }
+
+    private fun loadReminders(vehicleId: String) {
+        screenModelScope.launch {
+            reminderRepository.getRemindersForVehicle(vehicleId)
+                .onSuccess { reminders ->
+                    _state.value = _state.value.copy(reminders = reminders)
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(error = e.message ?: "Failed to load reminders")
+                }
+        }
+    }
+
+    fun deleteReminder(reminderId: String) {
+        val vehicleId = _state.value.vehicle?.id ?: return
+        screenModelScope.launch {
+            reminderRepository.deleteReminder(reminderId)
+                .onSuccess { loadReminders(vehicleId) }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(error = e.message ?: "Failed to delete reminder")
                 }
         }
     }

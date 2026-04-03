@@ -34,8 +34,11 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.MaintenanceLog
+import org.mycarcompanion.app.data.models.Reminder
 import org.mycarcompanion.app.data.models.Vehicle
+import org.mycarcompanion.app.data.models.reminderTypeLabels
 import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreen
+import org.mycarcompanion.app.ui.reminders.AddReminderScreen
 
 data class VehicleDetailScreen(val vehicleId: String) : Screen {
 
@@ -91,6 +94,42 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen {
                     ) {
                         item { VehicleHeader(vehicle, onBack = { navigator.pop() }) }
                         item { VehicleInfo(vehicle) }
+
+                        // --- Reminders Section ---
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "Reminders",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                TextButton(
+                                    onClick = { navigator.push(AddReminderScreen(vehicleId)) },
+                                ) {
+                                    Text("+ Add")
+                                }
+                            }
+                        }
+                        if (state.reminders.isEmpty()) {
+                            item {
+                                Text(
+                                    "No reminders set. Add one to stay on top of service.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.outline,
+                                    modifier = Modifier.padding(vertical = 12.dp),
+                                )
+                            }
+                        } else {
+                            items(state.reminders, key = { it.id }) { reminder ->
+                                ReminderCard(reminder, onDelete = { model.deleteReminder(reminder.id) })
+                            }
+                        }
+
+                        // --- Maintenance Section ---
                         item {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -228,6 +267,59 @@ fun MaintenanceLogCard(log: MaintenanceLog, onDelete: () -> Unit) {
             log.notes?.let { notes ->
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(notes, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+            }
+        }
+    }
+}
+
+@Composable
+fun ReminderCard(reminder: Reminder, onDelete: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = if (reminder.type == "custom") reminder.customName ?: "Custom" else reminderTypeLabels[reminder.type] ?: reminder.type,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                if (!reminder.isActive) {
+                    Text(
+                        text = "Inactive",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column {
+                    reminder.nextDueDate?.let {
+                        Text("Due: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    reminder.nextDueMileage?.let {
+                        Text("Due at: $it mi", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (reminder.intervalMonths != null || reminder.intervalMiles != null) {
+                        val parts = mutableListOf<String>()
+                        reminder.intervalMonths?.let { parts.add("$it mo") }
+                        reminder.intervalMiles?.let { parts.add("$it mi") }
+                        Text("Repeats every ${parts.joinToString(" / ")}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                    }
+                }
+                TextButton(onClick = onDelete) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                }
             }
         }
     }
