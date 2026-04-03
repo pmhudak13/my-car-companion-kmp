@@ -34,10 +34,12 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.MaintenanceLog
+import org.mycarcompanion.app.data.models.MechanicAssignment
 import org.mycarcompanion.app.data.models.Reminder
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.data.models.reminderTypeLabels
 import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreen
+import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreen
 import org.mycarcompanion.app.ui.reminders.AddReminderScreen
 
 data class VehicleDetailScreen(val vehicleId: String) : Screen {
@@ -126,6 +128,40 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen {
                         } else {
                             items(state.reminders, key = { it.id }) { reminder ->
                                 ReminderCard(reminder, onDelete = { model.deleteReminder(reminder.id) })
+                            }
+                        }
+
+                        // --- Assigned Mechanics Section ---
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "Assigned Mechanics",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                TextButton(
+                                    onClick = { navigator.push(MechanicDirectoryScreen()) },
+                                ) {
+                                    Text("Find")
+                                }
+                            }
+                        }
+                        if (state.assignments.isEmpty()) {
+                            item {
+                                Text(
+                                    "No mechanics assigned. Tap Find to browse.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.outline,
+                                    modifier = Modifier.padding(vertical = 12.dp),
+                                )
+                            }
+                        } else {
+                            items(state.assignments, key = { it.id }) { assignment ->
+                                AssignmentCard(assignment, onRevoke = { model.revokeAssignment(assignment.id) })
                             }
                         }
 
@@ -320,6 +356,39 @@ fun ReminderCard(reminder: Reminder, onDelete: () -> Unit) {
                 TextButton(onClick = onDelete) {
                     Text("Delete", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun AssignmentCard(assignment: MechanicAssignment, onRevoke: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column {
+                Text(
+                    text = "Mechanic Assigned",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "Since ${assignment.assignedAt.take(10)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                assignment.notes?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                }
+            }
+            TextButton(onClick = onRevoke) {
+                Text("Revoke", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
             }
         }
     }

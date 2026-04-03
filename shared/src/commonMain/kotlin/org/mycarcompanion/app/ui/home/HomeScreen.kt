@@ -40,6 +40,8 @@ import org.mycarcompanion.app.data.models.AppUser
 import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.ui.auth.LoginScreen
+import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreen
+import org.mycarcompanion.app.ui.mileage.MileageTrackerScreen
 import org.mycarcompanion.app.ui.vehicles.AddVehicleScreen
 import org.mycarcompanion.app.ui.vehicles.VehicleCard
 import org.mycarcompanion.app.ui.vehicles.VehicleDetailScreen
@@ -101,7 +103,35 @@ data class HomeScreen(val user: AppUser) : Screen {
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Button(
+                        onClick = { navigator.push(MechanicDirectoryScreen()) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        ),
+                    ) {
+                        Text("Find Mechanic", style = MaterialTheme.typography.labelMedium)
+                    }
+                    Button(
+                        onClick = { navigator.push(MileageTrackerScreen()) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        ),
+                    ) {
+                        Text("Mileage Tracker", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
                     text = "My Vehicles",

@@ -7,9 +7,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.mycarcompanion.app.data.models.MaintenanceLog
+import org.mycarcompanion.app.data.models.MechanicAssignment
 import org.mycarcompanion.app.data.models.Reminder
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.data.repository.MaintenanceRepository
+import org.mycarcompanion.app.data.repository.MechanicAssignmentRepository
 import org.mycarcompanion.app.data.repository.ReminderRepository
 import org.mycarcompanion.app.data.repository.VehicleRepository
 
@@ -17,6 +19,7 @@ data class VehicleDetailState(
     val vehicle: Vehicle? = null,
     val logs: List<MaintenanceLog> = emptyList(),
     val reminders: List<Reminder> = emptyList(),
+    val assignments: List<MechanicAssignment> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null,
     val deleted: Boolean = false,
@@ -26,6 +29,7 @@ class VehicleDetailScreenModel(
     private val vehicleRepository: VehicleRepository,
     private val maintenanceRepository: MaintenanceRepository,
     private val reminderRepository: ReminderRepository,
+    private val assignmentRepository: MechanicAssignmentRepository,
 ) : ScreenModel {
 
     private val _state = MutableStateFlow(VehicleDetailState())
@@ -39,6 +43,7 @@ class VehicleDetailScreenModel(
                     _state.value = _state.value.copy(vehicle = vehicle, isLoading = false)
                     loadLogs(vehicleId)
                     loadReminders(vehicleId)
+                    loadAssignments(vehicleId)
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(
@@ -69,6 +74,29 @@ class VehicleDetailScreenModel(
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(error = e.message ?: "Failed to load reminders")
+                }
+        }
+    }
+
+    private fun loadAssignments(vehicleId: String) {
+        screenModelScope.launch {
+            assignmentRepository.getAssignmentsForVehicle(vehicleId)
+                .onSuccess { assignments ->
+                    _state.value = _state.value.copy(assignments = assignments)
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(error = e.message ?: "Failed to load assignments")
+                }
+        }
+    }
+
+    fun revokeAssignment(assignmentId: String) {
+        val vehicleId = _state.value.vehicle?.id ?: return
+        screenModelScope.launch {
+            assignmentRepository.revokeAssignment(assignmentId)
+                .onSuccess { loadAssignments(vehicleId) }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(error = e.message ?: "Failed to revoke assignment")
                 }
         }
     }
