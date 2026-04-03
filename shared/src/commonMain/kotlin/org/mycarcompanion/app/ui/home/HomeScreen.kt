@@ -42,6 +42,7 @@ import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.vehicles.AddVehicleScreen
 import org.mycarcompanion.app.ui.vehicles.VehicleCard
+import org.mycarcompanion.app.ui.vehicles.VehicleDetailScreen
 
 data class HomeScreen(val user: AppUser) : Screen {
 
@@ -160,7 +161,7 @@ data class HomeScreen(val user: AppUser) : Screen {
                             items(vehicleState.vehicles, key = { it.id }) { vehicle ->
                                 VehicleCard(
                                     vehicle = vehicle,
-                                    onClick = { /* Detail screen — Phase 3+ */ },
+                                    onClick = { navigator.push(VehicleDetailScreen(vehicle.id)) },
                                 )
                             }
                         }

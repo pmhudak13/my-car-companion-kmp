@@ -108,7 +108,7 @@ class VehicleListScreen : Screen {
                         items(state.vehicles, key = { it.id }) { vehicle ->
                             VehicleCard(
                                 vehicle = vehicle,
-                                onClick = { /* Detail screen — Phase 3+ */ },
+                                onClick = { navigator.push(VehicleDetailScreen(vehicle.id)) },
                             )
                         }
                     }
