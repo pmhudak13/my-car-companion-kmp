@@ -11,11 +11,9 @@ workflows:
     environment:
       android_signing:
         - Car Companion
-      vars:
-        SUPABASE_URL: Encrypted(...)
-        SUPABASE_ANON_KEY: Encrypted(...)
-        GCLOUD_SERVICE_ACCOUNT_CREDENTIALS: Encrypted(...)
-        PACKAGE_NAME: org.mycarcompanion.app
+      groups:
+        - google_play
+        - supabase
       java: 21
 
     scripts:
