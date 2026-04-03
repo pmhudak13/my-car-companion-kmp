@@ -11,18 +11,18 @@ workflows:
     environment:
       android_signing:
         - Car Companion
-      groups:
-        - Google Play
-        - Supabase
+      vars:
+        SUPABASE_URL: Encrypted(...)
+        SUPABASE_ANON_KEY: Encrypted(...)
+        GCLOUD_SERVICE_ACCOUNT_CREDENTIALS: Encrypted(...)
+        PACKAGE_NAME: org.mycarcompanion.app
       java: 21
 
     scripts:
       - name: Write Supabase credentials to local.properties
         script: |
-          cat >> local.properties <<EOF
-          SUPABASE_URL=$SUPABASE_URL
-          SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
-          EOF
+          echo "SUPABASE_URL=$SUPABASE_URL" >> local.properties
+          echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> local.properties
 
       - name: Build signed Android App Bundle (AAB)
         script: |
