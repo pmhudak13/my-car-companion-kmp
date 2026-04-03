@@ -27,6 +27,33 @@ android {
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${localProperties["SUPABASE_ANON_KEY"] ?: ""}\"")
     }
 
+    signingConfigs {
+        val storeFilePath = localProperties["RELEASE_STORE_FILE"]?.toString()
+        if (storeFilePath != null) {
+            create("release") {
+                storeFile = file(storeFilePath)
+                storePassword = localProperties["RELEASE_STORE_PASSWORD"]?.toString() ?: ""
+                keyAlias = localProperties["RELEASE_KEY_ALIAS"]?.toString() ?: ""
+                keyPassword = localProperties["RELEASE_KEY_PASSWORD"]?.toString() ?: ""
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            val releaseConfig = signingConfigs.findByName("release")
+            if (releaseConfig != null) {
+                signingConfig = releaseConfig
+            }
+        }
+    }
+
     buildFeatures {
         buildConfig = true
         compose = true

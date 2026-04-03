@@ -9,6 +9,7 @@ import org.koin.core.context.startKoin
 import org.mycarcompanion.androidapp.BuildConfig
 import org.mycarcompanion.app.data.supabase.SupabaseConfig
 import org.mycarcompanion.app.di.appModule
+import org.mycarcompanion.app.platform.initGeolocation
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,6 +19,7 @@ class MainActivity : ComponentActivity() {
             url = BuildConfig.SUPABASE_URL,
             anonKey = BuildConfig.SUPABASE_ANON_KEY,
         )
+        initGeolocation(applicationContext)
         startKoin {
             androidContext(applicationContext)
             modules(appModule)
