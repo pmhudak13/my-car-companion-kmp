@@ -1,23 +1,36 @@
 package org.mycarcompanion.app.ui.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
@@ -25,7 +38,10 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.AppUser
 import org.mycarcompanion.app.data.models.AuthState
+import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.ui.auth.LoginScreen
+import org.mycarcompanion.app.ui.vehicles.AddVehicleScreen
+import org.mycarcompanion.app.ui.vehicles.VehicleCard
 
 data class HomeScreen(val user: AppUser) : Screen {
 
@@ -34,6 +50,7 @@ data class HomeScreen(val user: AppUser) : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val model: HomeScreenModel = koinScreenModel()
         val authState by model.authState.collectAsState()
+        val vehicleState by model.vehicleState.collectAsState()
 
         LaunchedEffect(authState) {
             if (authState is AuthState.Unauthenticated) {
@@ -41,60 +58,113 @@ data class HomeScreen(val user: AppUser) : Screen {
             }
         }
 
-        Scaffold { paddingValues ->
+        Scaffold(
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { navigator.push(AddVehicleScreen()) },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                ) {
+                    Text("+", style = MaterialTheme.typography.headlineSmall)
+                }
+            }
+        ) { paddingValues ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(horizontal = 16.dp),
             ) {
-                Text(
-                    text = "Welcome to My Car Companion",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Spacer(modifier = Modifier.height(24.dp))
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = user.email,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Your vehicles and maintenance records will appear here.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(48.dp))
-
-                // Bottom navigation placeholder
-                Box(
-                    modifier = Modifier.padding(8.dp),
-                    contentAlignment = Alignment.Center
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = "Bottom navigation — Phase 2",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
+                    Column {
+                        Text(
+                            text = "My Car Companion",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Text(
+                            text = user.email,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    TextButton(
+                        onClick = model::signOut,
+                    ) {
+                        Text("Sign Out", color = MaterialTheme.colorScheme.error)
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                Button(
-                    onClick = model::signOut,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text("Sign Out")
+                Text(
+                    text = "My Vehicles",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                when {
+                    vehicleState.isLoading -> {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(48.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    vehicleState.error != null -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                text = vehicleState.error ?: "Unknown error",
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            TextButton(onClick = model::loadVehicles) {
+                                Text("Retry")
+                            }
+                        }
+                    }
+                    vehicleState.vehicles.isEmpty() -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(48.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                text = "No vehicles yet",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Tap + to add your first vehicle",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.outline,
+                            )
+                        }
+                    }
+                    else -> {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(bottom = 80.dp),
+                        ) {
+                            items(vehicleState.vehicles, key = { it.id }) { vehicle ->
+                                VehicleCard(
+                                    vehicle = vehicle,
+                                    onClick = { /* Detail screen — Phase 3+ */ },
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
