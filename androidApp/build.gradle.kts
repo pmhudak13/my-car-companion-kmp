@@ -20,7 +20,8 @@ android {
         applicationId = "org.mycarcompanion.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
+        // Codemagic sets BUILD_NUMBER env var; offset by 20 to exceed old Capacitor version codes
+        versionCode = (System.getenv("BUILD_NUMBER")?.toIntOrNull()?.plus(20)) ?: 21
         versionName = "2.0.0"
 
         buildConfigField("String", "SUPABASE_URL", "\"${localProperties["SUPABASE_URL"] ?: ""}\"")
