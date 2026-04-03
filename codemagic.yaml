@@ -22,9 +22,17 @@ workflows:
           echo "SUPABASE_URL=$SUPABASE_URL" >> local.properties
           echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> local.properties
 
+      - name: Calculate version code
+        script: |
+          # Offset by 20 to exceed all old Capacitor version codes
+          VERSION_CODE=$((BUILD_NUMBER + 20))
+          echo "BUILD_NUMBER=$BUILD_NUMBER → versionCode=$VERSION_CODE"
+          echo "VERSION_CODE=$VERSION_CODE" >> $CM_ENV
+
       - name: Build signed Android App Bundle (AAB)
         script: |
           ./gradlew :androidApp:bundleRelease \
+            -PversionCode=$VERSION_CODE \
             -Pandroid.injected.signing.store.file=$CM_KEYSTORE_PATH \
             -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
             -Pandroid.injected.signing.key.alias=$CM_KEY_ALIAS \
