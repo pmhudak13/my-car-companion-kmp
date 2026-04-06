@@ -46,6 +46,17 @@ class AuthScreenModel(private val authRepository: AuthRepository) : ScreenModel 
         }
     }
 
+    fun signInWithGoogle() {
+        screenModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            val result = authRepository.signInWithGoogle()
+            _uiState.value = when (result) {
+                is AuthResult.Success -> _uiState.value.copy(isLoading = false)
+                is AuthResult.Error -> _uiState.value.copy(isLoading = false, errorMessage = result.message)
+            }
+        }
+    }
+
     fun signUp() {
         val state = _uiState.value
         if (state.password != state.confirmPassword) {

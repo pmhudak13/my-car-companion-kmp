@@ -1,5 +1,6 @@
 package org.mycarcompanion.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,6 +10,7 @@ import org.koin.core.context.startKoin
 import org.mycarcompanion.androidapp.BuildConfig
 import org.mycarcompanion.app.data.supabase.SupabaseConfig
 import org.mycarcompanion.app.di.appModule
+import org.mycarcompanion.app.platform.handleAuthDeepLinkIntent
 import org.mycarcompanion.app.platform.initGeolocation
 
 class MainActivity : ComponentActivity() {
@@ -26,6 +28,18 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             App()
+        }
+        handleAuthIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleAuthIntent(intent)
+    }
+
+    private fun handleAuthIntent(intent: Intent) {
+        if (intent.data?.scheme == "org.mycarcompanion.app") {
+            handleAuthDeepLinkIntent(intent)
         }
     }
 }

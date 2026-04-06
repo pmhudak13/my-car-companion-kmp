@@ -19,3 +19,4 @@ val supabaseClient by lazy {
         install(Realtime)
     }
 }
+
