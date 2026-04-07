@@ -1,6 +1,7 @@
 package org.mycarcompanion.app.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import cafe.adriel.voyager.navigator.Navigator
 import org.mycarcompanion.app.ui.auth.LoginScreen
 
@@ -15,7 +16,11 @@ import org.mycarcompanion.app.ui.auth.LoginScreen
 // Auth-driven screen transitions (Login → Home, Home → Login on sign-out)
 // are handled inside each Screen via LaunchedEffect. AppNavigation's only
 // job is to mount the root Navigator once.
+//
+// LoginScreen() is wrapped in remember so Voyager always receives the same
+// instance across recompositions — avoids screen-stack confusion in beta.
 @Composable
 fun AppNavigation() {
-    Navigator(LoginScreen())
+    val loginScreen = remember { LoginScreen() }
+    Navigator(loginScreen)
 }
