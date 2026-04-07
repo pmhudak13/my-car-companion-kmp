@@ -13,6 +13,8 @@ val supabaseClient by lazy {
     ) {
         install(Auth) {
             autoSaveToStorage = true
+            scheme = "org.mycarcompanion.app"
+            host = "auth"
         }
         install(Postgrest)
         install(Storage)
