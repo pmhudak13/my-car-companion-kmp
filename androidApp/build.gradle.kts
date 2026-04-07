@@ -23,8 +23,12 @@ android {
         versionCode = 21
         versionName = "2.0.0"
 
-        buildConfigField("String", "SUPABASE_URL", "\"${localProperties["SUPABASE_URL"] ?: ""}\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${localProperties["SUPABASE_ANON_KEY"] ?: ""}\"")
+        val supabaseUrl = localProperties["SUPABASE_URL"]?.toString()
+            ?: error("SUPABASE_URL is missing from local.properties")
+        val supabaseAnonKey = localProperties["SUPABASE_ANON_KEY"]?.toString()
+            ?: error("SUPABASE_ANON_KEY is missing from local.properties")
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
     }
 
     signingConfigs {

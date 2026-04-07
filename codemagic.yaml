@@ -29,6 +29,14 @@ workflows:
     scripts:
       - name: Write Supabase credentials to local.properties
         script: |
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "ERROR: SUPABASE_URL is not set in the 'supabase' environment group" >&2
+            exit 1
+          fi
+          if [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "ERROR: SUPABASE_ANON_KEY is not set in the 'supabase' environment group" >&2
+            exit 1
+          fi
           echo "SUPABASE_URL=$SUPABASE_URL" >> local.properties
           echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> local.properties
 
