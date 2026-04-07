@@ -29,6 +29,9 @@ android {
             ?: error("SUPABASE_ANON_KEY is missing from local.properties")
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
+        // SENTRY_DSN is optional; empty string disables Sentry (fine for local dev)
+        val sentryDsn = localProperties["SENTRY_DSN"]?.toString() ?: ""
+        buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"")
     }
 
     signingConfigs {
@@ -73,4 +76,6 @@ dependencies {
     implementation(projects.shared)
     implementation(libs.koin.android)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.sentry.android)
+    debugImplementation(libs.leakcanary.android)
 }

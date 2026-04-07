@@ -39,6 +39,8 @@ workflows:
           fi
           echo "SUPABASE_URL=$SUPABASE_URL" >> local.properties
           echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> local.properties
+          # SENTRY_DSN is optional — empty string disables Sentry
+          echo "SENTRY_DSN=${SENTRY_DSN:-}" >> local.properties
 
       - name: Bump version code
         script: |

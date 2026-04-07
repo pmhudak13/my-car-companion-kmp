@@ -25,6 +25,7 @@ jobs:
         run: |
           echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> local.properties
           echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> local.properties
+          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> local.properties
           echo "sdk.dir=$ANDROID_SDK_ROOT" >> local.properties
 
       - name: Build Android Debug APK

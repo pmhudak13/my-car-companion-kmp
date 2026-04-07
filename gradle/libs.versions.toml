@@ -10,6 +10,8 @@ coroutines = "1.9.0"
 coil = "3.0.4"
 serialization = "1.7.3"
 kotlinx-datetime = "0.6.1"
+sentry = "7.14.0"
+leakcanary = "2.14"
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -57,6 +59,12 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 
 # DateTime
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+
+# Crash reporting
+sentry-android = { module = "io.sentry:sentry-android", version.ref = "sentry" }
+
+# Debug tooling
+leakcanary-android = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanary" }
 
 [bundles]
 supabase = ["supabase-auth", "supabase-postgrest", "supabase-storage", "supabase-realtime"]

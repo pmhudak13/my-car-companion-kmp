@@ -1,37 +1,21 @@
 package org.mycarcompanion.app.ui.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.navigator.Navigator
-import org.koin.compose.koinInject
-import org.mycarcompanion.app.data.models.AuthState
-import org.mycarcompanion.app.data.repository.AuthRepository
 import org.mycarcompanion.app.ui.auth.LoginScreen
 
+// The Navigator is created ONCE and never destroyed based on auth state.
+//
+// Why: Supabase auth emits SessionStatus.Initializing (→ AuthState.Loading)
+// during sign-in and session refresh. If AppNavigation reacts to Loading by
+// swapping in a LoadingScreen, the Navigator composable leaves the tree.
+// Every active screen holds a LocalNavigator reference that instantly becomes
+// invalid, so the very next navigator.push/replace call crashes with NPE.
+//
+// Auth-driven screen transitions (Login → Home, Home → Login on sign-out)
+// are handled inside each Screen via LaunchedEffect. AppNavigation's only
+// job is to mount the root Navigator once.
 @Composable
 fun AppNavigation() {
-    val authRepository: AuthRepository = koinInject()
-    val authState = authRepository.authState.collectAsState(initial = AuthState.Loading)
-
-    // Keep a single, stable Navigator — let LoginScreen/HomeScreen handle
-    // auth-driven transitions internally via LaunchedEffect.
-    // Recreating Navigator on auth state changes causes simultaneous navigation
-    // calls from both AppNavigation and the active Screen's LaunchedEffect, which
-    // tears Voyager's state and crashes the app.
-    when (authState.value) {
-        is AuthState.Loading -> LoadingScreen()
-        else -> Navigator(LoginScreen())
-    }
-}
-
-@Composable
-fun LoadingScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
-    }
+    Navigator(LoginScreen())
 }

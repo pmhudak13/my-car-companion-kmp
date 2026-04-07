@@ -61,6 +61,15 @@ class LoginScreen : Screen {
             }
         }
 
+        // Show a full-screen spinner while Supabase checks for a saved session.
+        // This prevents the login form from flashing before an auto-redirect to Home.
+        if (authState is AuthState.Loading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            return
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
