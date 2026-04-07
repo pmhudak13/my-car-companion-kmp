@@ -34,6 +34,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import org.koin.compose.koinInject
 import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.data.repository.AuthRepository
+import org.mycarcompanion.app.ui.home.HomeScreen
 
 class LoginScreen : Screen {
 
@@ -46,8 +47,9 @@ class LoginScreen : Screen {
         val authState by authRepository.authState.collectAsState(initial = AuthState.Loading)
 
         LaunchedEffect(authState) {
-            if (authState is AuthState.Authenticated) {
-                navigator.replace(SignUpScreen()) // Will be replaced by HomeScreen once available
+            val state = authState
+            if (state is AuthState.Authenticated) {
+                navigator.replace(HomeScreen(state.user))
             }
         }
 
