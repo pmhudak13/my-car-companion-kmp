@@ -9,6 +9,7 @@ ktor = "3.0.3"
 coroutines = "1.9.0"
 coil = "3.0.4"
 serialization = "1.7.3"
+kotlinx-datetime = "0.6.1"
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -53,6 +54,9 @@ coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.re
 
 # Serialization
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+
+# DateTime
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
 [bundles]
 supabase = ["supabase-auth", "supabase-postgrest", "supabase-storage", "supabase-realtime"]

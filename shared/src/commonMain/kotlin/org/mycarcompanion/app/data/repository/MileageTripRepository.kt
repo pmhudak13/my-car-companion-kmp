@@ -4,6 +4,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import kotlinx.datetime.Clock
 import org.mycarcompanion.app.data.models.MileageTrip
 
 class MileageTripRepository(private val client: SupabaseClient) {
@@ -51,7 +52,7 @@ class MileageTripRepository(private val client: SupabaseClient) {
             set("distance_miles", distanceMiles)
             set("end_lat", endLat)
             set("end_lng", endLng)
-            set("ended_at", "now()")
+            set("ended_at", Clock.System.now().toString())
         }) {
             filter { eq("id", tripId) }
             select()

@@ -12,6 +12,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -68,6 +69,10 @@ class SignUpScreen : Screen {
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
                 ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -83,6 +88,10 @@ class SignUpScreen : Screen {
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Next
                 ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -97,6 +106,10 @@ class SignUpScreen : Screen {
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
+                ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
