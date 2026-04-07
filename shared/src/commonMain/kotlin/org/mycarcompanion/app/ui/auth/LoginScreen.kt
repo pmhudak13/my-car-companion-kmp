@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -120,8 +121,8 @@ class LoginScreen : Screen {
                     imeAction = ImeAction.Next
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -139,8 +140,8 @@ class LoginScreen : Screen {
                     imeAction = ImeAction.Done
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
