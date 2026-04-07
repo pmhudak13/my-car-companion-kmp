@@ -1,6 +1,6 @@
 import java.util.Properties
 
-// Read Supabase credentials from local.properties
+// Read backend credentials from local.properties
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
@@ -14,12 +14,12 @@ plugins {
 
 android {
     namespace = "org.mycarcompanion.androidapp"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "org.mycarcompanion.app"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 21
         versionName = "2.0.0"
 

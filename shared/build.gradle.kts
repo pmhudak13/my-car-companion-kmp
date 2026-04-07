@@ -15,7 +15,7 @@ kotlin {
     // This replaces both androidTarget() and the separate android {} block.
     android {
         namespace = "org.mycarcompanion.app.shared"
-        compileSdk = 35
+        compileSdk = 36
         minSdk = 26
         compilations.configureEach {
             compileTaskProvider.configure {
