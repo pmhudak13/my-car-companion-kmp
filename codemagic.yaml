@@ -22,6 +22,7 @@ workflows:
       groups:
         - google_play
         - supabase
+        - sentry
       java: 21
       vars:
         PACKAGE_NAME: org.mycarcompanion.app

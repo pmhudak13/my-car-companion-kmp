@@ -1,3 +1,7 @@
+# ---------- App classes ----------
+-keep class org.mycarcompanion.app.MyApp { *; }
+-keep class org.mycarcompanion.app.MainActivity { *; }
+
 # ---------- kotlinx.serialization ----------
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.AnnotationsKt
@@ -26,9 +30,20 @@
 
 # ---------- Koin ----------
 -keep class org.koin.** { *; }
+-keep class org.mycarcompanion.app.di.** { *; }
+-keep class org.mycarcompanion.app.ui.**ScreenModel { *; }
+-keep class org.mycarcompanion.app.data.repository.** { *; }
 
 # ---------- Compose / Voyager ----------
 -keep class cafe.adriel.voyager.** { *; }
+
+# ---------- Sentry ----------
+-keep class io.sentry.** { *; }
+-dontwarn io.sentry.**
+-keepattributes SourceFile,LineNumberTable
+
+# ---------- androidx.startup (reflection-based initializers) ----------
+-keep class androidx.startup.** { *; }
 
 # ---------- Coroutines ----------
 -dontwarn kotlinx.coroutines.**
