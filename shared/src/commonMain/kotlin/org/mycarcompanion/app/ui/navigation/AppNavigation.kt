@@ -12,17 +12,20 @@ import org.koin.compose.koinInject
 import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.data.repository.AuthRepository
 import org.mycarcompanion.app.ui.auth.LoginScreen
-import org.mycarcompanion.app.ui.home.HomeScreen
 
 @Composable
 fun AppNavigation() {
     val authRepository: AuthRepository = koinInject()
     val authState = authRepository.authState.collectAsState(initial = AuthState.Loading)
 
-    when (val state = authState.value) {
+    // Keep a single, stable Navigator — let LoginScreen/HomeScreen handle
+    // auth-driven transitions internally via LaunchedEffect.
+    // Recreating Navigator on auth state changes causes simultaneous navigation
+    // calls from both AppNavigation and the active Screen's LaunchedEffect, which
+    // tears Voyager's state and crashes the app.
+    when (authState.value) {
         is AuthState.Loading -> LoadingScreen()
-        is AuthState.Unauthenticated -> Navigator(LoginScreen())
-        is AuthState.Authenticated -> Navigator(HomeScreen(state.user))
+        else -> Navigator(LoginScreen())
     }
 }
 
