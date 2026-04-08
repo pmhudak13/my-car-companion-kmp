@@ -33,11 +33,9 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import kotlinx.parcelize.Parcelize
 import org.mycarcompanion.app.data.models.maintenanceCategories
 import org.mycarcompanion.app.platform.CommonParcelable
 
-@Parcelize
 data class AddMaintenanceScreen(val vehicleId: String) : Screen, CommonParcelable {
 
     @OptIn(ExperimentalLayoutApi::class)
