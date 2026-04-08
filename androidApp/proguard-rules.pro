@@ -36,6 +36,10 @@
 
 # ---------- Compose / Voyager ----------
 -keep class cafe.adriel.voyager.** { *; }
+# Keep all Screen implementations so Voyager backstack serialization works across app updates.
+# Without this, R8 renames LoginScreen/HomeScreen/etc. differently each build,
+# causing ClassNotFoundException when Android restores saved state after an update.
+-keep class org.mycarcompanion.app.ui.** implements cafe.adriel.voyager.core.screen.Screen { *; }
 
 # ---------- Sentry ----------
 -keep class io.sentry.** { *; }
