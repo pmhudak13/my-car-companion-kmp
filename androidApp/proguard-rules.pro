@@ -59,8 +59,14 @@
     volatile <fields>;
 }
 
-# ---------- Parcelize ----------
-# Keep @Parcelize-generated CREATOR fields on all Parcelable screen classes.
--keepclassmembers class org.mycarcompanion.app.ui.** implements android.os.Parcelable {
-    static ** CREATOR;
+# ---------- Serializable Screens ----------
+# Screen data classes implement java.io.Serializable via CommonParcelable.
+# Keep serialVersionUID so Android saved-state bundles survive R8 builds.
+-keepclassmembers class org.mycarcompanion.app.ui.** implements java.io.Serializable {
+    static final long serialVersionUID;
+    private static final java.io.ObjectStreamField[] serialPersistentFields;
+    private void writeObject(java.io.ObjectOutputStream);
+    private void readObject(java.io.ObjectInputStream);
+    java.lang.Object writeReplace();
+    java.lang.Object readResolve();
 }
