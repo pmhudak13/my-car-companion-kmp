@@ -51,3 +51,16 @@
 
 # ---------- Coroutines ----------
 -dontwarn kotlinx.coroutines.**
+# Keep the Android main-thread dispatcher factory which is loaded via ServiceLoader.
+# Without this, release builds throw "No main thread dispatcher found" at runtime.
+-keepnames class kotlinx.coroutines.android.AndroidDispatcherFactory {}
+# Volatile fields are updated via Atomic Field Updaters and must not be mangled.
+-keepclassmembers class kotlinx.coroutines.** {
+    volatile <fields>;
+}
+
+# ---------- Parcelize ----------
+# Keep @Parcelize-generated CREATOR fields on all Parcelable screen classes.
+-keepclassmembers class org.mycarcompanion.app.ui.** implements android.os.Parcelable {
+    static ** CREATOR;
+}

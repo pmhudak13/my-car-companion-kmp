@@ -33,16 +33,19 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import kotlinx.parcelize.Parcelize
 import org.mycarcompanion.app.data.models.MaintenanceLog
 import org.mycarcompanion.app.data.models.MechanicAssignment
 import org.mycarcompanion.app.data.models.Reminder
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.data.models.reminderTypeLabels
+import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreen
 import org.mycarcompanion.app.ui.reminders.AddReminderScreen
 
-data class VehicleDetailScreen(val vehicleId: String) : Screen {
+@Parcelize
+data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable {
 
     @Composable
     override fun Content() {

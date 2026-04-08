@@ -33,10 +33,13 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import kotlinx.parcelize.Parcelize
 import org.mycarcompanion.app.data.models.reminderTypeLabels
 import org.mycarcompanion.app.data.models.reminderTypes
+import org.mycarcompanion.app.platform.CommonParcelable
 
-data class AddReminderScreen(val vehicleId: String) : Screen {
+@Parcelize
+data class AddReminderScreen(val vehicleId: String) : Screen, CommonParcelable {
 
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
