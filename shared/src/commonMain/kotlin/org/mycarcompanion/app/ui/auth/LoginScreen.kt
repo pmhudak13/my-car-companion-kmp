@@ -58,7 +58,7 @@ class LoginScreen : Screen {
         LaunchedEffect(authState) {
             val state = authState
             if (state is AuthState.Authenticated) {
-                navigator.replace(HomeScreen(state.user))
+                navigator.replace(HomeScreen())
             }
         }
 

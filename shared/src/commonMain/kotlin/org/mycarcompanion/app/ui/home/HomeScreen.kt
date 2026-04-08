@@ -36,7 +36,6 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import org.mycarcompanion.app.data.models.AppUser
 import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.ui.auth.LoginScreen
@@ -46,7 +45,7 @@ import org.mycarcompanion.app.ui.vehicles.AddVehicleScreen
 import org.mycarcompanion.app.ui.vehicles.VehicleCard
 import org.mycarcompanion.app.ui.vehicles.VehicleDetailScreen
 
-data class HomeScreen(val user: AppUser) : Screen {
+class HomeScreen : Screen {
 
     @Composable
     override fun Content() {
@@ -60,6 +59,8 @@ data class HomeScreen(val user: AppUser) : Screen {
                 navigator.replaceAll(LoginScreen())
             }
         }
+
+        val user = (authState as? AuthState.Authenticated)?.user ?: return
 
         Scaffold(
             floatingActionButton = {
