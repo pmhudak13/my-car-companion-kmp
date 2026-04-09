@@ -12,17 +12,24 @@ import org.mycarcompanion.app.data.models.AuthResult
 import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.platform.googleAuthRedirectUrl
 
-class AuthRepository(private val client: SupabaseClient) {
+class AuthRepository(
+    private val client: SupabaseClient,
+    private val profileRepository: ProfileRepository,
+) {
 
     val authState: Flow<AuthState> = client.auth.sessionStatus.map { status ->
         when (status) {
             is SessionStatus.Authenticated -> {
                 val user = client.auth.currentUserOrNull()
                 if (user != null) {
+                    val isAdmin = profileRepository.hasRole("admin").getOrDefault(false)
+                    val profile = profileRepository.getMyProfile().getOrNull()
                     AuthState.Authenticated(
                         AppUser(
                             id = user.id,
                             email = user.email ?: "",
+                            isAdmin = isAdmin,
+                            isPremium = profile?.isPremium ?: false,
                         )
                     )
                 } else {

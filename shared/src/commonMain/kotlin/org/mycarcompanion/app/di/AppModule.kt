@@ -7,9 +7,11 @@ import org.mycarcompanion.app.data.repository.MaintenanceRepository
 import org.mycarcompanion.app.data.repository.MechanicAssignmentRepository
 import org.mycarcompanion.app.data.repository.MechanicRepository
 import org.mycarcompanion.app.data.repository.MileageTripRepository
+import org.mycarcompanion.app.data.repository.ProfileRepository
 import org.mycarcompanion.app.data.repository.ReminderRepository
 import org.mycarcompanion.app.data.repository.VehicleRepository
 import org.mycarcompanion.app.data.supabase.supabaseClient
+import org.mycarcompanion.app.ui.admin.AdminScreenModel
 import org.mycarcompanion.app.ui.auth.AuthScreenModel
 import org.mycarcompanion.app.ui.home.HomeScreenModel
 import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreenModel
@@ -22,13 +24,15 @@ import org.mycarcompanion.app.ui.vehicles.VehicleListScreenModel
 
 val appModule = module {
     single { supabaseClient }
-    single { AuthRepository(get()) }
+    single { AuthRepository(get(), get()) }
     single { VehicleRepository(get()) }
     single { MaintenanceRepository(get()) }
     single { ReminderRepository(get()) }
     single { MechanicRepository(get()) }
     single { MechanicAssignmentRepository(get()) }
     single { MileageTripRepository(get()) }
+    single { ProfileRepository(get()) }
+    factoryOf(::AdminScreenModel)
     factoryOf(::AuthScreenModel)
     factoryOf(::HomeScreenModel)
     factoryOf(::VehicleListScreenModel)

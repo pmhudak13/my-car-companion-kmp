@@ -3,7 +3,9 @@ package org.mycarcompanion.app.data.models
 data class AppUser(
     val id: String,
     val email: String,
-    val name: String = ""
+    val name: String = "",
+    val isAdmin: Boolean = false,
+    val isPremium: Boolean = false,
 )
 
 sealed class AuthState {

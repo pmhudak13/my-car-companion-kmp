@@ -38,6 +38,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.data.models.Vehicle
+import org.mycarcompanion.app.ui.admin.AdminScreen
 import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreen
 import org.mycarcompanion.app.ui.mileage.MileageTrackerScreen
@@ -129,6 +130,20 @@ class HomeScreen : Screen {
                         ),
                     ) {
                         Text("Mileage Tracker", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+
+                if (user.isAdmin) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = { navigator.push(AdminScreen()) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                        ),
+                    ) {
+                        Text("Admin Panel", style = MaterialTheme.typography.labelMedium)
                     }
                 }
 
