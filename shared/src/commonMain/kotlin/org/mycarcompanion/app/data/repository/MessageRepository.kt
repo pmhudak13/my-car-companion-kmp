@@ -21,6 +21,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import org.mycarcompanion.app.data.models.Message
+import org.mycarcompanion.app.data.models.MessageInsert
 
 class MessageRepository(private val client: SupabaseClient) {
 
@@ -55,12 +56,12 @@ class MessageRepository(private val client: SupabaseClient) {
 
     suspend fun sendMessage(recipientId: String, content: String, vehicleId: String? = null): Result<Unit> = runCatching {
         val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
-        val payload = buildMap<String, Any?> {
-            put("sender_id", userId)
-            put("recipient_id", recipientId)
-            put("content", content)
-            if (vehicleId != null) put("vehicle_id", vehicleId)
-        }
+        val payload = MessageInsert(
+            senderId = userId,
+            recipientId = recipientId,
+            content = content,
+            vehicleId = vehicleId,
+        )
         table.insert(payload)
         Unit
     }

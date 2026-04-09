@@ -13,3 +13,11 @@ data class Message(
     @SerialName("is_read") val isRead: Boolean = false,
     @SerialName("created_at") val createdAt: String = "",
 )
+
+@Serializable
+data class MessageInsert(
+    @SerialName("sender_id") val senderId: String,
+    @SerialName("recipient_id") val recipientId: String,
+    val content: String,
+    @SerialName("vehicle_id") val vehicleId: String? = null,
+)
