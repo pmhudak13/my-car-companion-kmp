@@ -6,6 +6,7 @@ import org.mycarcompanion.app.data.repository.AuthRepository
 import org.mycarcompanion.app.data.repository.MaintenanceRepository
 import org.mycarcompanion.app.data.repository.MechanicAssignmentRepository
 import org.mycarcompanion.app.data.repository.MechanicRepository
+import org.mycarcompanion.app.data.repository.MessageRepository
 import org.mycarcompanion.app.data.repository.MileageTripRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
 import org.mycarcompanion.app.data.repository.ReminderRepository
@@ -18,6 +19,7 @@ import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicDashboardScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicSetupScreenModel
+import org.mycarcompanion.app.ui.messaging.MessagingScreenModel
 import org.mycarcompanion.app.ui.mileage.MileageTrackerScreenModel
 import org.mycarcompanion.app.ui.reminders.AddReminderScreenModel
 import org.mycarcompanion.app.ui.vehicles.AddVehicleScreenModel
@@ -32,6 +34,7 @@ val appModule = module {
     single { ReminderRepository(get()) }
     single { MechanicRepository(get()) }
     single { MechanicAssignmentRepository(get()) }
+    single { MessageRepository(get()) }
     single { MileageTripRepository(get()) }
     single { ProfileRepository(get()) }
     factoryOf(::AdminScreenModel)
@@ -45,5 +48,6 @@ val appModule = module {
     factoryOf(::MechanicDashboardScreenModel)
     factoryOf(::MechanicDirectoryScreenModel)
     factoryOf(::MechanicSetupScreenModel)
+    factoryOf(::MessagingScreenModel)
     factoryOf(::MileageTrackerScreenModel)
 }

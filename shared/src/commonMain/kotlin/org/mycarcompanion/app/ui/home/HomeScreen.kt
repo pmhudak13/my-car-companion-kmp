@@ -47,6 +47,7 @@ import org.mycarcompanion.app.ui.admin.AdminScreen
 import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDashboardScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreen
+import org.mycarcompanion.app.ui.mechanics.MechanicSetupScreen
 import org.mycarcompanion.app.ui.mileage.MileageTrackerScreen
 import org.mycarcompanion.app.ui.vehicles.AddVehicleScreen
 import org.mycarcompanion.app.ui.vehicles.VehicleCard
@@ -67,7 +68,8 @@ class HomeScreen : Screen {
             when (val s = authState) {
                 is AuthState.Unauthenticated -> navigator.replaceAll(LoginScreen())
                 is AuthState.Authenticated -> {
-                    if (s.user.isMechanic) {
+                    // Admins stay on HomeScreen and can switch views manually
+                    if (s.user.isMechanic && !s.user.isAdmin) {
                         navigator.replace(MechanicDashboardScreen())
                     }
                 }
@@ -174,15 +176,41 @@ class HomeScreen : Screen {
 
                 if (user.isAdmin) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Button(
-                        onClick = { navigator.push(AdminScreen()) },
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                        ),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        Text("Admin Panel", style = MaterialTheme.typography.labelMedium)
+                        Button(
+                            onClick = { navigator.push(AdminScreen()) },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                            ),
+                        ) {
+                            Text("Admin Panel", style = MaterialTheme.typography.labelMedium)
+                        }
+                        Button(
+                            onClick = { navigator.push(MechanicDashboardScreen()) },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            ),
+                        ) {
+                            Text("Mechanic View", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+
+                // Pending mechanic: signed up as mechanic but not yet approved
+                if (!user.isMechanic && user.intendedRole == "mechanic") {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = { navigator.push(MechanicSetupScreen()) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Complete Mechanic Profile Setup", style = MaterialTheme.typography.labelMedium)
                     }
                 }
 

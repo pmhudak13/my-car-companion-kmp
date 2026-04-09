@@ -13,16 +13,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -33,16 +39,36 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.MechanicProfile
 import org.mycarcompanion.app.data.models.shopTypeLabels
+import org.mycarcompanion.app.platform.CommonParcelable
+import org.mycarcompanion.app.ui.messaging.MessagingScreen
 
-class MechanicDirectoryScreen : Screen {
+data class MechanicDirectoryScreen(val vehicleId: String? = null) : Screen, CommonParcelable {
 
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val model: MechanicDirectoryScreenModel = koinScreenModel()
         val state by model.state.collectAsState()
+        val snackbarHostState = remember { SnackbarHostState() }
 
-        Scaffold { paddingValues ->
+        LaunchedEffect(state.assignSuccess) {
+            if (state.assignSuccess) {
+                snackbarHostState.showSnackbar("Mechanic assigned successfully!")
+                model.clearAssignResult()
+                navigator.pop()
+            }
+        }
+
+        LaunchedEffect(state.assignError) {
+            state.assignError?.let { err ->
+                snackbarHostState.showSnackbar(err)
+                model.clearAssignResult()
+            }
+        }
+
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+        ) { paddingValues ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -99,7 +125,13 @@ class MechanicDirectoryScreen : Screen {
                             contentPadding = PaddingValues(bottom = 24.dp),
                         ) {
                             items(state.mechanics, key = { it.id }) { mechanic ->
-                                MechanicCard(mechanic)
+                                MechanicCard(
+                                    mechanic = mechanic,
+                                    vehicleId = vehicleId,
+                                    isAssigning = state.assigningMechanicId == mechanic.userId,
+                                    onAssign = { vehicleId?.let { vid -> model.assignMechanic(vid, mechanic.userId) } },
+                                    onMessage = { navigator.push(MessagingScreen(recipientId = mechanic.userId)) },
+                                )
                             }
                         }
                     }
@@ -110,7 +142,13 @@ class MechanicDirectoryScreen : Screen {
 }
 
 @Composable
-fun MechanicCard(mechanic: MechanicProfile) {
+fun MechanicCard(
+    mechanic: MechanicProfile,
+    vehicleId: String? = null,
+    isAssigning: Boolean = false,
+    onAssign: () -> Unit = {},
+    onMessage: () -> Unit = {},
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -175,6 +213,34 @@ fun MechanicCard(mechanic: MechanicProfile) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(
+                    onClick = onMessage,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Message", style = MaterialTheme.typography.labelMedium)
+                }
+                if (vehicleId != null) {
+                    if (isAssigning) {
+                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
+                        Button(
+                            onClick = onAssign,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text("Assign", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
             }
         }
     }

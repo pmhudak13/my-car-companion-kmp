@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,7 +40,9 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.data.models.MechanicAssignment
 import org.mycarcompanion.app.ui.auth.LoginScreen
+import org.mycarcompanion.app.ui.home.HomeScreen
 import org.mycarcompanion.app.ui.home.HomeScreenModel
+import org.mycarcompanion.app.ui.messaging.MessagingScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MechanicDashboardScreen : Screen {
@@ -51,6 +54,7 @@ class MechanicDashboardScreen : Screen {
         val homeModel: HomeScreenModel = koinScreenModel()
         val state by model.state.collectAsState()
         val authState by homeModel.authState.collectAsState()
+        val currentUser = (authState as? org.mycarcompanion.app.data.models.AuthState.Authenticated)?.user
 
         LaunchedEffect(authState) {
             if (authState is AuthState.Unauthenticated) {
@@ -63,11 +67,22 @@ class MechanicDashboardScreen : Screen {
                 TopAppBar(
                     title = { Text(state.profile?.shopName ?: "My Dashboard") },
                     actions = {
+                        IconButton(onClick = { navigator.push(MessagingScreen()) }) {
+                            Icon(
+                                imageVector = Icons.Default.Email,
+                                contentDescription = "Messages",
+                            )
+                        }
                         IconButton(onClick = { navigator.push(MechanicSetupScreen()) }) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = "Edit Profile",
                             )
+                        }
+                        if (currentUser?.isAdmin == true) {
+                            TextButton(onClick = { navigator.replace(HomeScreen()) }) {
+                                Text("Individual View", color = MaterialTheme.colorScheme.secondary)
+                            }
                         }
                         TextButton(onClick = homeModel::signOut) {
                             Text("Sign Out", color = MaterialTheme.colorScheme.error)

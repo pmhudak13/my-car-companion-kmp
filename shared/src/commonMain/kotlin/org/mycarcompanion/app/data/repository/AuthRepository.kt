@@ -7,6 +7,10 @@ import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.models.AppUser
 import org.mycarcompanion.app.data.models.AuthResult
 import org.mycarcompanion.app.data.models.AuthState
@@ -26,6 +30,7 @@ class AuthRepository(
                     val isMechanic = profileRepository.hasRole("mechanic").getOrDefault(false)
                     val profile = profileRepository.getMyProfile().getOrNull()
                     val hasGoogleLinked = user.identities?.any { it.provider == "google" } ?: false
+                    val intendedRole = user.userMetadata?.get("role")?.jsonPrimitive?.contentOrNull
                     AuthState.Authenticated(
                         AppUser(
                             id = user.id,
@@ -34,6 +39,7 @@ class AuthRepository(
                             isMechanic = isMechanic,
                             isPremium = profile?.isPremium ?: false,
                             hasGoogleLinked = hasGoogleLinked,
+                            intendedRole = intendedRole,
                         )
                     )
                 } else {
@@ -56,10 +62,11 @@ class AuthRepository(
         AuthResult.Error(e.message ?: "Sign in failed")
     }
 
-    suspend fun signUp(email: String, password: String): AuthResult = try {
+    suspend fun signUp(email: String, password: String, role: String = "individual"): AuthResult = try {
         client.auth.signUpWith(Email) {
             this.email = email
             this.password = password
+            this.data = buildJsonObject { put("role", role) }
         }
         AuthResult.Success
     } catch (e: Exception) {

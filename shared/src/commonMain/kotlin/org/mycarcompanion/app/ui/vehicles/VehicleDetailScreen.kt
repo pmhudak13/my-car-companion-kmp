@@ -145,7 +145,7 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
                                     fontWeight = FontWeight.Bold,
                                 )
                                 TextButton(
-                                    onClick = { navigator.push(MechanicDirectoryScreen()) },
+                                    onClick = { navigator.push(MechanicDirectoryScreen(vehicleId = vehicleId)) },
                                 ) {
                                     Text("Find")
                                 }

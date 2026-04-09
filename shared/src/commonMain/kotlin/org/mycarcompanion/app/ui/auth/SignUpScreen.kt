@@ -2,6 +2,7 @@ package org.mycarcompanion.app.ui.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,8 +10,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -58,7 +61,39 @@ class SignUpScreen : Screen {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "I am a...",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                val roles = listOf("individual" to "Individual", "mechanic" to "Mechanic")
+                roles.forEach { (value, label) ->
+                    val selected = uiState.selectedRole == value
+                    if (selected) {
+                        Button(
+                            onClick = { model.onRoleChange(value) },
+                            modifier = Modifier.weight(1f),
+                        ) { Text(label) }
+                    } else {
+                        OutlinedButton(
+                            onClick = { model.onRoleChange(value) },
+                            modifier = Modifier.weight(1f),
+                        ) { Text(label) }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedTextField(
                 value = uiState.email,

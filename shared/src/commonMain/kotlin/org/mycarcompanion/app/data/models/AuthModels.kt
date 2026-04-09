@@ -8,6 +8,7 @@ data class AppUser(
     val isMechanic: Boolean = false,
     val isPremium: Boolean = false,
     val hasGoogleLinked: Boolean = false,
+    val intendedRole: String? = null, // "mechanic" if signed up as mechanic but not yet approved
 )
 
 sealed class AuthState {

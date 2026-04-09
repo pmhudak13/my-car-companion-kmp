@@ -14,6 +14,7 @@ data class AuthUiState(
     val email: String = "",
     val password: String = "",
     val confirmPassword: String = "",
+    val selectedRole: String = "individual", // "individual" or "mechanic"
     val errorMessage: String? = null,
     val successMessage: String? = null
 )
@@ -33,6 +34,10 @@ class AuthScreenModel(private val authRepository: AuthRepository) : ScreenModel 
 
     fun onConfirmPasswordChange(password: String) {
         _uiState.value = _uiState.value.copy(confirmPassword = password, errorMessage = null)
+    }
+
+    fun onRoleChange(role: String) {
+        _uiState.value = _uiState.value.copy(selectedRole = role, errorMessage = null)
     }
 
     fun signIn() {
@@ -65,7 +70,7 @@ class AuthScreenModel(private val authRepository: AuthRepository) : ScreenModel 
         }
         screenModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            val result = authRepository.signUp(state.email, state.password)
+            val result = authRepository.signUp(state.email, state.password, state.selectedRole)
             _uiState.value = when (result) {
                 is AuthResult.Success -> _uiState.value.copy(
                     isLoading = false,
