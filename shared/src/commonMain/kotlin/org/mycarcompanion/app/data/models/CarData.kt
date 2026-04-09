@@ -1,0 +1,42 @@
+package org.mycarcompanion.app.data.models
+
+val carMakes: List<String> = listOf(
+    "Acura", "Audi", "BMW", "Buick", "Cadillac", "Chevrolet", "Chrysler",
+    "Dodge", "Ford", "GMC", "Honda", "Hyundai", "Infiniti", "Jeep", "Kia",
+    "Land Rover", "Lexus", "Lincoln", "Mazda", "Mercedes-Benz", "Mitsubishi",
+    "Nissan", "Porsche", "RAM", "Subaru", "Tesla", "Toyota", "Volkswagen",
+    "Volvo", "Other",
+)
+
+val carModelsByMake: Map<String, List<String>> = mapOf(
+    "Acura" to listOf("ILX", "Integra", "MDX", "RDX", "TLX"),
+    "Audi" to listOf("A3", "A4", "A5", "A6", "A7", "A8", "e-tron", "Q3", "Q5", "Q7", "Q8", "RS3", "RS5", "RS7", "S3", "S4", "S5", "TT"),
+    "BMW" to listOf("2 Series", "3 Series", "4 Series", "5 Series", "7 Series", "8 Series", "i4", "i7", "iX", "M2", "M3", "M4", "M5", "X1", "X2", "X3", "X4", "X5", "X6", "X7", "Z4"),
+    "Buick" to listOf("Enclave", "Encore", "Encore GX", "Envision", "LaCrosse"),
+    "Cadillac" to listOf("CT4", "CT5", "CT6", "Escalade", "XT4", "XT5", "XT6"),
+    "Chevrolet" to listOf("Blazer", "Bolt EV", "Camaro", "Colorado", "Corvette", "Equinox", "Impala", "Malibu", "Silverado 1500", "Silverado 2500HD", "Silverado 3500HD", "Sonic", "Spark", "Suburban", "Tahoe", "Traverse", "Trax"),
+    "Chrysler" to listOf("300", "Pacifica", "Voyager"),
+    "Dodge" to listOf("Challenger", "Charger", "Durango", "Hornet", "Journey"),
+    "Ford" to listOf("Bronco", "Bronco Sport", "E-Transit", "Edge", "Escape", "Expedition", "Explorer", "F-150", "F-250", "F-350", "Maverick", "Mustang", "Mustang Mach-E", "Ranger", "Transit"),
+    "GMC" to listOf("Acadia", "Canyon", "Savana", "Sierra 1500", "Sierra 2500HD", "Sierra 3500HD", "Terrain", "Yukon", "Yukon XL"),
+    "Honda" to listOf("Accord", "Civic", "CR-V", "Fit", "HR-V", "Insight", "Odyssey", "Passport", "Pilot", "Prologue", "Ridgeline"),
+    "Hyundai" to listOf("Elantra", "IONIQ 5", "IONIQ 6", "Kona", "Palisade", "Santa Cruz", "Santa Fe", "Sonata", "Tucson", "Venue"),
+    "Infiniti" to listOf("Q50", "Q60", "QX50", "QX55", "QX60", "QX80"),
+    "Jeep" to listOf("Cherokee", "Compass", "Gladiator", "Grand Cherokee", "Grand Cherokee L", "Renegade", "Wagoneer", "Wrangler"),
+    "Kia" to listOf("Carnival", "EV6", "Forte", "K5", "Niro", "Seltos", "Sorento", "Soul", "Sportage", "Stinger", "Telluride"),
+    "Land Rover" to listOf("Defender", "Discovery", "Discovery Sport", "Range Rover", "Range Rover Evoque", "Range Rover Sport", "Range Rover Velar"),
+    "Lexus" to listOf("ES", "GS", "GX", "IS", "LC", "LS", "LX", "NX", "RX", "UX"),
+    "Lincoln" to listOf("Aviator", "Corsair", "Nautilus", "Navigator"),
+    "Mazda" to listOf("CX-3", "CX-30", "CX-5", "CX-50", "CX-9", "Mazda3", "Mazda6", "MX-5 Miata", "MX-30"),
+    "Mercedes-Benz" to listOf("A-Class", "C-Class", "CLA", "CLS", "E-Class", "G-Class", "GLA", "GLB", "GLC", "GLE", "GLS", "S-Class", "SL"),
+    "Mitsubishi" to listOf("Eclipse Cross", "Galant", "Outlander", "Outlander Sport"),
+    "Nissan" to listOf("Altima", "Armada", "Frontier", "Kicks", "Leaf", "Maxima", "Murano", "Pathfinder", "Rogue", "Rogue Sport", "Sentra", "Titan", "Versa"),
+    "Porsche" to listOf("718 Boxster", "718 Cayman", "911", "Cayenne", "Macan", "Panamera", "Taycan"),
+    "RAM" to listOf("1500", "2500", "3500", "ProMaster", "ProMaster City"),
+    "Subaru" to listOf("Ascent", "BRZ", "Crosstrek", "Forester", "Impreza", "Legacy", "Outback", "Solterra", "WRX"),
+    "Tesla" to listOf("Cybertruck", "Model 3", "Model S", "Model X", "Model Y"),
+    "Toyota" to listOf("4Runner", "Avalon", "Camry", "C-HR", "Corolla", "GR Supra", "Highlander", "Land Cruiser", "Mirai", "Prius", "RAV4", "Sequoia", "Sienna", "Tacoma", "Tundra", "Venza"),
+    "Volkswagen" to listOf("Arteon", "Atlas", "Atlas Cross Sport", "Golf", "ID.4", "Jetta", "Passat", "Taos", "Tiguan"),
+    "Volvo" to listOf("C40", "S60", "S90", "V60", "V90", "XC40", "XC60", "XC90"),
+    "Other" to emptyList(),
+)

@@ -16,11 +16,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -121,10 +125,25 @@ class MileageTrackerScreen : Screen {
                                             verticalArrangement = Arrangement.spacedBy(4.dp),
                                         ) {
                                             tripPurposes.forEach { purpose ->
+                                                val isSelected = state.form.purpose == purpose
                                                 FilterChip(
-                                                    selected = state.form.purpose == purpose,
+                                                    selected = isSelected,
                                                     onClick = { model.updateForm(state.form.copy(purpose = purpose)) },
-                                                    label = { Text(tripPurposeLabels[purpose] ?: purpose, style = MaterialTheme.typography.bodySmall) },
+                                                    label = {
+                                                        Text(
+                                                            tripPurposeLabels[purpose] ?: purpose,
+                                                            style = MaterialTheme.typography.bodySmall,
+                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                        )
+                                                    },
+                                                    leadingIcon = if (isSelected) {
+                                                        { Icon(Icons.Default.Check, contentDescription = null) }
+                                                    } else null,
+                                                    colors = FilterChipDefaults.filterChipColors(
+                                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                    ),
                                                 )
                                             }
                                         }
@@ -138,10 +157,25 @@ class MileageTrackerScreen : Screen {
                                                 verticalArrangement = Arrangement.spacedBy(4.dp),
                                             ) {
                                                 state.vehicles.forEach { vehicle ->
+                                                    val isVehicleSelected = state.form.vehicleId == vehicle.id
                                                     FilterChip(
-                                                        selected = state.form.vehicleId == vehicle.id,
+                                                        selected = isVehicleSelected,
                                                         onClick = { model.updateForm(state.form.copy(vehicleId = vehicle.id)) },
-                                                        label = { Text("${vehicle.year} ${vehicle.make}", style = MaterialTheme.typography.bodySmall) },
+                                                        label = {
+                                                            Text(
+                                                                "${vehicle.year} ${vehicle.make} ${vehicle.model}",
+                                                                style = MaterialTheme.typography.bodySmall,
+                                                                fontWeight = if (isVehicleSelected) FontWeight.Bold else FontWeight.Normal,
+                                                            )
+                                                        },
+                                                        leadingIcon = if (isVehicleSelected) {
+                                                            { Icon(Icons.Default.Check, contentDescription = null) }
+                                                        } else null,
+                                                        colors = FilterChipDefaults.filterChipColors(
+                                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                        ),
                                                     )
                                                 }
                                             }
