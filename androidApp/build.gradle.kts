@@ -9,6 +9,7 @@ if (localPropertiesFile.exists()) {
 
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
 }
 
@@ -80,6 +81,7 @@ android {
 
 dependencies {
     implementation(projects.shared)
+    implementation(compose.components.resources)
     implementation(libs.koin.android)
     implementation(libs.androidx.activity.compose)
     implementation(libs.sentry.android)

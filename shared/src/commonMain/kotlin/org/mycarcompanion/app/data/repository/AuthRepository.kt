@@ -23,6 +23,7 @@ class AuthRepository(
                 val user = client.auth.currentUserOrNull()
                 if (user != null) {
                     val isAdmin = profileRepository.hasRole("admin").getOrDefault(false)
+                    val isMechanic = profileRepository.hasRole("mechanic").getOrDefault(false)
                     val profile = profileRepository.getMyProfile().getOrNull()
                     val hasGoogleLinked = user.identities?.any { it.provider == "google" } ?: false
                     AuthState.Authenticated(
@@ -30,6 +31,7 @@ class AuthRepository(
                             id = user.id,
                             email = user.email ?: "",
                             isAdmin = isAdmin,
+                            isMechanic = isMechanic,
                             isPremium = profile?.isPremium ?: false,
                             hasGoogleLinked = hasGoogleLinked,
                         )

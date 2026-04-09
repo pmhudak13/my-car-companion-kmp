@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.mycarcompanion.app.data.models.AdminUserEntry
+import org.mycarcompanion.app.data.models.MechanicProfile
 import org.mycarcompanion.app.data.repository.ProfileRepository
 
 data class AdminUiState(
@@ -15,6 +16,10 @@ data class AdminUiState(
     val actionUserId: String? = null,
     val error: String? = null,
     val successMessage: String? = null,
+    val mechanics: List<MechanicProfile> = emptyList(),
+    val mechanicsLoading: Boolean = false,
+    val mechanicsError: String? = null,
+    val processingMechanicId: String? = null,
 )
 
 class AdminScreenModel(
@@ -26,6 +31,7 @@ class AdminScreenModel(
 
     init {
         loadUsers()
+        loadMechanics()
     }
 
     fun loadUsers() {
@@ -42,6 +48,25 @@ class AdminScreenModel(
                     _state.value = _state.value.copy(
                         error = e.message ?: "Failed to load users",
                         isLoading = false,
+                    )
+                }
+        }
+    }
+
+    fun loadMechanics() {
+        screenModelScope.launch {
+            _state.value = _state.value.copy(mechanicsLoading = true, mechanicsError = null)
+            profileRepository.getAllMechanicProfiles()
+                .onSuccess { mechanics ->
+                    _state.value = _state.value.copy(
+                        mechanics = mechanics,
+                        mechanicsLoading = false,
+                    )
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        mechanicsError = e.message ?: "Failed to load mechanics",
+                        mechanicsLoading = false,
                     )
                 }
         }
@@ -76,6 +101,50 @@ class AdminScreenModel(
                     _state.value = _state.value.copy(
                         actionUserId = null,
                         error = e.message ?: "Failed to revoke premium",
+                    )
+                }
+        }
+    }
+
+    fun approveMechanic(userId: String) {
+        screenModelScope.launch {
+            _state.value = _state.value.copy(processingMechanicId = userId)
+            profileRepository.approveMechanic(userId)
+                .onSuccess {
+                    val updated = _state.value.mechanics.map { m ->
+                        if (m.userId == userId) m.copy(verificationStatus = "verified") else m
+                    }
+                    _state.value = _state.value.copy(
+                        mechanics = updated,
+                        processingMechanicId = null,
+                    )
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        mechanicsError = e.message ?: "Failed to approve mechanic",
+                        processingMechanicId = null,
+                    )
+                }
+        }
+    }
+
+    fun rejectMechanic(userId: String) {
+        screenModelScope.launch {
+            _state.value = _state.value.copy(processingMechanicId = userId)
+            profileRepository.rejectMechanic(userId)
+                .onSuccess {
+                    val updated = _state.value.mechanics.map { m ->
+                        if (m.userId == userId) m.copy(verificationStatus = "rejected") else m
+                    }
+                    _state.value = _state.value.copy(
+                        mechanics = updated,
+                        processingMechanicId = null,
+                    )
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        mechanicsError = e.message ?: "Failed to reject mechanic",
+                        processingMechanicId = null,
                     )
                 }
         }

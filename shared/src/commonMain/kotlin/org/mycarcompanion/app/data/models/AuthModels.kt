@@ -5,6 +5,7 @@ data class AppUser(
     val email: String,
     val name: String = "",
     val isAdmin: Boolean = false,
+    val isMechanic: Boolean = false,
     val isPremium: Boolean = false,
     val hasGoogleLinked: Boolean = false,
 )

@@ -4,6 +4,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import kotlinx.datetime.Clock
 import org.mycarcompanion.app.data.models.MechanicAssignment
 
 class MechanicAssignmentRepository(private val client: SupabaseClient) {
@@ -37,6 +38,27 @@ class MechanicAssignmentRepository(private val client: SupabaseClient) {
     suspend fun revokeAssignment(id: String): Result<Unit> = runCatching {
         table.update({
             set("status", "revoked")
+        }) {
+            filter { eq("id", id) }
+        }
+    }
+
+    suspend fun getAssignmentsForMechanic(): Result<List<MechanicAssignment>> = runCatching {
+        val userId = client.auth.currentUserOrNull()?.id
+            ?: error("Not authenticated")
+        table.select {
+            filter {
+                eq("mechanic_user_id", userId)
+                eq("status", "active")
+            }
+            order("assigned_at", Order.DESCENDING)
+        }.decodeList<MechanicAssignment>()
+    }
+
+    suspend fun completeAssignment(id: String): Result<Unit> = runCatching {
+        table.update({
+            set("status", "completed")
+            set("completed_at", Clock.System.now().toString())
         }) {
             filter { eq("id", id) }
         }

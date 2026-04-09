@@ -15,7 +15,9 @@ import org.mycarcompanion.app.ui.admin.AdminScreenModel
 import org.mycarcompanion.app.ui.auth.AuthScreenModel
 import org.mycarcompanion.app.ui.home.HomeScreenModel
 import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreenModel
+import org.mycarcompanion.app.ui.mechanics.MechanicDashboardScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreenModel
+import org.mycarcompanion.app.ui.mechanics.MechanicSetupScreenModel
 import org.mycarcompanion.app.ui.mileage.MileageTrackerScreenModel
 import org.mycarcompanion.app.ui.reminders.AddReminderScreenModel
 import org.mycarcompanion.app.ui.vehicles.AddVehicleScreenModel
@@ -40,6 +42,8 @@ val appModule = module {
     factoryOf(::VehicleDetailScreenModel)
     factoryOf(::AddMaintenanceScreenModel)
     factoryOf(::AddReminderScreenModel)
+    factoryOf(::MechanicDashboardScreenModel)
     factoryOf(::MechanicDirectoryScreenModel)
+    factoryOf(::MechanicSetupScreenModel)
     factoryOf(::MileageTrackerScreenModel)
 }

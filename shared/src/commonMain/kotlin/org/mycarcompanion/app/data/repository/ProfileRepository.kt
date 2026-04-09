@@ -3,8 +3,10 @@ package org.mycarcompanion.app.data.repository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.datetime.Clock
 import org.mycarcompanion.app.data.models.AdminUserEntry
 import org.mycarcompanion.app.data.models.GiftedSubscription
+import org.mycarcompanion.app.data.models.MechanicProfile
 import org.mycarcompanion.app.data.models.UserProfile
 import org.mycarcompanion.app.data.models.UserRole
 
@@ -88,6 +90,87 @@ class ProfileRepository(private val client: SupabaseClient) {
             set("subscription_tier", "free")
         }) {
             filter { eq("user_id", userId) }
+        }
+    }
+
+    suspend fun getMyMechanicProfile(): Result<MechanicProfile?> = runCatching {
+        val userId = client.auth.currentUserOrNull()?.id ?: return Result.success(null)
+        client.postgrest["mechanic_profiles"].select {
+            filter { eq("user_id", userId) }
+        }.decodeList<MechanicProfile>().firstOrNull()
+    }
+
+    suspend fun getAllMechanicProfiles(): Result<List<MechanicProfile>> = runCatching {
+        client.postgrest["mechanic_profiles"].select {
+            order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+        }.decodeList<MechanicProfile>()
+    }
+
+    suspend fun approveMechanic(userId: String): Result<Unit> = runCatching {
+        val now = Clock.System.now().toString()
+        client.postgrest["mechanic_profiles"].update({
+            set("verification_status", "verified")
+            set("verified_at", now)
+        }) {
+            filter { eq("user_id", userId) }
+        }
+        // Insert role, ignore if it already exists
+        runCatching {
+            client.postgrest["user_roles"].insert(
+                mapOf("user_id" to userId, "role" to "mechanic")
+            )
+        }
+        Unit
+    }
+
+    suspend fun rejectMechanic(userId: String): Result<Unit> = runCatching {
+        client.postgrest["mechanic_profiles"].update({
+            set("verification_status", "rejected")
+        }) {
+            filter { eq("user_id", userId) }
+        }
+    }
+
+    suspend fun upsertMechanicProfile(
+        shopName: String,
+        shopType: String,
+        bio: String?,
+        city: String?,
+        state: String?,
+        yearsExperience: Int?,
+        hourlyRate: Double?,
+    ): Result<Unit> = runCatching {
+        val userId = client.auth.currentUserOrNull()?.id
+            ?: error("Not authenticated")
+        val now = Clock.System.now().toString()
+        val existing = getMyMechanicProfile().getOrNull()
+        if (existing != null) {
+            client.postgrest["mechanic_profiles"].update({
+                set("shop_name", shopName)
+                set("shop_type", shopType)
+                set("bio", bio)
+                set("city", city)
+                set("state", state)
+                set("years_experience", yearsExperience)
+                set("hourly_rate", hourlyRate)
+                set("updated_at", now)
+            }) {
+                filter { eq("user_id", userId) }
+            }
+        } else {
+            client.postgrest["mechanic_profiles"].insert(
+                mapOf(
+                    "user_id" to userId,
+                    "shop_name" to shopName,
+                    "shop_type" to shopType,
+                    "bio" to bio,
+                    "city" to city,
+                    "state" to state,
+                    "years_experience" to yearsExperience,
+                    "hourly_rate" to hourlyRate,
+                    "updated_at" to now,
+                )
+            )
         }
     }
 }

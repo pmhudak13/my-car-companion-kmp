@@ -1,5 +1,6 @@
 package org.mycarcompanion.app.ui.admin
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,16 +15,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -41,6 +46,8 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.AdminUserEntry
+import org.mycarcompanion.app.data.models.MechanicProfile
+import org.mycarcompanion.app.data.models.shopTypeLabels
 
 class AdminScreen : Screen {
 
@@ -51,74 +58,141 @@ class AdminScreen : Screen {
         val state by model.state.collectAsState()
         var giftDialogUser by remember { mutableStateOf<AdminUserEntry?>(null) }
         var giftReason by remember { mutableStateOf("") }
+        var selectedTab by remember { mutableStateOf(0) }
 
         Scaffold { paddingValues ->
-            when {
-                state.isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize().padding(paddingValues),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator()
-                    }
+            Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                // Header row
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "Admin Panel",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    TextButton(onClick = { navigator.pop() }) { Text("Back") }
                 }
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize().padding(paddingValues),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        item {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    "Admin Panel",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                TextButton(onClick = { navigator.pop() }) { Text("Back") }
+
+                TabRow(selectedTabIndex = selectedTab) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        text = { Text("Users") },
+                    )
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        text = { Text("Mechanics") },
+                    )
+                }
+
+                when (selectedTab) {
+                    0 -> {
+                        // Existing users tab content
+                        when {
+                            state.isLoading -> {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    CircularProgressIndicator()
+                                }
+                            }
+                            else -> {
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    state.error?.let { error ->
+                                        item {
+                                            Text(
+                                                error,
+                                                color = MaterialTheme.colorScheme.error,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                            )
+                                        }
+                                    }
+
+                                    state.successMessage?.let { msg ->
+                                        item {
+                                            Text(
+                                                msg,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold,
+                                            )
+                                        }
+                                    }
+
+                                    item {
+                                        Text(
+                                            "${state.users.size} users",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+
+                                    items(state.users, key = { it.userId }) { user ->
+                                        UserCard(
+                                            user = user,
+                                            isActioning = state.actionUserId == user.userId,
+                                            onGiftPremium = { giftDialogUser = user },
+                                            onRevokePremium = { model.revokePremium(user.userId) },
+                                        )
+                                    }
+                                }
                             }
                         }
-
-                        state.error?.let { error ->
-                            item {
-                                Text(
-                                    error,
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
+                    }
+                    1 -> {
+                        // Mechanics tab content
+                        when {
+                            state.mechanicsLoading -> {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    CircularProgressIndicator()
+                                }
                             }
-                        }
+                            else -> {
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    state.mechanicsError?.let { error ->
+                                        item {
+                                            Text(
+                                                error,
+                                                color = MaterialTheme.colorScheme.error,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                            )
+                                        }
+                                    }
 
-                        state.successMessage?.let { msg ->
-                            item {
-                                Text(
-                                    msg,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold,
-                                )
+                                    item {
+                                        Text(
+                                            "${state.mechanics.size} mechanics",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+
+                                    items(state.mechanics, key = { it.userId }) { mechanic ->
+                                        MechanicAdminCard(
+                                            mechanic = mechanic,
+                                            processingId = state.processingMechanicId,
+                                            onApprove = { model.approveMechanic(mechanic.userId) },
+                                            onReject = { model.rejectMechanic(mechanic.userId) },
+                                        )
+                                    }
+                                }
                             }
-                        }
-
-                        item {
-                            Text(
-                                "${state.users.size} users",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-
-                        items(state.users, key = { it.userId }) { user ->
-                            UserCard(
-                                user = user,
-                                isActioning = state.actionUserId == user.userId,
-                                onGiftPremium = { giftDialogUser = user },
-                                onRevokePremium = { model.revokePremium(user.userId) },
-                            )
                         }
                     }
                 }
@@ -246,5 +320,143 @@ private fun PremiumBadge() {
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.Bold,
+    )
+}
+
+@Composable
+private fun MechanicAdminCard(
+    mechanic: MechanicProfile,
+    processingId: String?,
+    onApprove: () -> Unit,
+    onReject: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Shop name + verification badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = mechanic.shopName ?: "Unnamed",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                )
+                VerificationBadge(mechanic.verificationStatus)
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Shop type + location
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = shopTypeLabels[mechanic.shopType] ?: mechanic.shopType,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                val location = listOfNotNull(mechanic.city, mechanic.state).joinToString(", ")
+                if (location.isNotEmpty()) {
+                    Text(
+                        text = location,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            // Experience + rate
+            val hasExtra = mechanic.yearsExperience != null || mechanic.hourlyRate != null
+            if (hasExtra) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    mechanic.yearsExperience?.let {
+                        Text(
+                            text = "${it}yr exp",
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                    mechanic.hourlyRate?.let {
+                        Text(
+                            text = "$$it/hr",
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Action area based on verification status
+            when (mechanic.verificationStatus) {
+                "pending" -> {
+                    if (processingId == mechanic.userId) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilledTonalButton(onClick = onApprove) {
+                                Text("Approve")
+                            }
+                            OutlinedButton(onClick = onReject) {
+                                Text("Reject")
+                            }
+                        }
+                    }
+                }
+                "verified" -> {
+                    Text(
+                        text = "✓ Verified",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                "rejected" -> {
+                    Text(
+                        text = "✗ Rejected",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VerificationBadge(status: String) {
+    val (text, color, borderColor) = when (status) {
+        "verified" -> Triple(
+            "VERIFIED",
+            MaterialTheme.colorScheme.primary,
+            MaterialTheme.colorScheme.primary,
+        )
+        "rejected" -> Triple(
+            "REJECTED",
+            MaterialTheme.colorScheme.error,
+            MaterialTheme.colorScheme.error,
+        )
+        else -> Triple(
+            "PENDING",
+            MaterialTheme.colorScheme.outline,
+            MaterialTheme.colorScheme.outline,
+        )
+    }
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        color = color,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .border(1.dp, borderColor, RoundedCornerShape(4.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
     )
 }

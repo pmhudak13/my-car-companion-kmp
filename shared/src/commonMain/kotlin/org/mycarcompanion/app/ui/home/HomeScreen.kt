@@ -45,6 +45,7 @@ import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.ui.admin.AdminScreen
 import org.mycarcompanion.app.ui.auth.LoginScreen
+import org.mycarcompanion.app.ui.mechanics.MechanicDashboardScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreen
 import org.mycarcompanion.app.ui.mileage.MileageTrackerScreen
 import org.mycarcompanion.app.ui.vehicles.AddVehicleScreen
@@ -63,8 +64,14 @@ class HomeScreen : Screen {
         val snackbarHostState = remember { SnackbarHostState() }
 
         LaunchedEffect(authState) {
-            if (authState is AuthState.Unauthenticated) {
-                navigator.replaceAll(LoginScreen())
+            when (val s = authState) {
+                is AuthState.Unauthenticated -> navigator.replaceAll(LoginScreen())
+                is AuthState.Authenticated -> {
+                    if (s.user.isMechanic) {
+                        navigator.replace(MechanicDashboardScreen())
+                    }
+                }
+                else -> Unit
             }
         }
 
