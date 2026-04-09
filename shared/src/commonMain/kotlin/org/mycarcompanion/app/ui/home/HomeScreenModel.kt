@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.mycarcompanion.app.data.models.AuthResult
 import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.data.repository.AuthRepository
@@ -33,6 +34,9 @@ class HomeScreenModel(
     private val _vehicleState = MutableStateFlow(VehicleUiState())
     val vehicleState: StateFlow<VehicleUiState> = _vehicleState.asStateFlow()
 
+    private val _linkState = MutableStateFlow<AuthResult?>(null)
+    val linkState: StateFlow<AuthResult?> = _linkState.asStateFlow()
+
     init {
         loadVehicles()
     }
@@ -51,6 +55,16 @@ class HomeScreenModel(
                     )
                 }
         }
+    }
+
+    fun linkGoogleAccount() {
+        screenModelScope.launch {
+            _linkState.value = authRepository.linkGoogleIdentity()
+        }
+    }
+
+    fun clearLinkState() {
+        _linkState.value = null
     }
 
     fun signOut() {

@@ -24,12 +24,14 @@ class AuthRepository(
                 if (user != null) {
                     val isAdmin = profileRepository.hasRole("admin").getOrDefault(false)
                     val profile = profileRepository.getMyProfile().getOrNull()
+                    val hasGoogleLinked = user.identities?.any { it.provider == "google" } ?: false
                     AuthState.Authenticated(
                         AppUser(
                             id = user.id,
                             email = user.email ?: "",
                             isAdmin = isAdmin,
                             isPremium = profile?.isPremium ?: false,
+                            hasGoogleLinked = hasGoogleLinked,
                         )
                     )
                 } else {
@@ -67,6 +69,13 @@ class AuthRepository(
         AuthResult.Success
     } catch (e: Exception) {
         AuthResult.Error(e.message ?: "Google sign-in failed")
+    }
+
+    suspend fun linkGoogleIdentity(): AuthResult = try {
+        client.auth.linkIdentity(Google, redirectUrl = googleAuthRedirectUrl)
+        AuthResult.Success
+    } catch (e: Exception) {
+        AuthResult.Error(e.message ?: "Failed to link Google account")
     }
 
     suspend fun signOut(): AuthResult = try {

@@ -6,6 +6,7 @@ data class AppUser(
     val name: String = "",
     val isAdmin: Boolean = false,
     val isPremium: Boolean = false,
+    val hasGoogleLinked: Boolean = false,
 )
 
 sealed class AuthState {

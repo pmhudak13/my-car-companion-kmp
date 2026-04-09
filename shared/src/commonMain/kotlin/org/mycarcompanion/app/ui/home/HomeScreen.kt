@@ -21,13 +21,18 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import org.mycarcompanion.app.data.models.AuthResult
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -54,6 +59,8 @@ class HomeScreen : Screen {
         val model: HomeScreenModel = koinScreenModel()
         val authState by model.authState.collectAsState()
         val vehicleState by model.vehicleState.collectAsState()
+        val linkState by model.linkState.collectAsState()
+        val snackbarHostState = remember { SnackbarHostState() }
 
         LaunchedEffect(authState) {
             if (authState is AuthState.Unauthenticated) {
@@ -61,9 +68,24 @@ class HomeScreen : Screen {
             }
         }
 
+        LaunchedEffect(linkState) {
+            when (val state = linkState) {
+                is AuthResult.Success -> {
+                    snackbarHostState.showSnackbar("Google account linked successfully")
+                    model.clearLinkState()
+                }
+                is AuthResult.Error -> {
+                    snackbarHostState.showSnackbar(state.message)
+                    model.clearLinkState()
+                }
+                null -> Unit
+            }
+        }
+
         val user = (authState as? AuthState.Authenticated)?.user ?: return
 
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
                 FloatingActionButton(
                     onClick = { navigator.push(AddVehicleScreen()) },
@@ -130,6 +152,16 @@ class HomeScreen : Screen {
                         ),
                     ) {
                         Text("Mileage Tracker", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+
+                if (!user.hasGoogleLinked) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = model::linkGoogleAccount,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Link Google Account", style = MaterialTheme.typography.labelMedium)
                     }
                 }
 
