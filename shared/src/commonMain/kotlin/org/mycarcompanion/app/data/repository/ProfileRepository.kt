@@ -7,6 +7,7 @@ import kotlinx.datetime.Clock
 import org.mycarcompanion.app.data.models.AdminUserEntry
 import org.mycarcompanion.app.data.models.GiftedSubscription
 import org.mycarcompanion.app.data.models.MechanicProfile
+import org.mycarcompanion.app.data.models.MechanicProfileInsert
 import org.mycarcompanion.app.data.models.UserProfile
 import org.mycarcompanion.app.data.models.UserRole
 
@@ -159,16 +160,16 @@ class ProfileRepository(private val client: SupabaseClient) {
             }
         } else {
             client.postgrest["mechanic_profiles"].insert(
-                mapOf(
-                    "user_id" to userId,
-                    "shop_name" to shopName,
-                    "shop_type" to shopType,
-                    "bio" to bio,
-                    "city" to city,
-                    "state" to state,
-                    "years_experience" to yearsExperience,
-                    "hourly_rate" to hourlyRate,
-                    "updated_at" to now,
+                MechanicProfileInsert(
+                    userId = userId,
+                    shopName = shopName,
+                    shopType = shopType,
+                    bio = bio,
+                    city = city,
+                    state = state,
+                    yearsExperience = yearsExperience,
+                    hourlyRate = hourlyRate,
+                    updatedAt = now,
                 )
             )
         }

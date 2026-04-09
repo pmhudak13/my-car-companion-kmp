@@ -24,7 +24,7 @@ import org.mycarcompanion.app.data.models.Message
 
 class MessageRepository(private val client: SupabaseClient) {
 
-    private val table get() = client.postgrest["messages"]
+    private val table get() = client.postgrest["chat_messages"]
 
     suspend fun getInbox(): Result<List<Message>> = runCatching {
         val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")

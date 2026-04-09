@@ -39,6 +39,19 @@ data class MechanicAssignment(
     @SerialName("created_at") val createdAt: String = "",
 )
 
+@Serializable
+data class MechanicProfileInsert(
+    @SerialName("user_id") val userId: String,
+    @SerialName("shop_name") val shopName: String,
+    @SerialName("shop_type") val shopType: String,
+    val bio: String? = null,
+    val city: String? = null,
+    val state: String? = null,
+    @SerialName("years_experience") val yearsExperience: Int? = null,
+    @SerialName("hourly_rate") val hourlyRate: Double? = null,
+    @SerialName("updated_at") val updatedAt: String,
+)
+
 val shopTypes = listOf(
     "general", "smog", "body_shop", "tire", "electrical", "detailing",
 )
