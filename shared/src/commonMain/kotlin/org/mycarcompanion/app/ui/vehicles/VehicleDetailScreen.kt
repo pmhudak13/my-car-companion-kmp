@@ -13,10 +13,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -95,7 +99,7 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        item { VehicleHeader(vehicle, onBack = { navigator.pop() }) }
+                        item { VehicleHeader(vehicle, onBack = { navigator.pop() }, onSettings = { navigator.push(VehicleSettingsScreen(vehicleId)) }) }
                         item { VehicleInfo(vehicle) }
 
                         // --- Reminders Section ---
@@ -207,7 +211,7 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
 }
 
 @Composable
-private fun VehicleHeader(vehicle: Vehicle, onBack: () -> Unit) {
+private fun VehicleHeader(vehicle: Vehicle, onBack: () -> Unit, onSettings: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -219,7 +223,9 @@ private fun VehicleHeader(vehicle: Vehicle, onBack: () -> Unit) {
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
         )
-        Spacer(modifier = Modifier.width(48.dp))
+        IconButton(onClick = onSettings) {
+            Icon(Icons.Default.Settings, contentDescription = "Vehicle Settings")
+        }
     }
 }
 

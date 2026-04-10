@@ -137,6 +137,7 @@ class MechanicDashboardScreen : Screen {
                                     assignment = assignment,
                                     isCompleting = state.completingId == assignment.id,
                                     onComplete = { model.completeJob(assignment.id) },
+                                    onViewVehicle = { navigator.push(MechanicVehicleViewScreen(assignment.vehicleId, assignment.id)) },
                                 )
                             }
                         }
@@ -152,10 +153,12 @@ private fun AssignmentCard(
     assignment: MechanicAssignment,
     isCompleting: Boolean,
     onComplete: () -> Unit,
+    onViewVehicle: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        onClick = onViewVehicle,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(

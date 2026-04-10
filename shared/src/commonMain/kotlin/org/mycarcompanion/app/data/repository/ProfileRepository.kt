@@ -132,6 +132,17 @@ class ProfileRepository(private val client: SupabaseClient) {
         }
     }
 
+    suspend fun updateProfile(firstName: String, lastName: String): Result<Unit> = runCatching {
+        val userId = client.auth.currentUserOrNull()?.id
+            ?: error("Not authenticated")
+        profiles.update({
+            set("first_name", firstName)
+            set("last_name", lastName)
+        }) {
+            filter { eq("user_id", userId) }
+        }
+    }
+
     suspend fun upsertMechanicProfile(
         shopName: String,
         shopType: String,

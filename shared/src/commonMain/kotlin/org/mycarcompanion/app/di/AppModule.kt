@@ -19,10 +19,15 @@ import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicDashboardScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicSetupScreenModel
+import org.mycarcompanion.app.ui.mechanics.MechanicVehicleViewScreenModel
 import org.mycarcompanion.app.ui.messaging.MessagingScreenModel
 import org.mycarcompanion.app.ui.mileage.MileageTrackerScreenModel
+import org.mycarcompanion.app.ui.profile.ProfileScreenModel
 import org.mycarcompanion.app.ui.reminders.AddReminderScreenModel
+import org.mycarcompanion.app.ui.reminders.RemindersListScreenModel
+import org.mycarcompanion.app.ui.settings.SettingsScreenModel
 import org.mycarcompanion.app.ui.vehicles.AddVehicleScreenModel
+import org.mycarcompanion.app.ui.vehicles.VehicleSettingsScreenModel
 import org.mycarcompanion.app.ui.vehicles.VehicleDetailScreenModel
 import org.mycarcompanion.app.ui.vehicles.VehicleListScreenModel
 
@@ -50,4 +55,9 @@ val appModule = module {
     factoryOf(::MechanicSetupScreenModel)
     factoryOf(::MessagingScreenModel)
     factoryOf(::MileageTrackerScreenModel)
+    factoryOf(::RemindersListScreenModel)
+    factoryOf(::ProfileScreenModel)
+    factoryOf(::SettingsScreenModel)
+    factoryOf(::VehicleSettingsScreenModel)
+    factoryOf(::MechanicVehicleViewScreenModel)
 }

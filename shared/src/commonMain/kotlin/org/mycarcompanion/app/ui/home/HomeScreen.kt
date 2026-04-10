@@ -45,6 +45,7 @@ import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.ui.admin.AdminScreen
 import org.mycarcompanion.app.ui.auth.LoginScreen
+import org.mycarcompanion.app.ui.settings.SettingsScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDashboardScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicSetupScreen
@@ -130,9 +131,9 @@ class HomeScreen : Screen {
                         )
                     }
                     TextButton(
-                        onClick = model::signOut,
+                        onClick = { navigator.push(SettingsScreen()) },
                     ) {
-                        Text("Sign Out", color = MaterialTheme.colorScheme.error)
+                        Text("Settings")
                     }
                 }
 

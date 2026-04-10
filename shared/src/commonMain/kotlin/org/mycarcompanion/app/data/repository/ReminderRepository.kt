@@ -34,4 +34,12 @@ class ReminderRepository(private val client: SupabaseClient) {
             filter { eq("id", id) }
         }
     }
+
+    suspend fun getRemindersForVehicles(vehicleIds: List<String>): Result<List<Reminder>> = runCatching {
+        if (vehicleIds.isEmpty()) return Result.success(emptyList())
+        table.select {
+            filter { isIn("vehicle_id", vehicleIds) }
+            order("next_due_date", Order.ASCENDING)
+        }.decodeList<Reminder>()
+    }
 }
