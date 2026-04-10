@@ -49,6 +49,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.carMakes
 import org.mycarcompanion.app.data.models.carModelsByMake
 import org.mycarcompanion.app.platform.CommonParcelable
+import org.mycarcompanion.app.ui.transfer.TransferScreen
 
 data class VehicleSettingsScreen(val vehicleId: String) : Screen, CommonParcelable {
 
@@ -290,6 +291,21 @@ data class VehicleSettingsScreen(val vehicleId: String) : Screen, CommonParcelab
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            val v = state.vehicle
+                            if (v != null) {
+                                val label = "${v.year} ${v.make} ${v.model}"
+                                navigator.push(TransferScreen(vehicleId = vehicleId, vehicleName = label))
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Transfer Vehicle")
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     OutlinedButton(
                         onClick = { model.showDeleteConfirm() },

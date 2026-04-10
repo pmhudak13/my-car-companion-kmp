@@ -41,6 +41,7 @@ import org.mycarcompanion.app.data.models.MechanicProfile
 import org.mycarcompanion.app.data.models.shopTypeLabels
 import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.ui.messaging.MessagingScreen
+import org.mycarcompanion.app.ui.reviews.MechanicReviewsScreen
 
 data class MechanicDirectoryScreen(val vehicleId: String? = null) : Screen, CommonParcelable {
 
@@ -131,6 +132,14 @@ data class MechanicDirectoryScreen(val vehicleId: String? = null) : Screen, Comm
                                     isAssigning = state.assigningMechanicId == mechanic.userId,
                                     onAssign = { vehicleId?.let { vid -> model.assignMechanic(vid, mechanic.userId) } },
                                     onMessage = { navigator.push(MessagingScreen(recipientId = mechanic.userId)) },
+                                    onReviews = {
+                                        navigator.push(
+                                            MechanicReviewsScreen(
+                                                mechanicUserId = mechanic.userId,
+                                                mechanicName = mechanic.shopName ?: "Mechanic",
+                                            )
+                                        )
+                                    },
                                 )
                             }
                         }
@@ -148,6 +157,7 @@ fun MechanicCard(
     isAssigning: Boolean = false,
     onAssign: () -> Unit = {},
     onMessage: () -> Unit = {},
+    onReviews: () -> Unit = {},
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -227,18 +237,25 @@ fun MechanicCard(
                 ) {
                     Text("Message", style = MaterialTheme.typography.labelMedium)
                 }
-                if (vehicleId != null) {
-                    if (isAssigning) {
-                        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
-                        }
-                    } else {
-                        Button(
-                            onClick = onAssign,
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text("Assign", style = MaterialTheme.typography.labelMedium)
-                        }
+                OutlinedButton(
+                    onClick = onReviews,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Reviews", style = MaterialTheme.typography.labelMedium)
+                }
+            }
+            if (vehicleId != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                if (isAssigning) {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    Button(
+                        onClick = onAssign,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Assign to Vehicle", style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }

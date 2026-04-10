@@ -18,8 +18,9 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsNone
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
@@ -52,6 +53,7 @@ import org.mycarcompanion.app.ui.messaging.MessagesListScreen
 import org.mycarcompanion.app.ui.notifications.NotificationsScreen
 import org.mycarcompanion.app.ui.profile.ProfileScreen
 import org.mycarcompanion.app.ui.reminders.RemindersListScreen
+import org.mycarcompanion.app.ui.transfer.ReceiveTransferScreen
 
 class SettingsScreen : Screen {
 
@@ -130,6 +132,11 @@ class SettingsScreen : Screen {
                         icon = Icons.Default.NotificationsNone,
                         label = "Notifications",
                         onClick = { navigator.push(NotificationsScreen()) },
+                    )
+                    SettingsRow(
+                        icon = Icons.Default.SwapHoriz,
+                        label = "Receive Vehicle Transfer",
+                        onClick = { navigator.push(ReceiveTransferScreen()) },
                     )
                     Divider(modifier = Modifier.padding(horizontal = 16.dp))
 
