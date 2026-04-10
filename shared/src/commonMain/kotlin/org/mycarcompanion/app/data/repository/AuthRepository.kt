@@ -5,7 +5,11 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -26,22 +30,27 @@ class AuthRepository(
             is SessionStatus.Authenticated -> {
                 val user = client.auth.currentUserOrNull()
                 if (user != null) {
-                    val isAdmin = profileRepository.hasRole("admin").getOrDefault(false)
-                    val isMechanic = profileRepository.hasRole("mechanic").getOrDefault(false)
-                    val profile = profileRepository.getMyProfile().getOrNull()
-                    val hasGoogleLinked = user.identities?.any { it.provider == "google" } ?: false
-                    val intendedRole = user.userMetadata?.get("role")?.jsonPrimitive?.contentOrNull
-                    AuthState.Authenticated(
-                        AppUser(
-                            id = user.id,
-                            email = user.email ?: "",
-                            isAdmin = isAdmin,
-                            isMechanic = isMechanic,
-                            isPremium = profile?.isPremium ?: false,
-                            hasGoogleLinked = hasGoogleLinked,
-                            intendedRole = intendedRole,
+                    coroutineScope {
+                        val isAdminDeferred = async { profileRepository.hasRole("admin").getOrDefault(false) }
+                        val isMechanicDeferred = async { profileRepository.hasRole("mechanic").getOrDefault(false) }
+                        val profileDeferred = async { profileRepository.getMyProfile().getOrNull() }
+                        val isAdmin = isAdminDeferred.await()
+                        val isMechanic = isMechanicDeferred.await()
+                        val profile = profileDeferred.await()
+                        val hasGoogleLinked = user.identities?.any { it.provider == "google" } ?: false
+                        val intendedRole = user.userMetadata?.get("role")?.jsonPrimitive?.contentOrNull
+                        AuthState.Authenticated(
+                            AppUser(
+                                id = user.id,
+                                email = user.email ?: "",
+                                isAdmin = isAdmin,
+                                isMechanic = isMechanic,
+                                isPremium = profile?.isPremium ?: false,
+                                hasGoogleLinked = hasGoogleLinked,
+                                intendedRole = intendedRole,
+                            )
                         )
-                    )
+                    }
                 } else {
                     AuthState.Unauthenticated
                 }
@@ -50,7 +59,7 @@ class AuthRepository(
             is SessionStatus.Initializing -> AuthState.Loading
             is SessionStatus.RefreshFailure -> AuthState.Unauthenticated
         }
-    }
+    }.flowOn(Dispatchers.Default)
 
     suspend fun signIn(email: String, password: String): AuthResult = try {
         client.auth.signInWith(Email) {
