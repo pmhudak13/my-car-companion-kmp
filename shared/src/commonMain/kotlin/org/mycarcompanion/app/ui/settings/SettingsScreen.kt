@@ -15,7 +15,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.HelpOutline
+import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -44,6 +47,9 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.ui.auth.LoginScreen
+import org.mycarcompanion.app.ui.help.HelpScreen
+import org.mycarcompanion.app.ui.messaging.MessagesListScreen
+import org.mycarcompanion.app.ui.notifications.NotificationsScreen
 import org.mycarcompanion.app.ui.profile.ProfileScreen
 import org.mycarcompanion.app.ui.reminders.RemindersListScreen
 
@@ -114,6 +120,25 @@ class SettingsScreen : Screen {
                         icon = Icons.Default.Notifications,
                         label = "Reminders",
                         onClick = { navigator.push(RemindersListScreen()) },
+                    )
+                    SettingsRow(
+                        icon = Icons.Default.Email,
+                        label = "Messages",
+                        onClick = { navigator.push(MessagesListScreen()) },
+                    )
+                    SettingsRow(
+                        icon = Icons.Default.NotificationsNone,
+                        label = "Notifications",
+                        onClick = { navigator.push(NotificationsScreen()) },
+                    )
+                    Divider(modifier = Modifier.padding(horizontal = 16.dp))
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    SectionHeader("Support")
+                    SettingsRow(
+                        icon = Icons.Default.HelpOutline,
+                        label = "Help & FAQ",
+                        onClick = { navigator.push(HelpScreen()) },
                     )
                     Divider(modifier = Modifier.padding(horizontal = 16.dp))
 

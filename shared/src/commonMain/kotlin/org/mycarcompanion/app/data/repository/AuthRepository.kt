@@ -93,4 +93,6 @@ class AuthRepository(
     } catch (e: Exception) {
         AuthResult.Error(e.message ?: "Sign out failed")
     }
+
+    fun getCurrentUserId(): String? = client.auth.currentUserOrNull()?.id
 }

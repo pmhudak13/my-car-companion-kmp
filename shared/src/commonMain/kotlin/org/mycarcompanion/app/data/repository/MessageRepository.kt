@@ -71,4 +71,19 @@ class MessageRepository(private val client: SupabaseClient) {
             filter { eq("id", id) }
         }
     }
+
+    // Returns all messages where current user is sender OR recipient, newest first.
+    // Used to build a conversations list.
+    suspend fun getAllMessages(): Result<List<Message>> = runCatching {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
+        table.select {
+            filter {
+                or {
+                    eq("sender_id", userId)
+                    eq("recipient_id", userId)
+                }
+            }
+            order("created_at", Order.DESCENDING)
+        }.decodeList<Message>()
+    }
 }
