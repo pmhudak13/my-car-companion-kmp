@@ -37,6 +37,28 @@ import org.mycarcompanion.app.data.models.reminderTypeLabels
 import org.mycarcompanion.app.data.models.reminderTypes
 import org.mycarcompanion.app.platform.CommonParcelable
 
+// Auto-formats raw digit input into YYYY-MM-DD as the user types.
+private fun formatDateInput(input: String): String {
+    val digits = input.filter { it.isDigit() }.take(8)
+    return buildString {
+        digits.forEachIndexed { index, c ->
+            if (index == 4 || index == 6) append('-')
+            append(c)
+        }
+    }
+}
+
+// Returns true only when the string is a complete, well-formed YYYY-MM-DD date.
+private fun isValidDate(date: String): Boolean {
+    if (date.length != 10) return false
+    val parts = date.split("-")
+    if (parts.size != 3) return false
+    val year = parts[0].toIntOrNull() ?: return false
+    val month = parts[1].toIntOrNull() ?: return false
+    val day = parts[2].toIntOrNull() ?: return false
+    return year in 1900..2100 && month in 1..12 && day in 1..31
+}
+
 data class AddReminderScreen(val vehicleId: String) : Screen, CommonParcelable {
 
     @OptIn(ExperimentalLayoutApi::class)
@@ -105,11 +127,21 @@ data class AddReminderScreen(val vehicleId: String) : Screen, CommonParcelable {
                 Text("Due When", style = MaterialTheme.typography.labelLarge)
                 Spacer(modifier = Modifier.height(8.dp))
 
+                val dateIsInvalid = state.form.nextDueDate.isNotEmpty() &&
+                    !isValidDate(state.form.nextDueDate)
                 OutlinedTextField(
                     value = state.form.nextDueDate,
-                    onValueChange = { model.updateForm(state.form.copy(nextDueDate = it)) },
-                    label = { Text("Next Due Date (YYYY-MM-DD)") },
+                    onValueChange = { input ->
+                        model.updateForm(state.form.copy(nextDueDate = formatDateInput(input)))
+                    },
+                    label = { Text("Next Due Date") },
+                    placeholder = { Text("YYYY-MM-DD") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
+                    isError = dateIsInvalid,
+                    supportingText = {
+                        if (dateIsInvalid) Text("Enter a valid date (YYYY-MM-DD)")
+                    },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(modifier = Modifier.height(12.dp))

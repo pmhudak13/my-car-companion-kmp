@@ -42,6 +42,18 @@ class AddReminderScreenModel(
             _state.value = _state.value.copy(error = "At least a due date or due mileage is required")
             return
         }
+        if (form.nextDueDate.isNotBlank()) {
+            val dateParts = form.nextDueDate.trim().split("-")
+            val valid = form.nextDueDate.trim().length == 10 &&
+                dateParts.size == 3 &&
+                dateParts[0].toIntOrNull()?.let { it in 1900..2100 } == true &&
+                dateParts[1].toIntOrNull()?.let { it in 1..12 } == true &&
+                dateParts[2].toIntOrNull()?.let { it in 1..31 } == true
+            if (!valid) {
+                _state.value = _state.value.copy(error = "Date must be in YYYY-MM-DD format")
+                return
+            }
+        }
 
         screenModelScope.launch {
             _state.value = _state.value.copy(isSaving = true, error = null)
