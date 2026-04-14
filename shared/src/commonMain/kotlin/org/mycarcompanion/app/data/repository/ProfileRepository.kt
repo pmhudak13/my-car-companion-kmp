@@ -124,6 +124,23 @@ class ProfileRepository(private val client: SupabaseClient) {
         Unit
     }
 
+    suspend fun convertToMechanic(userId: String): Result<Unit> = runCatching {
+        val now = Clock.System.now().toString()
+        // Insert a minimal profile if one doesn't exist yet (ignore if it does)
+        runCatching {
+            client.postgrest["mechanic_profiles"].insert(
+                MechanicProfileInsert(
+                    userId = userId,
+                    shopName = "My Shop",
+                    shopType = "general",
+                    updatedAt = now,
+                )
+            )
+        }
+        // Mark verified and grant mechanic role
+        approveMechanic(userId).getOrThrow()
+    }
+
     suspend fun rejectMechanic(userId: String): Result<Unit> = runCatching {
         client.postgrest["mechanic_profiles"].update({
             set("verification_status", "rejected")

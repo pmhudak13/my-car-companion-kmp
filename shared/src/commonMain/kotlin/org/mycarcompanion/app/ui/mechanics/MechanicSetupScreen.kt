@@ -86,6 +86,22 @@ class MechanicSetupScreen : Screen {
                     Spacer(modifier = Modifier.height(12.dp))
                 }
 
+                if (state.isPendingApproval) {
+                    Spacer(modifier = Modifier.height(40.dp))
+                    Text(
+                        text = "Application Under Review",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Your mechanic profile has been submitted and is awaiting approval. You will gain full mechanic access once an admin reviews your application.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    return@Column
+                }
+
                 OutlinedTextField(
                     value = state.shopName,
                     onValueChange = model::onShopNameChange,

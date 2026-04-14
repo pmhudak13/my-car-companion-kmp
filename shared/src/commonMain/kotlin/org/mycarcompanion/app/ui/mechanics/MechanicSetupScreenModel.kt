@@ -20,6 +20,7 @@ data class MechanicSetupState(
     val error: String? = null,
     val isSaved: Boolean = false,
     val isLoadingProfile: Boolean = false,
+    val isPendingApproval: Boolean = false, // profile submitted, awaiting admin review
 )
 
 class MechanicSetupScreenModel(
@@ -44,6 +45,7 @@ class MechanicSetupScreenModel(
                             yearsExperience = profile.yearsExperience?.toString() ?: "",
                             hourlyRate = profile.hourlyRate?.toString() ?: "",
                             isLoadingProfile = false,
+                            isPendingApproval = profile.verificationStatus == "pending",
                         )
                     } else {
                         _state.value = _state.value.copy(isLoadingProfile = false)

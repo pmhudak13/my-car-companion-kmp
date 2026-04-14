@@ -142,6 +142,7 @@ class AdminScreen : Screen {
                                             isActioning = state.actionUserId == user.userId,
                                             onGiftPremium = { giftDialogUser = user },
                                             onRevokePremium = { model.revokePremium(user.userId) },
+                                            onConvertToMechanic = { model.convertToMechanic(user.userId) },
                                         )
                                     }
                                 }
@@ -252,6 +253,7 @@ private fun UserCard(
     isActioning: Boolean,
     onGiftPremium: () -> Unit,
     onRevokePremium: () -> Unit,
+    onConvertToMechanic: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -292,6 +294,15 @@ private fun UserCard(
                     Button(onClick = onGiftPremium) {
                         Text("Gift Premium", style = MaterialTheme.typography.labelSmall)
                     }
+                }
+            }
+            if (!isActioning && user.role == "owner") {
+                Spacer(modifier = Modifier.height(8.dp))
+                FilledTonalButton(
+                    onClick = onConvertToMechanic,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Make Mechanic", style = MaterialTheme.typography.labelSmall)
                 }
             }
         }

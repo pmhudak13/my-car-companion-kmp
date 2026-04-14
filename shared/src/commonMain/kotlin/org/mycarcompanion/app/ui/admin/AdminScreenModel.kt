@@ -150,6 +150,27 @@ class AdminScreenModel(
         }
     }
 
+    fun convertToMechanic(userId: String) {
+        screenModelScope.launch {
+            _state.value = _state.value.copy(actionUserId = userId, error = null, successMessage = null)
+            profileRepository.convertToMechanic(userId)
+                .onSuccess {
+                    _state.value = _state.value.copy(
+                        actionUserId = null,
+                        successMessage = "User converted to mechanic",
+                    )
+                    loadUsers()
+                    loadMechanics()
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        actionUserId = null,
+                        error = e.message ?: "Failed to convert user to mechanic",
+                    )
+                }
+        }
+    }
+
     fun clearMessage() {
         _state.value = _state.value.copy(successMessage = null, error = null)
     }

@@ -69,10 +69,14 @@ class HomeScreen : Screen {
             when (val s = authState) {
                 is AuthState.Unauthenticated -> navigator.replaceAll(LoginScreen())
                 is AuthState.Authenticated -> {
-                    // Admins stay on HomeScreen and can switch views manually
                     if (s.user.isMechanic && !s.user.isAdmin) {
+                        // Approved mechanic → mechanic dashboard
                         navigator.replace(MechanicDashboardScreen())
+                    } else if (!s.user.isMechanic && !s.user.isAdmin && s.user.intendedRole == "mechanic") {
+                        // New or pending mechanic → setup/pending screen
+                        navigator.replace(MechanicSetupScreen())
                     }
+                    // Admins and regular users stay on HomeScreen
                 }
                 else -> Unit
             }
