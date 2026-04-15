@@ -10,7 +10,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -25,7 +25,7 @@ class AuthRepository(
     private val profileRepository: ProfileRepository,
 ) {
 
-    val authState: Flow<AuthState> = client.auth.sessionStatus.map { status ->
+    val authState: Flow<AuthState> = client.auth.sessionStatus.mapLatest { status ->
         when (status) {
             is SessionStatus.Authenticated -> {
                 val user = client.auth.currentUserOrNull()
