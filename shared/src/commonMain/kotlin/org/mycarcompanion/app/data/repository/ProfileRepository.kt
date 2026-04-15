@@ -149,12 +149,13 @@ class ProfileRepository(private val client: SupabaseClient) {
         }
     }
 
-    suspend fun updateProfile(firstName: String, lastName: String): Result<Unit> = runCatching {
+    suspend fun updateProfile(firstName: String, lastName: String, avatarUrl: String? = null): Result<Unit> = runCatching {
         val userId = client.auth.currentUserOrNull()?.id
             ?: error("Not authenticated")
         profiles.update({
             set("first_name", firstName)
             set("last_name", lastName)
+            if (avatarUrl != null) set("avatar_url", avatarUrl)
         }) {
             filter { eq("user_id", userId) }
         }
@@ -168,6 +169,9 @@ class ProfileRepository(private val client: SupabaseClient) {
         state: String?,
         yearsExperience: Int?,
         hourlyRate: Double?,
+        profileImageUrl: String? = null,
+        googlePlaceUrl: String? = null,
+        yelpUrl: String? = null,
     ): Result<Unit> = runCatching {
         val userId = client.auth.currentUserOrNull()?.id
             ?: error("Not authenticated")
@@ -182,6 +186,9 @@ class ProfileRepository(private val client: SupabaseClient) {
                 set("state", state)
                 set("years_experience", yearsExperience)
                 set("hourly_rate", hourlyRate)
+                if (profileImageUrl != null) set("profile_image_url", profileImageUrl)
+                if (googlePlaceUrl != null) set("google_place_url", googlePlaceUrl)
+                if (yelpUrl != null) set("yelp_url", yelpUrl)
                 set("updated_at", now)
             }) {
                 filter { eq("user_id", userId) }

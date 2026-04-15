@@ -17,6 +17,8 @@ data class MechanicProfile(
     val city: String? = null,
     val state: String? = null,
     @SerialName("profile_image_url") val profileImageUrl: String? = null,
+    @SerialName("google_place_url") val googlePlaceUrl: String? = null,
+    @SerialName("yelp_url") val yelpUrl: String? = null,
     @SerialName("verification_status") val verificationStatus: String = "pending",
     @SerialName("verified_at") val verifiedAt: String? = null,
     @SerialName("is_available") val isAvailable: Boolean? = true,
@@ -25,6 +27,9 @@ data class MechanicProfile(
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = "",
 )
+// DB migrations:
+// ALTER TABLE mechanic_profiles ADD COLUMN IF NOT EXISTS google_place_url TEXT;
+// ALTER TABLE mechanic_profiles ADD COLUMN IF NOT EXISTS yelp_url TEXT;
 
 @Serializable
 data class MechanicAssignment(

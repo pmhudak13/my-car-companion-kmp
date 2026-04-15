@@ -137,6 +137,8 @@ data class MechanicDirectoryScreen(val vehicleId: String? = null) : Screen, Comm
                                             MechanicReviewsScreen(
                                                 mechanicUserId = mechanic.userId,
                                                 mechanicName = mechanic.shopName ?: "Mechanic",
+                                                googlePlaceUrl = mechanic.googlePlaceUrl,
+                                                yelpUrl = mechanic.yelpUrl,
                                             )
                                         )
                                     },

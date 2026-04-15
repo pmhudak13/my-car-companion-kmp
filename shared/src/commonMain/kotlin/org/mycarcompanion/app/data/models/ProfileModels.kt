@@ -13,7 +13,9 @@ data class UserProfile(
     @SerialName("subscription_tier") val subscriptionTier: String = "free",
     @SerialName("is_premium") val isPremium: Boolean = false,
     @SerialName("is_mechanic_pro") val isMechanicPro: Boolean = false,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
 )
+// DB migration: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
 @Serializable
 data class UserRole(

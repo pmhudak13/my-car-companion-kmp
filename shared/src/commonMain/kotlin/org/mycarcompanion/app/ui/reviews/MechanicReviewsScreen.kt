@@ -10,10 +10,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -22,7 +26,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -37,6 +43,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
@@ -49,6 +56,8 @@ import org.mycarcompanion.app.platform.CommonParcelable
 data class MechanicReviewsScreen(
     val mechanicUserId: String,
     val mechanicName: String,
+    val googlePlaceUrl: String? = null,
+    val yelpUrl: String? = null,
 ) : Screen, CommonParcelable {
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -58,6 +67,7 @@ data class MechanicReviewsScreen(
         val model: MechanicReviewsScreenModel = koinScreenModel()
         val state by model.state.collectAsState()
         val snackbarHostState = remember { SnackbarHostState() }
+        val uriHandler = LocalUriHandler.current
 
         LaunchedEffect(mechanicUserId) { model.load(mechanicUserId) }
 
@@ -76,20 +86,10 @@ data class MechanicReviewsScreen(
                     Column {
                         Text("Rating", style = MaterialTheme.typography.labelMedium)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            (1..5).forEach { star ->
-                                TextButton(onClick = { model.setDraftRating(star) }) {
-                                    Text(
-                                        if (star <= state.draftRating) "★" else "☆",
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        color = if (star <= state.draftRating)
-                                            MaterialTheme.colorScheme.primary
-                                        else
-                                            MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            }
-                        }
+                        StarRatingSelector(
+                            rating = state.draftRating,
+                            onRatingChange = model::setDraftRating,
+                        )
                         Spacer(modifier = Modifier.height(12.dp))
                         OutlinedTextField(
                             value = state.draftComment,
@@ -101,7 +101,11 @@ data class MechanicReviewsScreen(
                         )
                         state.submitError?.let {
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                it,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
                         }
                     }
                 },
@@ -155,30 +159,148 @@ data class MechanicReviewsScreen(
                     }
                 }
 
-                state.reviews.isEmpty() -> Box(
-                    modifier = Modifier.fillMaxSize().padding(paddingValues),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "No reviews yet",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = model::openReviewDialog) { Text("Be the first to review") }
-                    }
-                }
-
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(paddingValues),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    items(state.reviews, key = { it.id }) { review ->
-                        ReviewCard(review = review, isOwn = review.id == state.myReview?.id)
+                    // Average rating summary
+                    if (state.reviews.isNotEmpty()) {
+                        item {
+                            AverageRatingCard(reviews = state.reviews)
+                        }
+                    }
+
+                    // External review links
+                    if (!googlePlaceUrl.isNullOrBlank() || !yelpUrl.isNullOrBlank()) {
+                        item {
+                            ExternalReviewLinks(
+                                googlePlaceUrl = googlePlaceUrl,
+                                yelpUrl = yelpUrl,
+                                onOpenUrl = { uriHandler.openUri(it) },
+                            )
+                        }
+                    }
+
+                    if (state.reviews.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        "No reviews yet",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Button(onClick = model::openReviewDialog) { Text("Be the first to review") }
+                                }
+                            }
+                        }
+                    } else {
+                        items(state.reviews, key = { it.id }) { review ->
+                            ReviewCard(review = review, isOwn = review.id == state.myReview?.id)
+                        }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AverageRatingCard(reviews: List<MechanicReview>) {
+    val avg = reviews.map { it.rating }.average()
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column {
+                Text(
+                    text = "%.1f out of 5".format(avg),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+                Text(
+                    text = "${reviews.size} review${if (reviews.size != 1) "s" else ""}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+            StarRatingDisplay(rating = avg.toFloat(), maxStars = 5)
+        }
+    }
+}
+
+@Composable
+private fun ExternalReviewLinks(
+    googlePlaceUrl: String?,
+    yelpUrl: String?,
+    onOpenUrl: (String) -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("External Reviews", style = MaterialTheme.typography.labelLarge)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!googlePlaceUrl.isNullOrBlank()) {
+                    OutlinedButton(onClick = { onOpenUrl(googlePlaceUrl) }) {
+                        Text("View on Google")
+                    }
+                }
+                if (!yelpUrl.isNullOrBlank()) {
+                    OutlinedButton(onClick = { onOpenUrl(yelpUrl) }) {
+                        Text("View on Yelp")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun StarRatingDisplay(rating: Float, maxStars: Int = 5, starSize: Int = 24) {
+    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        (1..maxStars).forEach { star ->
+            Icon(
+                imageVector = if (star <= rating.toInt()) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                contentDescription = null,
+                tint = if (star <= rating.toInt())
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(starSize.dp),
+            )
+        }
+    }
+}
+
+@Composable
+fun StarRatingSelector(rating: Int, onRatingChange: (Int) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        (1..5).forEach { star ->
+            IconToggleButton(
+                checked = star <= rating,
+                onCheckedChange = { onRatingChange(star) },
+                modifier = Modifier.size(40.dp),
+            ) {
+                Icon(
+                    imageVector = if (star <= rating) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                    contentDescription = "$star star${if (star != 1) "s" else ""}",
+                    tint = if (star <= rating)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(28.dp),
+                )
             }
         }
     }
@@ -201,11 +323,7 @@ private fun ReviewCard(review: MechanicReview, isOwn: Boolean) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = "★".repeat(review.rating) + "☆".repeat(5 - review.rating),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                StarRatingDisplay(rating = review.rating.toFloat())
                 if (isOwn) {
                     Text(
                         "Your review",

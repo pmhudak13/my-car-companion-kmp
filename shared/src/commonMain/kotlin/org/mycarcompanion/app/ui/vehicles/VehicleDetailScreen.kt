@@ -10,11 +10,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -22,6 +28,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,12 +38,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import coil3.compose.AsyncImage
 import org.mycarcompanion.app.data.models.MaintenanceLog
 import org.mycarcompanion.app.data.models.MechanicAssignment
 import org.mycarcompanion.app.data.models.Reminder
@@ -101,6 +111,25 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
                     ) {
                         item { VehicleHeader(vehicle, onBack = { navigator.pop() }, onSettings = { navigator.push(VehicleSettingsScreen(vehicleId)) }) }
                         item { VehicleInfo(vehicle) }
+
+                        // --- Pending Records Section ---
+                        if (state.pendingLogs.isNotEmpty()) {
+                            item {
+                                Text(
+                                    "Pending Mechanic Records (${state.pendingLogs.size})",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                            items(state.pendingLogs, key = { "pending-${it.id}" }) { log ->
+                                PendingRecordCard(
+                                    log = log,
+                                    onApprove = { model.approvePendingLog(log.id) },
+                                    onReject = { model.rejectPendingLog(log.id) },
+                                )
+                            }
+                        }
 
                         // --- Reminders Section ---
                         item {
@@ -211,6 +240,73 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
 }
 
 @Composable
+private fun PendingRecordCard(
+    log: MaintenanceLog,
+    onApprove: () -> Unit,
+    onReject: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    log.category,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    log.date.take(10),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(log.description, style = MaterialTheme.typography.bodyMedium)
+            if (log.mileage > 0) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    "${log.mileage} mi",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+            }
+            log.notes?.let {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                "Submitted by your mechanic — do you want to add this to your vehicle history?",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onApprove, modifier = Modifier.weight(1f)) {
+                    Text("Accept")
+                }
+                OutlinedButton(
+                    onClick = onReject,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                ) {
+                    Text("Decline")
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun VehicleHeader(vehicle: Vehicle, onBack: () -> Unit, onSettings: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -310,6 +406,26 @@ fun MaintenanceLogCard(log: MaintenanceLog, onDelete: () -> Unit) {
             log.notes?.let { notes ->
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(notes, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+            }
+            // Photo thumbnails
+            val photos = log.photoUrls
+            if (!photos.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    contentPadding = PaddingValues(vertical = 2.dp),
+                ) {
+                    itemsIndexed(photos) { _, url ->
+                        AsyncImage(
+                            model = url,
+                            contentDescription = "Maintenance photo",
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(RoundedCornerShape(6.dp)),
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
+                }
             }
         }
     }

@@ -11,6 +11,7 @@ import org.mycarcompanion.app.data.repository.MileageTripRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
 import org.mycarcompanion.app.data.repository.ReminderRepository
 import org.mycarcompanion.app.data.repository.ReviewRepository
+import org.mycarcompanion.app.data.repository.StorageRepository
 import org.mycarcompanion.app.data.repository.TransferRepository
 import org.mycarcompanion.app.data.repository.VehicleRepository
 import org.mycarcompanion.app.data.supabase.supabaseClient
@@ -49,6 +50,7 @@ val appModule = module {
     single { MileageTripRepository(get()) }
     single { ProfileRepository(get()) }
     single { ReviewRepository(get()) }
+    single { StorageRepository(get()) }
     single { TransferRepository(get()) }
     factoryOf(::AdminScreenModel)
     factoryOf(::AuthScreenModel)

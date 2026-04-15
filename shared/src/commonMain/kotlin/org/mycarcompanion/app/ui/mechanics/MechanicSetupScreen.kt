@@ -19,6 +19,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -34,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -43,6 +45,8 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.shopTypeLabels
 import org.mycarcompanion.app.data.models.shopTypes
+import org.mycarcompanion.app.platform.rememberImagePickerLauncher
+import org.mycarcompanion.app.ui.profile.AvatarSection
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MechanicSetupScreen : Screen {
@@ -52,6 +56,10 @@ class MechanicSetupScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val model: MechanicSetupScreenModel = koinScreenModel()
         val state by model.state.collectAsState()
+
+        val launchImagePicker = rememberImagePickerLauncher { bytes ->
+            if (bytes != null) model.onPhotoPicked(bytes)
+        }
 
         LaunchedEffect(state.isSaved) {
             if (state.isSaved) {
@@ -80,6 +88,7 @@ class MechanicSetupScreen : Screen {
                     .padding(paddingValues)
                     .padding(horizontal = 24.dp, vertical = 16.dp)
                     .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (state.isLoadingProfile) {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
@@ -101,6 +110,15 @@ class MechanicSetupScreen : Screen {
                     )
                     return@Column
                 }
+
+                // Profile photo
+                AvatarSection(
+                    avatarUrl = state.profileImageUrl,
+                    pendingBytes = state.pendingPhotoBytes,
+                    uploadingPhoto = state.isUploadingPhoto,
+                    onPickPhoto = launchImagePicker,
+                )
+                Spacer(modifier = Modifier.height(24.dp))
 
                 OutlinedTextField(
                     value = state.shopName,
@@ -196,17 +214,50 @@ class MechanicSetupScreen : Screen {
                         modifier = Modifier.weight(1f),
                     )
                 }
+                Spacer(modifier = Modifier.height(20.dp))
+
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "External Review Links",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    "Add your Google Maps or Yelp URL so customers can see your external reviews.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = state.googlePlaceUrl,
+                    onValueChange = model::onGooglePlaceUrlChange,
+                    label = { Text("Google Maps URL") },
+                    singleLine = true,
+                    placeholder = { Text("https://maps.google.com/...") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = state.yelpUrl,
+                    onValueChange = model::onYelpUrlChange,
+                    label = { Text("Yelp URL") },
+                    singleLine = true,
+                    placeholder = { Text("https://www.yelp.com/biz/...") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
                     onClick = model::save,
-                    enabled = !state.isLoading,
+                    enabled = !state.isLoading && !state.isUploadingPhoto,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    if (state.isLoading) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
+                    if (state.isLoading || state.isUploadingPhoto) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
                     } else {
                         Text("Save Profile")
                     }

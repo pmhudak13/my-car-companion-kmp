@@ -18,6 +18,7 @@ import org.mycarcompanion.app.data.repository.VehicleRepository
 data class VehicleDetailState(
     val vehicle: Vehicle? = null,
     val logs: List<MaintenanceLog> = emptyList(),
+    val pendingLogs: List<MaintenanceLog> = emptyList(),
     val reminders: List<Reminder> = emptyList(),
     val assignments: List<MechanicAssignment> = emptyList(),
     val isLoading: Boolean = true,
@@ -42,6 +43,7 @@ class VehicleDetailScreenModel(
                 .onSuccess { vehicle ->
                     _state.value = _state.value.copy(vehicle = vehicle, isLoading = false)
                     loadLogs(vehicleId)
+                    loadPendingLogs(vehicleId)
                     loadReminders(vehicleId)
                     loadAssignments(vehicleId)
                 }
@@ -63,6 +65,16 @@ class VehicleDetailScreenModel(
                 .onFailure { e ->
                     _state.value = _state.value.copy(error = e.message ?: "Failed to load logs")
                 }
+        }
+    }
+
+    private fun loadPendingLogs(vehicleId: String) {
+        screenModelScope.launch {
+            maintenanceRepository.getPendingLogsForVehicle(vehicleId)
+                .onSuccess { pending ->
+                    _state.value = _state.value.copy(pendingLogs = pending)
+                }
+                .onFailure { /* non-critical, ignore */ }
         }
     }
 
@@ -130,6 +142,31 @@ class VehicleDetailScreenModel(
                 .onSuccess { loadLogs(vehicleId) }
                 .onFailure { e ->
                     _state.value = _state.value.copy(error = e.message ?: "Failed to delete log")
+                }
+        }
+    }
+
+    fun approvePendingLog(logId: String) {
+        val vehicleId = _state.value.vehicle?.id ?: return
+        screenModelScope.launch {
+            maintenanceRepository.approveLog(logId)
+                .onSuccess {
+                    loadLogs(vehicleId)
+                    loadPendingLogs(vehicleId)
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(error = e.message ?: "Failed to approve record")
+                }
+        }
+    }
+
+    fun rejectPendingLog(logId: String) {
+        val vehicleId = _state.value.vehicle?.id ?: return
+        screenModelScope.launch {
+            maintenanceRepository.rejectLog(logId)
+                .onSuccess { loadPendingLogs(vehicleId) }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(error = e.message ?: "Failed to reject record")
                 }
         }
     }

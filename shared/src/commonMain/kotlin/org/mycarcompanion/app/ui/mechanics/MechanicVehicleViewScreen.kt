@@ -76,7 +76,7 @@ data class MechanicVehicleViewScreen(
             },
             floatingActionButton = {
                 FloatingActionButton(
-                    onClick = { navigator.push(AddMaintenanceScreen(vehicleId)) },
+                    onClick = { navigator.push(AddMaintenanceScreen(vehicleId, requiresApproval = true)) },
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Add Maintenance Log")
                 }
