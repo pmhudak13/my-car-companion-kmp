@@ -11,7 +11,10 @@ class VehicleRepository(private val client: SupabaseClient) {
     private val table get() = client.postgrest["vehicles"]
 
     suspend fun getVehicles(): Result<List<Vehicle>> = runCatching {
+        val userId = client.auth.currentUserOrNull()?.id
+            ?: error("Not authenticated")
         table.select {
+            filter { eq("owner_id", userId) }
             order("created_at", Order.DESCENDING)
         }.decodeList<Vehicle>()
     }

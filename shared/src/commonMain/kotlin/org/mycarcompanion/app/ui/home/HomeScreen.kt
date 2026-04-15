@@ -75,8 +75,10 @@ class HomeScreen : Screen {
                     } else if (!s.user.isMechanic && !s.user.isAdmin && s.user.intendedRole == "mechanic") {
                         // New or pending mechanic → setup/pending screen
                         navigator.replace(MechanicSetupScreen())
+                    } else {
+                        // Admins and regular users stay — reload vehicles now that auth is confirmed
+                        model.loadVehicles()
                     }
-                    // Admins and regular users stay on HomeScreen
                 }
                 else -> Unit
             }
