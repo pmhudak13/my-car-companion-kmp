@@ -13,10 +13,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -51,6 +54,8 @@ data class MechanicDirectoryScreen(val vehicleId: String? = null) : Screen, Comm
         val model: MechanicDirectoryScreenModel = koinScreenModel()
         val state by model.state.collectAsState()
         val snackbarHostState = remember { SnackbarHostState() }
+
+        LaunchedEffect(vehicleId) { model.loadMechanics(vehicleId) }
 
         LaunchedEffect(state.assignSuccess) {
             if (state.assignSuccess) {
@@ -130,6 +135,7 @@ data class MechanicDirectoryScreen(val vehicleId: String? = null) : Screen, Comm
                                     mechanic = mechanic,
                                     vehicleId = vehicleId,
                                     isAssigning = state.assigningMechanicId == mechanic.userId,
+                                    isAssigned = mechanic.userId in state.assignedMechanicIds,
                                     onAssign = { vehicleId?.let { vid -> model.assignMechanic(vid, mechanic.userId) } },
                                     onMessage = { navigator.push(MessagingScreen(recipientId = mechanic.userId)) },
                                     onReviews = {
@@ -155,6 +161,7 @@ fun MechanicCard(
     mechanic: MechanicProfile,
     vehicleId: String? = null,
     isAssigning: Boolean = false,
+    isAssigned: Boolean = false,
     onAssign: () -> Unit = {},
     onMessage: () -> Unit = {},
     onReviews: () -> Unit = {},
@@ -246,16 +253,41 @@ fun MechanicCard(
             }
             if (vehicleId != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                if (isAssigning) {
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                when {
+                    isAssigned -> {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                "Assigned to this vehicle",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
                     }
-                } else {
-                    Button(
-                        onClick = onAssign,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("Assign to Vehicle", style = MaterialTheme.typography.labelMedium)
+                    isAssigning -> {
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    else -> {
+                        Button(
+                            onClick = onAssign,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Assign to Vehicle", style = MaterialTheme.typography.labelMedium)
+                        }
                     }
                 }
             }

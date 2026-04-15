@@ -1,0 +1,204 @@
+package org.mycarcompanion.app.ui.mechanics
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.koin.koinScreenModel
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+
+class CreateMechanicJobScreen : Screen {
+
+    @Composable
+    override fun Content() {
+        val navigator = LocalNavigator.currentOrThrow
+        val model: CreateMechanicJobScreenModel = koinScreenModel()
+        val state by model.state.collectAsState()
+
+        LaunchedEffect(state.createdJob) {
+            state.createdJob?.let { job ->
+                navigator.replace(MechanicJobDetailScreen(jobId = job.id))
+            }
+        }
+
+        Scaffold { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("New Job", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                    TextButton(onClick = { navigator.pop() }) { Text("Cancel") }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // ── Client Info ──────────────────────────────────────────────
+                Text("Client Info", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.form.clientName,
+                    onValueChange = { model.updateForm(state.form.copy(clientName = it)) },
+                    label = { Text("Client Name *") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.form.clientEmail,
+                    onValueChange = { model.updateForm(state.form.copy(clientEmail = it)) },
+                    label = { Text("Client Email (for invite)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    supportingText = { Text("An invite will be sent to join the app") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // ── Vehicle Info ─────────────────────────────────────────────
+                Text("Vehicle Info", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = state.form.vehicleMake,
+                        onValueChange = { model.updateForm(state.form.copy(vehicleMake = it)) },
+                        label = { Text("Make *") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = state.form.vehicleModel,
+                        onValueChange = { model.updateForm(state.form.copy(vehicleModel = it)) },
+                        label = { Text("Model *") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = state.form.vehicleYear,
+                        onValueChange = { model.updateForm(state.form.copy(vehicleYear = it)) },
+                        label = { Text("Year *") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = state.form.vehicleColor,
+                        onValueChange = { model.updateForm(state.form.copy(vehicleColor = it)) },
+                        label = { Text("Color") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.form.vehicleLicensePlate,
+                    onValueChange = { model.updateForm(state.form.copy(vehicleLicensePlate = it)) },
+                    label = { Text("License Plate") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.form.vehicleVin,
+                    onValueChange = { model.updateForm(state.form.copy(vehicleVin = it)) },
+                    label = { Text("VIN") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // ── Job Details ──────────────────────────────────────────────
+                Text("Job Details", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.form.description,
+                    onValueChange = { model.updateForm(state.form.copy(description = it)) },
+                    label = { Text("Job Description") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.form.notes,
+                    onValueChange = { model.updateForm(state.form.copy(notes = it)) },
+                    label = { Text("Notes") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                state.error?.let { error ->
+                    Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                Button(
+                    onClick = model::save,
+                    enabled = !state.isSaving,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (state.isSaving) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
+                    } else {
+                        Text("Create Job")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
+}

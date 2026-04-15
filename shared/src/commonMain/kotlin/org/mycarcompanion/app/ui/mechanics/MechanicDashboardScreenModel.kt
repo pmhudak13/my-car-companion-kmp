@@ -8,12 +8,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.mycarcompanion.app.data.models.MechanicAssignment
+import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.data.models.MechanicProfile
 import org.mycarcompanion.app.data.repository.MechanicAssignmentRepository
+import org.mycarcompanion.app.data.repository.MechanicJobRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
 
+enum class MechanicDashboardTab { CLIENT_JOBS, MY_JOBS }
+
 data class MechanicDashboardState(
+    val selectedTab: MechanicDashboardTab = MechanicDashboardTab.CLIENT_JOBS,
     val assignments: List<MechanicAssignment> = emptyList(),
+    val myJobs: List<MechanicJob> = emptyList(),
     val profile: MechanicProfile? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
@@ -22,6 +28,7 @@ data class MechanicDashboardState(
 
 class MechanicDashboardScreenModel(
     private val assignmentRepo: MechanicAssignmentRepository,
+    private val jobRepo: MechanicJobRepository,
     private val profileRepo: ProfileRepository,
 ) : ScreenModel {
 
@@ -32,25 +39,29 @@ class MechanicDashboardScreenModel(
         loadData()
     }
 
+    fun selectTab(tab: MechanicDashboardTab) {
+        _state.value = _state.value.copy(selectedTab = tab)
+    }
+
     fun loadData() {
         screenModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             val assignmentsDeferred = async { assignmentRepo.getAssignmentsForMechanic() }
+            val myJobsDeferred = async { jobRepo.getMyJobs() }
             val profileDeferred = async { profileRepo.getMyMechanicProfile() }
 
             val assignmentsResult = assignmentsDeferred.await()
+            val myJobsResult = myJobsDeferred.await()
             val profileResult = profileDeferred.await()
 
-            val assignments = assignmentsResult.getOrNull() ?: emptyList()
-            val profile = profileResult.getOrNull()
-            val error = assignmentsResult.exceptionOrNull()?.message
-                ?: profileResult.exceptionOrNull()?.message
-
             _state.value = _state.value.copy(
-                assignments = assignments,
-                profile = profile,
+                assignments = assignmentsResult.getOrNull() ?: emptyList(),
+                myJobs = myJobsResult.getOrNull() ?: emptyList(),
+                profile = profileResult.getOrNull(),
                 isLoading = false,
-                error = error,
+                error = assignmentsResult.exceptionOrNull()?.message
+                    ?: myJobsResult.exceptionOrNull()?.message
+                    ?: profileResult.exceptionOrNull()?.message,
             )
         }
     }

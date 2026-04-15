@@ -52,6 +52,67 @@ data class MechanicProfileInsert(
     @SerialName("updated_at") val updatedAt: String,
 )
 
+@Serializable
+data class MechanicJob(
+    val id: String = "",
+    @SerialName("mechanic_user_id") val mechanicUserId: String = "",
+    @SerialName("client_name") val clientName: String = "",
+    @SerialName("client_email") val clientEmail: String? = null,
+    @SerialName("vehicle_make") val vehicleMake: String = "",
+    @SerialName("vehicle_model") val vehicleModel: String = "",
+    @SerialName("vehicle_year") val vehicleYear: Int = 0,
+    @SerialName("vehicle_vin") val vehicleVin: String? = null,
+    @SerialName("vehicle_color") val vehicleColor: String? = null,
+    @SerialName("vehicle_license_plate") val vehicleLicensePlate: String? = null,
+    val description: String? = null,
+    val status: String = "open",
+    @SerialName("invite_sent") val inviteSent: Boolean = false,
+    val notes: String? = null,
+    @SerialName("created_at") val createdAt: String = "",
+    @SerialName("completed_at") val completedAt: String? = null,
+)
+
+@Serializable
+data class MechanicJobLog(
+    val id: String = "",
+    @SerialName("mechanic_job_id") val mechanicJobId: String = "",
+    @SerialName("mechanic_user_id") val mechanicUserId: String = "",
+    val category: String = "",
+    val description: String = "",
+    val date: String = "",
+    val mileage: Int = 0,
+    val cost: Double? = null,
+    val notes: String? = null,
+    @SerialName("created_at") val createdAt: String = "",
+)
+
+@Serializable
+data class MechanicJobInsert(
+    @SerialName("mechanic_user_id") val mechanicUserId: String,
+    @SerialName("client_name") val clientName: String,
+    @SerialName("client_email") val clientEmail: String? = null,
+    @SerialName("vehicle_make") val vehicleMake: String,
+    @SerialName("vehicle_model") val vehicleModel: String,
+    @SerialName("vehicle_year") val vehicleYear: Int,
+    @SerialName("vehicle_vin") val vehicleVin: String? = null,
+    @SerialName("vehicle_color") val vehicleColor: String? = null,
+    @SerialName("vehicle_license_plate") val vehicleLicensePlate: String? = null,
+    val description: String? = null,
+    val notes: String? = null,
+)
+
+@Serializable
+data class MechanicJobLogInsert(
+    @SerialName("mechanic_job_id") val mechanicJobId: String,
+    @SerialName("mechanic_user_id") val mechanicUserId: String,
+    val category: String,
+    val description: String,
+    val date: String,
+    val mileage: Int,
+    val cost: Double? = null,
+    val notes: String? = null,
+)
+
 val shopTypes = listOf(
     "general", "smog", "body_shop", "tire", "electrical", "detailing",
 )

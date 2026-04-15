@@ -27,6 +27,7 @@ supabase-auth = { module = "io.github.jan-tennert.supabase:auth-kt", version.ref
 supabase-postgrest = { module = "io.github.jan-tennert.supabase:postgrest-kt", version.ref = "supabase" }
 supabase-storage = { module = "io.github.jan-tennert.supabase:storage-kt", version.ref = "supabase" }
 supabase-realtime = { module = "io.github.jan-tennert.supabase:realtime-kt", version.ref = "supabase" }
+supabase-functions = { module = "io.github.jan-tennert.supabase:functions-kt", version.ref = "supabase" }
 
 # AndroidX
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.9.3" }
@@ -67,5 +68,5 @@ sentry-android = { module = "io.sentry:sentry-android", version.ref = "sentry" }
 leakcanary-android = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanary" }
 
 [bundles]
-supabase = ["supabase-auth", "supabase-postgrest", "supabase-storage", "supabase-realtime"]
+supabase = ["supabase-auth", "supabase-postgrest", "supabase-storage", "supabase-realtime", "supabase-functions"]
 voyager = ["voyager-navigator", "voyager-screenmodel", "voyager-koin"]

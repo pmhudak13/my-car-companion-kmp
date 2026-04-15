@@ -2,6 +2,7 @@ package org.mycarcompanion.app.data.supabase
 
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.realtime.Realtime
@@ -19,6 +20,7 @@ val supabaseClient by lazy {
         install(Postgrest)
         install(Storage)
         install(Realtime)
+        install(Functions)
     }
 }
 

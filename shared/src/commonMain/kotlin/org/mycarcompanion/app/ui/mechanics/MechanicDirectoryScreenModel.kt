@@ -12,6 +12,7 @@ import org.mycarcompanion.app.data.repository.MechanicRepository
 
 data class MechanicDirectoryState(
     val mechanics: List<MechanicProfile> = emptyList(),
+    val assignedMechanicIds: Set<String> = emptySet(),
     val isLoading: Boolean = true,
     val error: String? = null,
     val assigningMechanicId: String? = null,
@@ -28,15 +29,29 @@ class MechanicDirectoryScreenModel(
     val state: StateFlow<MechanicDirectoryState> = _state.asStateFlow()
 
     init {
-        loadMechanics()
+        loadMechanics(null)
     }
 
-    fun loadMechanics() {
+    fun loadMechanics(vehicleId: String? = null) {
         screenModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
-            mechanicRepository.getVerifiedMechanics()
+            val mechanicsResult = mechanicRepository.getVerifiedMechanics()
+            val assignedIds = if (vehicleId != null) {
+                assignmentRepository.getAssignmentsForVehicle(vehicleId)
+                    .getOrNull()
+                    ?.map { it.mechanicUserId }
+                    ?.toSet()
+                    ?: emptySet()
+            } else {
+                emptySet()
+            }
+            mechanicsResult
                 .onSuccess { mechanics ->
-                    _state.value = _state.value.copy(mechanics = mechanics, isLoading = false)
+                    _state.value = _state.value.copy(
+                        mechanics = mechanics,
+                        assignedMechanicIds = assignedIds,
+                        isLoading = false,
+                    )
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(
