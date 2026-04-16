@@ -12,6 +12,7 @@ import org.mycarcompanion.app.data.repository.MileageTripRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
 import org.mycarcompanion.app.data.repository.ReminderRepository
 import org.mycarcompanion.app.data.repository.ReviewRepository
+import org.mycarcompanion.app.data.repository.SubscriptionRepository
 import org.mycarcompanion.app.data.repository.TransferRepository
 import org.mycarcompanion.app.data.repository.VehicleRepository
 import org.mycarcompanion.app.data.supabase.supabaseClient
@@ -35,6 +36,7 @@ import org.mycarcompanion.app.ui.profile.ProfileScreenModel
 import org.mycarcompanion.app.ui.reminders.AddReminderScreenModel
 import org.mycarcompanion.app.ui.reminders.RemindersListScreenModel
 import org.mycarcompanion.app.ui.settings.SettingsScreenModel
+import org.mycarcompanion.app.ui.subscription.SubscribeScreenModel
 import org.mycarcompanion.app.ui.vehicles.AddVehicleScreenModel
 import org.mycarcompanion.app.ui.vehicles.VehicleSettingsScreenModel
 import org.mycarcompanion.app.ui.vehicles.VehicleDetailScreenModel
@@ -53,6 +55,7 @@ val appModule = module {
     single { MileageTripRepository(get()) }
     single { ProfileRepository(get()) }
     single { ReviewRepository(get()) }
+    single { SubscriptionRepository(get()) }
     single { TransferRepository(get()) }
     factoryOf(::AdminScreenModel)
     factoryOf(::AuthScreenModel)
@@ -78,4 +81,5 @@ val appModule = module {
     factoryOf(::MechanicReviewsScreenModel)
     factoryOf(::TransferScreenModel)
     factoryOf(::ReceiveTransferScreenModel)
+    factoryOf(::SubscribeScreenModel)
 }

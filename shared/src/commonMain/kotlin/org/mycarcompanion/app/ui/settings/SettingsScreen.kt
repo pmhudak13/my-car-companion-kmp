@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
@@ -49,6 +50,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.help.HelpScreen
+import org.mycarcompanion.app.ui.subscription.SubscribeScreen
 import org.mycarcompanion.app.ui.messaging.MessagesListScreen
 import org.mycarcompanion.app.ui.notifications.NotificationsScreen
 import org.mycarcompanion.app.ui.profile.ProfileScreen
@@ -118,6 +120,14 @@ class SettingsScreen : Screen {
                         label = "Profile",
                         onClick = { navigator.push(ProfileScreen()) },
                     )
+                    if (!state.isPremium) {
+                        SettingsRow(
+                            icon = Icons.Default.Star,
+                            label = "Upgrade to Premium",
+                            onClick = { navigator.push(SubscribeScreen()) },
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                     SettingsRow(
                         icon = Icons.Default.Notifications,
                         label = "Reminders",
