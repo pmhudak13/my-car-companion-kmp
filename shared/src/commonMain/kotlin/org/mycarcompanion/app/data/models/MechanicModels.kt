@@ -113,6 +113,80 @@ data class MechanicJobLogInsert(
     val notes: String? = null,
 )
 
+// ─────────────────────────────────────────────
+// Invoice models
+// ─────────────────────────────────────────────
+
+@Serializable
+data class MechanicInvoice(
+    val id: String = "",
+    @SerialName("mechanic_job_id") val mechanicJobId: String = "",
+    @SerialName("mechanic_user_id") val mechanicUserId: String = "",
+    @SerialName("client_user_id") val clientUserId: String? = null,
+    @SerialName("invoice_number") val invoiceNumber: String = "",
+    val status: String = "draft",          // draft | sent | paid | cancelled
+    val subtotal: Double = 0.0,
+    @SerialName("tax_rate") val taxRate: Double = 0.0,
+    @SerialName("tax_amount") val taxAmount: Double = 0.0,
+    val total: Double = 0.0,
+    val notes: String? = null,
+    @SerialName("due_date") val dueDate: String? = null,
+    @SerialName("paid_at") val paidAt: String? = null,
+    @SerialName("stripe_payment_link_url") val stripePaymentLinkUrl: String? = null,
+    @SerialName("stripe_payment_intent_id") val stripePaymentIntentId: String? = null,
+    @SerialName("created_at") val createdAt: String = "",
+    @SerialName("updated_at") val updatedAt: String = "",
+)
+
+@Serializable
+data class MechanicInvoiceItem(
+    val id: String = "",
+    @SerialName("invoice_id") val invoiceId: String = "",
+    val description: String = "",
+    val quantity: Double = 1.0,
+    @SerialName("unit_price") val unitPrice: Double = 0.0,
+    val total: Double = 0.0,
+)
+
+@Serializable
+data class MechanicInvoiceInsert(
+    @SerialName("mechanic_job_id") val mechanicJobId: String,
+    @SerialName("mechanic_user_id") val mechanicUserId: String,
+    @SerialName("client_user_id") val clientUserId: String? = null,
+    @SerialName("invoice_number") val invoiceNumber: String,
+    val status: String = "draft",
+    val subtotal: Double,
+    @SerialName("tax_rate") val taxRate: Double = 0.0,
+    @SerialName("tax_amount") val taxAmount: Double = 0.0,
+    val total: Double,
+    val notes: String? = null,
+    @SerialName("due_date") val dueDate: String? = null,
+)
+
+@Serializable
+data class MechanicInvoiceItemInsert(
+    @SerialName("invoice_id") val invoiceId: String,
+    val description: String,
+    val quantity: Double,
+    @SerialName("unit_price") val unitPrice: Double,
+    val total: Double,
+)
+
+// Form state for building an invoice in the UI
+data class InvoiceLineItemForm(
+    val id: String = "",          // temp ID for list key
+    val description: String = "",
+    val quantity: String = "1",
+    val unitPrice: String = "",
+)
+
+data class InvoiceForm(
+    val items: List<InvoiceLineItemForm> = listOf(InvoiceLineItemForm(id = "1")),
+    val taxRate: String = "0",
+    val notes: String = "",
+    val dueDate: String = "",
+)
+
 val shopTypes = listOf(
     "general", "smog", "body_shop", "tire", "electrical", "detailing",
 )

@@ -11,12 +11,16 @@ import org.mycarcompanion.app.data.models.MaintenanceFormData
 import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.data.models.MechanicJobLog
 import org.mycarcompanion.app.data.models.MechanicJobLogInsert
+import org.mycarcompanion.app.data.repository.MechanicImageRepository
+import org.mycarcompanion.app.data.repository.MechanicJobImage
 import org.mycarcompanion.app.data.repository.MechanicJobRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
 
 data class MechanicJobDetailState(
     val job: MechanicJob? = null,
     val logs: List<MechanicJobLog> = emptyList(),
+    val images: List<MechanicJobImage> = emptyList(),
+    val imageUrls: Map<String, String> = emptyMap(), // storagePath -> signed URL
     val isLoading: Boolean = true,
     val error: String? = null,
     val isCompleting: Boolean = false,
@@ -28,10 +32,13 @@ data class MechanicJobDetailState(
     val isSendingInvite: Boolean = false,
     val inviteMessage: String? = null,
     val mechanicShopName: String? = null,
+    val isUploadingImage: Boolean = false,
+    val uploadError: String? = null,
 )
 
 class MechanicJobDetailScreenModel(
     private val jobRepository: MechanicJobRepository,
+    private val imageRepository: MechanicImageRepository,
     private val profileRepository: ProfileRepository,
 ) : ScreenModel {
 
@@ -53,10 +60,22 @@ class MechanicJobDetailScreenModel(
                 return@launch
             }
 
-            val logsResult = jobRepository.getLogsForJob(jobId)
+            val logsDeferred = async { jobRepository.getLogsForJob(jobId) }
+            val imagesDeferred = async { imageRepository.getImagesForJob(jobId) }
+            val images = imagesDeferred.await().getOrNull() ?: emptyList()
+
+            // Pre-fetch signed URLs for all images
+            val urlMap = mutableMapOf<String, String>()
+            images.forEach { img ->
+                imageRepository.getSignedUrl(img.storagePath).getOrNull()
+                    ?.let { urlMap[img.storagePath] = it }
+            }
+
             _state.value = _state.value.copy(
                 job = job,
-                logs = logsResult.getOrNull() ?: emptyList(),
+                logs = logsDeferred.await().getOrNull() ?: emptyList(),
+                images = images,
+                imageUrls = urlMap,
                 isLoading = false,
                 mechanicShopName = profile?.shopName,
             )
@@ -143,6 +162,48 @@ class MechanicJobDetailScreenModel(
                     _state.value = _state.value.copy(error = e.message ?: "Failed to delete log")
                 }
         }
+    }
+
+    fun uploadImage(jobId: String, imageBytes: ByteArray) {
+        screenModelScope.launch {
+            _state.value = _state.value.copy(isUploadingImage = true, uploadError = null)
+            imageRepository.uploadImage(jobId, imageBytes)
+                .onSuccess { image ->
+                    val url = imageRepository.getSignedUrl(image.storagePath).getOrNull()
+                    val urlMap = _state.value.imageUrls.toMutableMap()
+                    if (url != null) urlMap[image.storagePath] = url
+                    _state.value = _state.value.copy(
+                        isUploadingImage = false,
+                        images = _state.value.images + image,
+                        imageUrls = urlMap,
+                    )
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        isUploadingImage = false,
+                        uploadError = e.message ?: "Failed to upload image",
+                    )
+                }
+        }
+    }
+
+    fun deleteImage(imageId: String, storagePath: String) {
+        screenModelScope.launch {
+            imageRepository.deleteImage(imageId, storagePath)
+                .onSuccess {
+                    _state.value = _state.value.copy(
+                        images = _state.value.images.filter { it.id != imageId },
+                        imageUrls = _state.value.imageUrls - storagePath,
+                    )
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(uploadError = e.message ?: "Failed to delete image")
+                }
+        }
+    }
+
+    fun clearUploadError() {
+        _state.value = _state.value.copy(uploadError = null)
     }
 
     fun sendInvite() {

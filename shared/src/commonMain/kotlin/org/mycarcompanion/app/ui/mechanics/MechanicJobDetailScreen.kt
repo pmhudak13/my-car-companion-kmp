@@ -12,15 +12,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,6 +53,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -56,10 +62,13 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import coil3.compose.AsyncImage
 import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.data.models.MechanicJobLog
 import org.mycarcompanion.app.data.models.maintenanceCategories
+import org.mycarcompanion.app.data.repository.MechanicJobImage
 import org.mycarcompanion.app.platform.CommonParcelable
+import org.mycarcompanion.app.platform.rememberImagePickerLauncher
 
 data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable {
 
@@ -72,12 +81,22 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
         val snackbarHostState = remember { SnackbarHostState() }
         val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+        val imagePicker = rememberImagePickerLauncher { bytes ->
+            if (bytes != null) model.uploadImage(jobId, bytes)
+        }
+
         LaunchedEffect(jobId) { model.load(jobId) }
         LaunchedEffect(state.completed) { if (state.completed) navigator.pop() }
         LaunchedEffect(state.inviteMessage) {
             state.inviteMessage?.let {
                 snackbarHostState.showSnackbar(it)
                 model.clearInviteMessage()
+            }
+        }
+        LaunchedEffect(state.uploadError) {
+            state.uploadError?.let {
+                snackbarHostState.showSnackbar(it)
+                model.clearUploadError()
             }
         }
 
@@ -140,11 +159,23 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                             }
                         }
 
-                        // Complete job button (only if open)
-                        if (job.status == "open") {
-                            item {
-                                Card(modifier = Modifier.fillMaxWidth()) {
-                                    Column(modifier = Modifier.padding(16.dp)) {
+                        // Action buttons card
+                        item {
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    // Invoice button (always visible)
+                                    OutlinedButton(
+                                        onClick = { navigator.push(MechanicInvoiceScreen(jobId = job.id)) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Text("View / Create Invoice")
+                                    }
+
+                                    // Complete job (only if open)
+                                    if (job.status == "open") {
                                         if (state.isCompleting) {
                                             CircularProgressIndicator()
                                         } else {
@@ -158,6 +189,18 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                     }
                                 }
                             }
+                        }
+
+                        // Photos section
+                        item {
+                            JobPhotosSection(
+                                images = state.images,
+                                imageUrls = state.imageUrls,
+                                isUploading = state.isUploadingImage,
+                                canAdd = job.status == "open",
+                                onAddPhoto = { imagePicker.launch() },
+                                onDeletePhoto = { img -> model.deleteImage(img.id, img.storagePath) },
+                            )
                         }
 
                         // Service logs header
@@ -459,6 +502,77 @@ private fun AddJobLogSheet(
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
             } else {
                 Text("Save Log")
+            }
+        }
+    }
+}
+
+@Composable
+private fun JobPhotosSection(
+    images: List<MechanicJobImage>,
+    imageUrls: Map<String, String>,
+    isUploading: Boolean,
+    canAdd: Boolean,
+    onAddPhoto: () -> Unit,
+    onDeletePhoto: (MechanicJobImage) -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Photos (${images.size})",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+                if (canAdd) {
+                    if (isUploading) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                    } else {
+                        TextButton(onClick = onAddPhoto) { Text("+ Add Photo") }
+                    }
+                }
+            }
+
+            if (images.isEmpty() && !isUploading) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "No photos yet. Tap + Add Photo to upload.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else if (images.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(images, key = { it.id }) { img ->
+                        Box {
+                            AsyncImage(
+                                model = imageUrls[img.storagePath],
+                                contentDescription = img.caption ?: "Job photo",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(100.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                            )
+                            IconButton(
+                                onClick = { onDeletePhoto(img) },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .size(28.dp),
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = "Delete photo",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }

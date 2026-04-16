@@ -46,6 +46,7 @@ import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.ui.admin.AdminScreen
 import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.settings.SettingsScreen
+import org.mycarcompanion.app.ui.invoices.ClientInvoiceScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDashboardScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicSetupScreen
@@ -169,6 +170,18 @@ class HomeScreen : Screen {
                     ) {
                         Text("Mileage Tracker", style = MaterialTheme.typography.labelMedium)
                     }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { navigator.push(ClientInvoiceScreen()) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    ),
+                ) {
+                    Text("My Invoices", style = MaterialTheme.typography.labelMedium)
                 }
 
                 if (!user.hasGoogleLinked) {

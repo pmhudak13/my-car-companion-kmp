@@ -5,6 +5,8 @@ import org.koin.dsl.module
 import org.mycarcompanion.app.data.repository.AuthRepository
 import org.mycarcompanion.app.data.repository.MaintenanceRepository
 import org.mycarcompanion.app.data.repository.MechanicAssignmentRepository
+import org.mycarcompanion.app.data.repository.MechanicImageRepository
+import org.mycarcompanion.app.data.repository.MechanicInvoiceRepository
 import org.mycarcompanion.app.data.repository.MechanicJobRepository
 import org.mycarcompanion.app.data.repository.MechanicRepository
 import org.mycarcompanion.app.data.repository.MessageRepository
@@ -19,9 +21,11 @@ import org.mycarcompanion.app.ui.admin.AdminScreenModel
 import org.mycarcompanion.app.ui.auth.AuthScreenModel
 import org.mycarcompanion.app.ui.home.HomeScreenModel
 import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreenModel
+import org.mycarcompanion.app.ui.invoices.ClientInvoiceScreenModel
 import org.mycarcompanion.app.ui.mechanics.CreateMechanicJobScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicDashboardScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreenModel
+import org.mycarcompanion.app.ui.mechanics.MechanicInvoiceScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicJobDetailScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicSetupScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicVehicleViewScreenModel
@@ -49,6 +53,8 @@ val appModule = module {
     single { MechanicRepository(get()) }
     single { MechanicAssignmentRepository(get()) }
     single { MechanicJobRepository(get()) }
+    single { MechanicImageRepository(get()) }
+    single { MechanicInvoiceRepository(get()) }
     single { MessageRepository(get()) }
     single { MileageTripRepository(get()) }
     single { ProfileRepository(get()) }
@@ -75,6 +81,8 @@ val appModule = module {
     factoryOf(::SettingsScreenModel)
     factoryOf(::VehicleSettingsScreenModel)
     factoryOf(::MechanicVehicleViewScreenModel)
+    factoryOf(::MechanicInvoiceScreenModel)
+    factoryOf(::ClientInvoiceScreenModel)
     factoryOf(::MechanicReviewsScreenModel)
     factoryOf(::TransferScreenModel)
     factoryOf(::ReceiveTransferScreenModel)
