@@ -128,7 +128,7 @@ class SubscribeScreen : Screen {
                         monthlyPriceId = SubscriptionRepository.PRICE_PREMIUM_MONTHLY,
                         yearlyPriceId = SubscriptionRepository.PRICE_PREMIUM_YEARLY,
                         monthlyLabel = "$4.99 / month",
-                        yearlyLabel = "$39.99 / year  (save 33%)",
+                        yearlyLabel = "$49.99 / year  (save 17%)",
                         onCheckout = { model.startCheckout(it) },
                     )
 
@@ -146,8 +146,8 @@ class SubscribeScreen : Screen {
                         ),
                         monthlyPriceId = SubscriptionRepository.PRICE_MECHANIC_MONTHLY,
                         yearlyPriceId = SubscriptionRepository.PRICE_MECHANIC_YEARLY,
-                        monthlyLabel = "$9.99 / month",
-                        yearlyLabel = "$79.99 / year  (save 33%)",
+                        monthlyLabel = "$14.99 / month",
+                        yearlyLabel = "$149.99 / year  (save 17%)",
                         onCheckout = { model.startCheckout(it) },
                     )
 
