@@ -71,7 +71,7 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         mechanicName: String,
         vehicleInfo: String,
     ): Result<Unit> = runCatching {
-        client.auth.currentUserOrNull() ?: error("Not authenticated")
+        client.auth.currentSessionOrNull() ?: error("Session expired — please sign out and sign back in")
         val body = buildJsonObject {
             put("jobId", jobId)
             put("clientEmail", clientEmail)
