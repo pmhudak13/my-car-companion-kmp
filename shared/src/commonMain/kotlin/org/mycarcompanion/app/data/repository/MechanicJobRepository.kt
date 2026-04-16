@@ -5,6 +5,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import io.ktor.http.Headers
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.models.MechanicJob
@@ -71,7 +72,8 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         mechanicName: String,
         vehicleInfo: String,
     ): Result<Unit> = runCatching {
-        client.auth.currentSessionOrNull() ?: error("Session expired — please sign out and sign back in")
+        val session = client.auth.currentSessionOrNull()
+            ?: error("Session expired — please sign out and sign back in")
         val body = buildJsonObject {
             put("jobId", jobId)
             put("clientEmail", clientEmail)
@@ -82,6 +84,9 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         client.functions.invoke(
             function = "send-mechanic-invite",
             body = body,
+            headers = Headers.build {
+                append("Authorization", "Bearer ${session.accessToken}")
+            },
         )
     }
 }
