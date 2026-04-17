@@ -158,7 +158,7 @@ class SettingsScreen : Screen {
                         icon = Icons.Default.Phone,
                         label = "Text Us About an Issue",
                         onClick = {
-                            uriHandler.openUri("sms:+15622658148?body=Hi, I have an issue with the My Car Companion app: ")
+                            uriHandler.openUri("sms:+15622658148?body=[MyCarCompanion] Issue: ")
                         },
                     )
                     Divider(modifier = Modifier.padding(horizontal = 16.dp))

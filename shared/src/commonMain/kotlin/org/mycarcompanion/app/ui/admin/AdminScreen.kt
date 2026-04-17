@@ -143,6 +143,7 @@ class AdminScreen : Screen {
                                             onGiftPremium = { giftDialogUser = user },
                                             onRevokePremium = { model.revokePremium(user.userId) },
                                             onConvertToMechanic = { model.convertToMechanic(user.userId) },
+                                            onRevokeMechanic = { model.revokeMechanicRole(user.userId) },
                                         )
                                     }
                                 }
@@ -254,6 +255,7 @@ private fun UserCard(
     onGiftPremium: () -> Unit,
     onRevokePremium: () -> Unit,
     onConvertToMechanic: () -> Unit,
+    onRevokeMechanic: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -303,6 +305,18 @@ private fun UserCard(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Make Mechanic", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+            if (!isActioning && user.role == "mechanic") {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onRevokeMechanic,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                ) {
+                    Text("Revoke Mechanic Role", style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
