@@ -40,7 +40,7 @@ class ReviewRepository(private val client: SupabaseClient) {
         table.select {
             filter {
                 eq("mechanic_user_id", mechanicUserId)
-                eq("reviewer_id", userId)
+                eq("reviewer_user_id", userId)
             }
         }.decodeList<MechanicReview>().firstOrNull()
     }
@@ -56,7 +56,7 @@ class ReviewRepository(private val client: SupabaseClient) {
             }) {
                 filter {
                     eq("mechanic_user_id", mechanicUserId)
-                    eq("reviewer_id", userId)
+                    eq("reviewer_user_id", userId)
                 }
             }
         } else {
