@@ -7,10 +7,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.mycarcompanion.app.data.models.Message
+import org.mycarcompanion.app.data.repository.AuthRepository
 import org.mycarcompanion.app.data.repository.MessageRepository
 
 data class MessagingState(
     val messages: List<Message> = emptyList(),
+    val currentUserId: String = "",
     val isLoading: Boolean = true,
     val error: String? = null,
     val composeText: String = "",
@@ -20,6 +22,7 @@ data class MessagingState(
 
 class MessagingScreenModel(
     private val messageRepository: MessageRepository,
+    private val authRepository: AuthRepository,
 ) : ScreenModel {
 
     private val _state = MutableStateFlow(MessagingState())
@@ -27,7 +30,8 @@ class MessagingScreenModel(
 
     fun loadInbox() {
         screenModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, error = null)
+            val currentUserId = authRepository.getCurrentUserId() ?: ""
+            _state.value = _state.value.copy(isLoading = true, error = null, currentUserId = currentUserId)
             messageRepository.getInbox()
                 .onSuccess { messages ->
                     _state.value = _state.value.copy(messages = messages, isLoading = false)
@@ -40,7 +44,8 @@ class MessagingScreenModel(
 
     fun loadConversation(otherUserId: String) {
         screenModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, error = null)
+            val currentUserId = authRepository.getCurrentUserId() ?: ""
+            _state.value = _state.value.copy(isLoading = true, error = null, currentUserId = currentUserId)
             messageRepository.getConversation(otherUserId)
                 .onSuccess { messages ->
                     _state.value = _state.value.copy(messages = messages, isLoading = false)

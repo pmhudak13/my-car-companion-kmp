@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -123,7 +124,10 @@ data class MessagingScreen(val recipientId: String? = null) : Screen, CommonParc
                             contentPadding = PaddingValues(16.dp),
                         ) {
                             items(state.messages, key = { it.id }) { message ->
-                                MessageBubble(message = message, isOutgoing = false)
+                                MessageBubble(
+                                    message = message,
+                                    isOutgoing = message.senderId == state.currentUserId,
+                                )
                             }
                         }
                     }
@@ -166,28 +170,33 @@ data class MessagingScreen(val recipientId: String? = null) : Screen, CommonParc
 
 @Composable
 private fun MessageBubble(message: Message, isOutgoing: Boolean) {
-    Card(
+    Box(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isOutgoing)
-                MaterialTheme.colorScheme.primaryContainer
-            else
-                MaterialTheme.colorScheme.surfaceVariant,
-        ),
+        contentAlignment = if (isOutgoing) Alignment.CenterEnd else Alignment.CenterStart,
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                text = message.content,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = message.createdAt.take(16).replace("T", " "),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Light,
-            )
+        Card(
+            modifier = Modifier.widthIn(max = 280.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isOutgoing)
+                    MaterialTheme.colorScheme.primaryContainer
+                else
+                    MaterialTheme.colorScheme.surfaceVariant,
+            ),
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    text = message.content,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = message.createdAt.take(16).replace("T", " "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Light,
+                )
+            }
         }
     }
 }

@@ -147,6 +147,33 @@ class ProfileRepository(private val client: SupabaseClient) {
         }) {
             filter { eq("user_id", userId) }
         }
+        // Remove mechanic role so they no longer get the mechanic dashboard
+        runCatching {
+            client.postgrest["user_roles"].delete {
+                filter {
+                    eq("user_id", userId)
+                    eq("role", "mechanic")
+                }
+            }
+        }
+        Unit
+    }
+
+    suspend fun revokeMechanicRole(userId: String): Result<Unit> = runCatching {
+        client.postgrest["user_roles"].delete {
+            filter {
+                eq("user_id", userId)
+                eq("role", "mechanic")
+            }
+        }
+        runCatching {
+            client.postgrest["mechanic_profiles"].update({
+                set("verification_status", "rejected")
+            }) {
+                filter { eq("user_id", userId) }
+            }
+        }
+        Unit
     }
 
     suspend fun updateProfile(firstName: String, lastName: String): Result<Unit> = runCatching {

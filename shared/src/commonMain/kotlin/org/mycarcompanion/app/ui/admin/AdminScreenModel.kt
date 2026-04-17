@@ -171,6 +171,27 @@ class AdminScreenModel(
         }
     }
 
+    fun revokeMechanicRole(userId: String) {
+        screenModelScope.launch {
+            _state.value = _state.value.copy(actionUserId = userId, error = null, successMessage = null)
+            profileRepository.revokeMechanicRole(userId)
+                .onSuccess {
+                    _state.value = _state.value.copy(
+                        actionUserId = null,
+                        successMessage = "Mechanic role revoked",
+                    )
+                    loadUsers()
+                    loadMechanics()
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        actionUserId = null,
+                        error = e.message ?: "Failed to revoke mechanic role",
+                    )
+                }
+        }
+    }
+
     fun clearMessage() {
         _state.value = _state.value.copy(successMessage = null, error = null)
     }

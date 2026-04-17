@@ -48,7 +48,7 @@ import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.home.HomeScreen
 import org.mycarcompanion.app.ui.home.HomeScreenModel
-import org.mycarcompanion.app.ui.messaging.MessagingScreen
+import org.mycarcompanion.app.ui.messaging.MessagesListScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MechanicDashboardScreen : Screen {
@@ -73,7 +73,7 @@ class MechanicDashboardScreen : Screen {
                 TopAppBar(
                     title = { Text(state.profile?.shopName ?: "My Dashboard") },
                     actions = {
-                        IconButton(onClick = { navigator.push(MessagingScreen()) }) {
+                        IconButton(onClick = { navigator.push(MessagesListScreen()) }) {
                             Icon(Icons.Default.Email, contentDescription = "Messages")
                         }
                         IconButton(onClick = { navigator.push(MechanicSetupScreen()) }) {
