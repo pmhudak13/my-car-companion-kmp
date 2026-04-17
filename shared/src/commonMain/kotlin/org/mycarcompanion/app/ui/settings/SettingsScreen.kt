@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -43,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
@@ -51,7 +53,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.help.HelpScreen
 import org.mycarcompanion.app.ui.subscription.SubscribeScreen
-import org.mycarcompanion.app.ui.messaging.MessagesListScreen
 import org.mycarcompanion.app.ui.notifications.NotificationsScreen
 import org.mycarcompanion.app.ui.profile.ProfileScreen
 import org.mycarcompanion.app.ui.reminders.RemindersListScreen
@@ -63,6 +64,7 @@ class SettingsScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
+        val uriHandler = LocalUriHandler.current
         val model: SettingsScreenModel = koinScreenModel()
         val state by model.state.collectAsState()
         var showSignOutConfirm by remember { mutableStateOf(false) }
@@ -134,11 +136,6 @@ class SettingsScreen : Screen {
                         onClick = { navigator.push(RemindersListScreen()) },
                     )
                     SettingsRow(
-                        icon = Icons.Default.Email,
-                        label = "Messages",
-                        onClick = { navigator.push(MessagesListScreen()) },
-                    )
-                    SettingsRow(
                         icon = Icons.Default.NotificationsNone,
                         label = "Notifications",
                         onClick = { navigator.push(NotificationsScreen()) },
@@ -156,6 +153,13 @@ class SettingsScreen : Screen {
                         icon = Icons.Default.HelpOutline,
                         label = "Help & FAQ",
                         onClick = { navigator.push(HelpScreen()) },
+                    )
+                    SettingsRow(
+                        icon = Icons.Default.Phone,
+                        label = "Text Us About an Issue",
+                        onClick = {
+                            uriHandler.openUri("sms:+15622658148?body=Hi, I have an issue with the My Car Companion app: ")
+                        },
                     )
                     Divider(modifier = Modifier.padding(horizontal = 16.dp))
 

@@ -9,12 +9,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -23,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -30,6 +33,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -69,55 +73,79 @@ data class MechanicReviewsScreen(
         }
 
         if (state.showReviewDialog) {
-            AlertDialog(
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            ModalBottomSheet(
                 onDismissRequest = model::closeReviewDialog,
-                title = { Text(if (state.myReview != null) "Edit Your Review" else "Leave a Review") },
-                text = {
-                    Column {
-                        Text("Rating", style = MaterialTheme.typography.labelMedium)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            (1..5).forEach { star ->
-                                TextButton(onClick = { model.setDraftRating(star) }) {
-                                    Text(
-                                        if (star <= state.draftRating) "★" else "☆",
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        color = if (star <= state.draftRating)
-                                            MaterialTheme.colorScheme.primary
-                                        else
-                                            MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
+                sheetState = sheetState,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .imePadding()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 32.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            if (state.myReview != null) "Edit Your Review" else "Leave a Review",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        TextButton(onClick = model::closeReviewDialog) { Text("Cancel") }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text("Rating", style = MaterialTheme.typography.labelMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        (1..5).forEach { star ->
+                            TextButton(onClick = { model.setDraftRating(star) }) {
+                                Text(
+                                    if (star <= state.draftRating) "★" else "☆",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    color = if (star <= state.draftRating)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        OutlinedTextField(
-                            value = state.draftComment,
-                            onValueChange = model::setDraftComment,
-                            label = { Text("Comment (optional)") },
-                            minLines = 3,
-                            maxLines = 5,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        state.submitError?.let {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                        }
                     }
-                },
-                confirmButton = {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = state.draftComment,
+                        onValueChange = model::setDraftComment,
+                        label = { Text("Comment (optional)") },
+                        minLines = 3,
+                        maxLines = 5,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    state.submitError?.let {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     if (state.submitting) {
-                        CircularProgressIndicator(strokeWidth = 2.dp)
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
                     } else {
-                        Button(onClick = { model.submitReview(mechanicUserId) }) {
-                            Text("Submit")
+                        Button(
+                            onClick = { model.submitReview(mechanicUserId) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Submit Review")
                         }
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = model::closeReviewDialog) { Text("Cancel") }
-                },
-            )
+                }
+            }
         }
 
         Scaffold(

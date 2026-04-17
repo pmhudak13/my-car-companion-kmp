@@ -45,6 +45,7 @@ import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.ui.admin.AdminScreen
 import org.mycarcompanion.app.ui.auth.LoginScreen
+import org.mycarcompanion.app.ui.messaging.MessagesListScreen
 import org.mycarcompanion.app.ui.settings.SettingsScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDashboardScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreen
@@ -147,7 +148,7 @@ class HomeScreen : Screen {
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Button(
                         onClick = { navigator.push(MechanicDirectoryScreen()) },
@@ -168,6 +169,16 @@ class HomeScreen : Screen {
                         ),
                     ) {
                         Text("Mileage Tracker", style = MaterialTheme.typography.labelMedium)
+                    }
+                    Button(
+                        onClick = { navigator.push(MessagesListScreen()) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        ),
+                    ) {
+                        Text("Messages", style = MaterialTheme.typography.labelMedium)
                     }
                 }
 
