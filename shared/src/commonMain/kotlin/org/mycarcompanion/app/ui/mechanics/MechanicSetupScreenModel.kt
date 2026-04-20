@@ -16,6 +16,8 @@ data class MechanicSetupState(
     val state: String = "",
     val yearsExperience: String = "",
     val hourlyRate: String = "",
+    val googlePlaceUrl: String = "",
+    val yelpUrl: String = "",
     val isLoading: Boolean = false,
     val error: String? = null,
     val isSaved: Boolean = false,
@@ -44,6 +46,8 @@ class MechanicSetupScreenModel(
                             state = profile.state ?: "",
                             yearsExperience = profile.yearsExperience?.toString() ?: "",
                             hourlyRate = profile.hourlyRate?.toString() ?: "",
+                            googlePlaceUrl = profile.googlePlaceUrl ?: "",
+                            yelpUrl = profile.yelpUrl ?: "",
                             isLoadingProfile = false,
                             isPendingApproval = profile.verificationStatus == "pending",
                         )
@@ -85,6 +89,14 @@ class MechanicSetupScreenModel(
         _state.value = _state.value.copy(hourlyRate = v)
     }
 
+    fun onGooglePlaceUrlChange(v: String) {
+        _state.value = _state.value.copy(googlePlaceUrl = v)
+    }
+
+    fun onYelpUrlChange(v: String) {
+        _state.value = _state.value.copy(yelpUrl = v)
+    }
+
     fun save() {
         val current = _state.value
         if (current.shopName.isBlank()) {
@@ -104,6 +116,8 @@ class MechanicSetupScreenModel(
                 state = current.state.ifBlank { null },
                 yearsExperience = years,
                 hourlyRate = rate,
+                googlePlaceUrl = current.googlePlaceUrl.ifBlank { null },
+                yelpUrl = current.yelpUrl.ifBlank { null },
             )
                 .onSuccess {
                     _state.value = _state.value.copy(isLoading = false, isSaved = true)

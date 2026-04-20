@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
   if (!authHeader) {
     return new Response(JSON.stringify({ error: "Missing authorization header" }), {
       status: 401,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
   }
 
@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
   if (authError || !user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
   }
 
@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
       status: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
   }
 
@@ -56,11 +56,11 @@ Deno.serve(async (req) => {
   if (!jobId || !clientEmail || !clientName || !mechanicName || !vehicleInfo) {
     return new Response(JSON.stringify({ error: "Missing required fields" }), {
       status: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
   }
 
-  // Verify the job belongs to the requesting mechanic
+  // Verify the job belongs to the requesting mechanic (service role bypasses RLS so we check manually)
   const { data: job, error: jobError } = await supabase
     .from("mechanic_jobs")
     .select("id, mechanic_user_id")
@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
   if (jobError || !job) {
     return new Response(JSON.stringify({ error: "Job not found or access denied" }), {
       status: 403,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
   }
 
@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "My Car Companion <noreply@mycarcompanion.app>",
+      from: "My Car Companion <noreply@mycarcompanion.com>",
       to: [clientEmail],
       subject: `${mechanicName} invited you to track your ${vehicleInfo}`,
       html: `
@@ -115,9 +115,9 @@ Deno.serve(async (req) => {
   if (!emailRes.ok) {
     const errText = await emailRes.text();
     console.error("Resend error:", errText);
-    return new Response(JSON.stringify({ error: "Failed to send email" }), {
+    return new Response(JSON.stringify({ error: "Failed to send email", detail: errText }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
   }
 

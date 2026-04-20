@@ -195,6 +195,8 @@ class ProfileRepository(private val client: SupabaseClient) {
         state: String?,
         yearsExperience: Int?,
         hourlyRate: Double?,
+        googlePlaceUrl: String? = null,
+        yelpUrl: String? = null,
     ): Result<Unit> = runCatching {
         val userId = client.auth.currentUserOrNull()?.id
             ?: error("Not authenticated")
@@ -209,6 +211,8 @@ class ProfileRepository(private val client: SupabaseClient) {
                 set("state", state)
                 set("years_experience", yearsExperience)
                 set("hourly_rate", hourlyRate)
+                set("google_place_url", googlePlaceUrl)
+                set("yelp_url", yelpUrl)
                 set("updated_at", now)
             }) {
                 filter { eq("user_id", userId) }
@@ -224,6 +228,8 @@ class ProfileRepository(private val client: SupabaseClient) {
                     state = state,
                     yearsExperience = yearsExperience,
                     hourlyRate = hourlyRate,
+                    googlePlaceUrl = googlePlaceUrl,
+                    yelpUrl = yelpUrl,
                     updatedAt = now,
                 )
             )

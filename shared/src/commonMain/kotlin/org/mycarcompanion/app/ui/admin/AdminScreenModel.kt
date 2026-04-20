@@ -34,9 +34,9 @@ class AdminScreenModel(
         loadMechanics()
     }
 
-    fun loadUsers() {
+    fun loadUsers(silent: Boolean = false) {
         screenModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, error = null)
+            if (!silent) _state.value = _state.value.copy(isLoading = true, error = null)
             profileRepository.getAllUsers()
                 .onSuccess { users ->
                     _state.value = _state.value.copy(
@@ -53,9 +53,9 @@ class AdminScreenModel(
         }
     }
 
-    fun loadMechanics() {
+    fun loadMechanics(silent: Boolean = false) {
         screenModelScope.launch {
-            _state.value = _state.value.copy(mechanicsLoading = true, mechanicsError = null)
+            if (!silent) _state.value = _state.value.copy(mechanicsLoading = true, mechanicsError = null)
             profileRepository.getAllMechanicProfiles()
                 .onSuccess { mechanics ->
                     _state.value = _state.value.copy(
@@ -78,7 +78,7 @@ class AdminScreenModel(
             profileRepository.giftPremium(userId, reason)
                 .onSuccess {
                     _state.value = _state.value.copy(actionUserId = null, successMessage = "Premium gifted!")
-                    loadUsers()
+                    loadUsers(silent = true)
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(
@@ -95,7 +95,7 @@ class AdminScreenModel(
             profileRepository.revokePremium(userId)
                 .onSuccess {
                     _state.value = _state.value.copy(actionUserId = null, successMessage = "Premium revoked")
-                    loadUsers()
+                    loadUsers(silent = true)
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(
@@ -159,8 +159,8 @@ class AdminScreenModel(
                         actionUserId = null,
                         successMessage = "User converted to mechanic",
                     )
-                    loadUsers()
-                    loadMechanics()
+                    loadUsers(silent = true)
+                    loadMechanics(silent = true)
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(
@@ -180,8 +180,8 @@ class AdminScreenModel(
                         actionUserId = null,
                         successMessage = "Mechanic role revoked",
                     )
-                    loadUsers()
-                    loadMechanics()
+                    loadUsers(silent = true)
+                    loadMechanics(silent = true)
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(

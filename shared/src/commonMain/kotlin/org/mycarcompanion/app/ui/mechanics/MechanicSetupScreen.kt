@@ -198,6 +198,26 @@ class MechanicSetupScreen : Screen {
                         modifier = Modifier.weight(1f),
                     )
                 }
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = state.googlePlaceUrl,
+                    onValueChange = model::onGooglePlaceUrlChange,
+                    label = { Text("Google Review Link (optional)") },
+                    placeholder = { Text("https://g.page/your-shop/review") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = state.yelpUrl,
+                    onValueChange = model::onYelpUrlChange,
+                    label = { Text("Yelp Review Link (optional)") },
+                    placeholder = { Text("https://yelp.com/biz/your-shop") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
