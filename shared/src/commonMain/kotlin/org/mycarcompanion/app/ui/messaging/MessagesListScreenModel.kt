@@ -38,7 +38,11 @@ class MessagesListScreenModel(
     fun load() {
         screenModelScope.launch {
             _state.value = _state.value.copy(loading = true, error = null)
-            val currentUserId = authRepository.getCurrentUserId() ?: ""
+            val currentUserId = authRepository.getCurrentUserId()
+            if (currentUserId == null) {
+                _state.value = _state.value.copy(loading = false, error = "Not signed in")
+                return@launch
+            }
             messageRepository.getAllMessages()
                 .onSuccess { messages ->
                     // Group messages by the other participant

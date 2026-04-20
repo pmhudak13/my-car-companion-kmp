@@ -69,4 +69,8 @@ class ProfileScreenModel(
             }
         }
     }
+
+    fun clearSaved() {
+        _state.value = _state.value.copy(saved = false)
+    }
 }

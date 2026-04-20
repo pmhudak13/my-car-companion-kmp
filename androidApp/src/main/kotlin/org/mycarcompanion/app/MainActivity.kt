@@ -19,14 +19,17 @@ class MainActivity : ComponentActivity() {
             anonKey = BuildConfig.SUPABASE_ANON_KEY,
         )
         initGeolocation(applicationContext)
+        // Process deep-link before setContent so the first composition sees the correct auth state
+        handleAuthIntent(intent)
         setContent {
             App()
         }
-        handleAuthIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        // Keep getIntent() up-to-date for any later callers (e.g. after rotation)
+        setIntent(intent)
         handleAuthIntent(intent)
     }
 

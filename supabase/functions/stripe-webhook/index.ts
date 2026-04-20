@@ -72,6 +72,8 @@ Deno.serve(async (req) => {
 });
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  if (session.mode !== "subscription") return;
+
   const userId = session.metadata?.supabase_user_id;
   if (!userId) return;
 
@@ -79,17 +81,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
   const priceId = lineItems.data[0]?.price?.id;
   const tier = tierFromPriceId(priceId);
+  if (!tier) {
+    console.error("handleCheckoutCompleted: unknown priceId, aborting profile update", priceId);
+    return;
+  }
 
+  // Single update merges all fields to avoid a partial-update race window
   await supabase.from("profiles").update({
     is_premium: true,
+    is_mechanic_pro: tier === "mechanic_pro",
     subscription_tier: tier,
     stripe_customer_id: session.customer as string,
   }).eq("user_id", userId);
-
-  // If this is a Mechanic Pro subscription, also set is_mechanic_pro
-  if (tier === "mechanic_pro") {
-    await supabase.from("profiles").update({ is_mechanic_pro: true }).eq("user_id", userId);
-  }
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
@@ -98,14 +101,13 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const tier = tierFromPriceId(priceId);
   const isActive = subscription.status === "active" || subscription.status === "trialing";
 
+  // Always set is_mechanic_pro in the same update to avoid partial-state windows
+  // and to correctly revoke it on downgrades (e.g. mechanic_pro → premium)
   await supabase.from("profiles").update({
     is_premium: isActive,
-    subscription_tier: isActive ? tier : "free",
+    is_mechanic_pro: tier === "mechanic_pro" ? isActive : false,
+    subscription_tier: isActive && tier ? tier : "free",
   }).eq("stripe_customer_id", customerId);
-
-  if (tier === "mechanic_pro") {
-    await supabase.from("profiles").update({ is_mechanic_pro: isActive }).eq("stripe_customer_id", customerId);
-  }
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
@@ -123,12 +125,13 @@ async function handlePaymentFailed(subscriptionId: string) {
   // Mark as inactive but keep customer ID; they may update their payment method
   await supabase.from("profiles").update({
     is_premium: false,
+    is_mechanic_pro: false,
     subscription_tier: "past_due",
   }).eq("stripe_customer_id", customerId);
 }
 
-/** Maps a Stripe Price ID to the internal subscription_tier string. */
-function tierFromPriceId(priceId: string | undefined): string {
+/** Maps a Stripe Price ID to the internal subscription_tier string, or null for unknown prices. */
+function tierFromPriceId(priceId: string | undefined): string | null {
   // Premium (car owner) — monthly + yearly
   if (
     priceId === "price_1TFf16EEo6NSMXCB9SQ29WiZ" ||
@@ -143,5 +146,6 @@ function tierFromPriceId(priceId: string | undefined): string {
   ) {
     return "mechanic_pro";
   }
-  return "premium"; // fallback
+  console.warn("Unknown price ID encountered:", priceId);
+  return null;
 }

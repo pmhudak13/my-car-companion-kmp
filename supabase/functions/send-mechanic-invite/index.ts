@@ -6,32 +6,33 @@ const resendApiKey = Deno.env.get("RESEND_API_KEY") ?? "";
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+function jsonResponse(body: unknown, status: number): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...corsHeaders },
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-      },
-    });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   // Verify JWT
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
-    return new Response(JSON.stringify({ error: "Missing authorization header" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Missing authorization header" }, 401);
   }
 
   const token = authHeader.replace("Bearer ", "");
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
   let body: {
@@ -45,19 +46,13 @@ Deno.serve(async (req) => {
   try {
     body = await req.json();
   } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Invalid JSON body" }, 400);
   }
 
   const { jobId, clientEmail, clientName, mechanicName, vehicleInfo } = body;
 
   if (!jobId || !clientEmail || !clientName || !mechanicName || !vehicleInfo) {
-    return new Response(JSON.stringify({ error: "Missing required fields" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Missing required fields" }, 400);
   }
 
   // Verify the job belongs to the requesting mechanic
@@ -69,10 +64,7 @@ Deno.serve(async (req) => {
     .single();
 
   if (jobError || !job) {
-    return new Response(JSON.stringify({ error: "Job not found or access denied" }), {
-      status: 403,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Job not found or access denied" }, 403);
   }
 
   // Send invite email via Resend
@@ -115,10 +107,7 @@ Deno.serve(async (req) => {
   if (!emailRes.ok) {
     const errText = await emailRes.text();
     console.error("Resend error:", errText);
-    return new Response(JSON.stringify({ error: "Failed to send email" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Failed to send email" }, 500);
   }
 
   // Mark invite as sent on the job
@@ -131,11 +120,5 @@ Deno.serve(async (req) => {
     console.error("Failed to update invite_sent:", updateError);
   }
 
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
-  });
+  return jsonResponse({ success: true }, 200);
 });

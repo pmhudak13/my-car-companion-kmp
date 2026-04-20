@@ -40,7 +40,7 @@ class MechanicDashboardScreenModel(
     }
 
     fun selectTab(tab: MechanicDashboardTab) {
-        _state.value = _state.value.copy(selectedTab = tab)
+        _state.value = _state.value.copy(selectedTab = tab, error = null)
     }
 
     fun loadData() {

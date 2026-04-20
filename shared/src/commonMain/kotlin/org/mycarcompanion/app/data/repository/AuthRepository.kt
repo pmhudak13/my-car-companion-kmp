@@ -5,6 +5,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -30,26 +31,32 @@ class AuthRepository(
             is SessionStatus.Authenticated -> {
                 val user = client.auth.currentUserOrNull()
                 if (user != null) {
-                    coroutineScope {
-                        val isAdminDeferred = async { profileRepository.hasRole("admin").getOrDefault(false) }
-                        val isMechanicDeferred = async { profileRepository.hasRole("mechanic").getOrDefault(false) }
-                        val profileDeferred = async { profileRepository.getMyProfile().getOrNull() }
-                        val isAdmin = isAdminDeferred.await()
-                        val isMechanic = isMechanicDeferred.await()
-                        val profile = profileDeferred.await()
-                        val hasGoogleLinked = user.identities?.any { it.provider == "google" } ?: false
-                        val intendedRole = user.userMetadata?.get("role")?.jsonPrimitive?.contentOrNull
-                        AuthState.Authenticated(
-                            AppUser(
-                                id = user.id,
-                                email = user.email ?: "",
-                                isAdmin = isAdmin,
-                                isMechanic = isMechanic,
-                                isPremium = profile?.isPremium ?: false,
-                                hasGoogleLinked = hasGoogleLinked,
-                                intendedRole = intendedRole,
+                    try {
+                        coroutineScope {
+                            val isAdminDeferred = async { profileRepository.hasRole("admin").getOrDefault(false) }
+                            val isMechanicDeferred = async { profileRepository.hasRole("mechanic").getOrDefault(false) }
+                            val profileDeferred = async { profileRepository.getMyProfile().getOrNull() }
+                            val isAdmin = isAdminDeferred.await()
+                            val isMechanic = isMechanicDeferred.await()
+                            val profile = profileDeferred.await()
+                            val hasGoogleLinked = user.identities?.any { it.provider == "google" } ?: false
+                            val intendedRole = user.userMetadata?.get("role")?.jsonPrimitive?.contentOrNull
+                            AuthState.Authenticated(
+                                AppUser(
+                                    id = user.id,
+                                    email = user.email ?: "",
+                                    isAdmin = isAdmin,
+                                    isMechanic = isMechanic,
+                                    isPremium = profile?.isPremium ?: false,
+                                    hasGoogleLinked = hasGoogleLinked,
+                                    intendedRole = intendedRole,
+                                )
                             )
-                        )
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        AuthState.Unauthenticated
                     }
                 } else {
                     AuthState.Unauthenticated
@@ -67,6 +74,8 @@ class AuthRepository(
             this.password = password
         }
         AuthResult.Success
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         AuthResult.Error(e.message ?: "Sign in failed")
     }
@@ -78,6 +87,8 @@ class AuthRepository(
             this.data = buildJsonObject { put("role", role) }
         }
         AuthResult.Success
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         AuthResult.Error(e.message ?: "Sign up failed")
     }
@@ -85,6 +96,8 @@ class AuthRepository(
     suspend fun signInWithGoogle(): AuthResult = try {
         client.auth.signInWith(Google, redirectUrl = googleAuthRedirectUrl)
         AuthResult.Success
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         AuthResult.Error(e.message ?: "Google sign-in failed")
     }
@@ -92,6 +105,8 @@ class AuthRepository(
     suspend fun linkGoogleIdentity(): AuthResult = try {
         client.auth.linkIdentity(Google, redirectUrl = googleAuthRedirectUrl)
         AuthResult.Success
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         AuthResult.Error(e.message ?: "Failed to link Google account")
     }
@@ -99,6 +114,8 @@ class AuthRepository(
     suspend fun signOut(): AuthResult = try {
         client.auth.signOut()
         AuthResult.Success
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         AuthResult.Error(e.message ?: "Sign out failed")
     }

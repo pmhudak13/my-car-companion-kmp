@@ -11,6 +11,7 @@ import org.mycarcompanion.app.data.models.MaintenanceFormData
 import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.data.models.MechanicJobLog
 import org.mycarcompanion.app.data.models.MechanicJobLogInsert
+import org.mycarcompanion.app.data.repository.AuthRepository
 import org.mycarcompanion.app.data.repository.MechanicJobRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
 
@@ -33,6 +34,7 @@ data class MechanicJobDetailState(
 class MechanicJobDetailScreenModel(
     private val jobRepository: MechanicJobRepository,
     private val profileRepository: ProfileRepository,
+    private val authRepository: AuthRepository,
 ) : ScreenModel {
 
     private val _state = MutableStateFlow(MechanicJobDetailState())
@@ -106,7 +108,7 @@ class MechanicJobDetailScreenModel(
             _state.value = _state.value.copy(isSavingLog = true, logError = null)
             val insert = MechanicJobLogInsert(
                 mechanicJobId = jobId,
-                mechanicUserId = "",
+                mechanicUserId = authRepository.getCurrentUserId() ?: "",
                 category = form.category,
                 description = form.description.trim(),
                 date = form.date.trim(),

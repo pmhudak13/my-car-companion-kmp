@@ -131,6 +131,24 @@ class RemindersListScreen : Screen {
                     contentAlignment = Alignment.Center,
                 ) { CircularProgressIndicator() }
 
+                state.error != null -> Box(
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(24.dp),
+                    ) {
+                        Text(
+                            state.error,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        TextButton(onClick = model::load) { Text("Retry") }
+                    }
+                }
+
                 state.vehicles.isEmpty() -> Box(
                     modifier = Modifier.fillMaxSize().padding(paddingValues),
                     contentAlignment = Alignment.Center,

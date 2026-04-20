@@ -44,7 +44,10 @@ class ProfileScreen : Screen {
         val state by model.state.collectAsState()
 
         LaunchedEffect(state.saved) {
-            if (state.saved) navigator.pop()
+            if (state.saved) {
+                model.clearSaved()
+                navigator.pop()
+            }
         }
 
         Scaffold(

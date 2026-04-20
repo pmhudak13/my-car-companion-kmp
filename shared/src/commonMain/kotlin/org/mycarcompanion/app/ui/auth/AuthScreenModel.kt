@@ -42,7 +42,7 @@ class AuthScreenModel(private val authRepository: AuthRepository) : ScreenModel 
 
     fun signIn() {
         screenModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, successMessage = null)
             val result = authRepository.signIn(_uiState.value.email, _uiState.value.password)
             _uiState.value = when (result) {
                 is AuthResult.Success -> _uiState.value.copy(isLoading = false)

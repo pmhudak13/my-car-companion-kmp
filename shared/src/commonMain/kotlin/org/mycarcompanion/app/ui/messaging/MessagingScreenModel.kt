@@ -30,7 +30,11 @@ class MessagingScreenModel(
 
     fun loadInbox() {
         screenModelScope.launch {
-            val currentUserId = authRepository.getCurrentUserId() ?: ""
+            val currentUserId = authRepository.getCurrentUserId()
+            if (currentUserId == null) {
+                _state.value = _state.value.copy(isLoading = false, error = "Not signed in")
+                return@launch
+            }
             _state.value = _state.value.copy(isLoading = true, error = null, currentUserId = currentUserId)
             messageRepository.getInbox()
                 .onSuccess { messages ->
@@ -44,7 +48,11 @@ class MessagingScreenModel(
 
     fun loadConversation(otherUserId: String) {
         screenModelScope.launch {
-            val currentUserId = authRepository.getCurrentUserId() ?: ""
+            val currentUserId = authRepository.getCurrentUserId()
+            if (currentUserId == null) {
+                _state.value = _state.value.copy(isLoading = false, error = "Not signed in")
+                return@launch
+            }
             _state.value = _state.value.copy(isLoading = true, error = null, currentUserId = currentUserId)
             messageRepository.getConversation(otherUserId)
                 .onSuccess { messages ->
