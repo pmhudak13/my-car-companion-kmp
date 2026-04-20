@@ -22,6 +22,8 @@ data class MechanicProfile(
     @SerialName("is_available") val isAvailable: Boolean? = true,
     val rating: Double? = null,
     @SerialName("total_jobs") val totalJobs: Int? = null,
+    @SerialName("google_place_url") val googlePlaceUrl: String? = null,
+    @SerialName("yelp_url") val yelpUrl: String? = null,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = "",
 )
@@ -49,6 +51,8 @@ data class MechanicProfileInsert(
     val state: String? = null,
     @SerialName("years_experience") val yearsExperience: Int? = null,
     @SerialName("hourly_rate") val hourlyRate: Double? = null,
+    @SerialName("google_place_url") val googlePlaceUrl: String? = null,
+    @SerialName("yelp_url") val yelpUrl: String? = null,
     @SerialName("updated_at") val updatedAt: String,
 )
 
