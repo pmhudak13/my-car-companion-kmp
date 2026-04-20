@@ -6,7 +6,7 @@ import android.location.LocationManager
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
-private var appContext: Context? = null
+internal var appContext: Context? = null
 
 fun initGeolocation(context: Context) {
     appContext = context.applicationContext

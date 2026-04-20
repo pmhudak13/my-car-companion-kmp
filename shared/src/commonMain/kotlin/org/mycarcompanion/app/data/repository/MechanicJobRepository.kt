@@ -2,12 +2,8 @@ package org.mycarcompanion.app.data.repository
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
-import io.ktor.http.Headers
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.data.models.MechanicJobInsert
 import org.mycarcompanion.app.data.models.MechanicJobLog
@@ -65,28 +61,11 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         }
     }
 
-    suspend fun sendInvite(
-        jobId: String,
-        clientEmail: String,
-        clientName: String,
-        mechanicName: String,
-        vehicleInfo: String,
-    ): Result<Unit> = runCatching {
-        val session = client.auth.currentSessionOrNull()
-            ?: error("Session expired — please sign out and sign back in")
-        val body = buildJsonObject {
-            put("jobId", jobId)
-            put("clientEmail", clientEmail)
-            put("clientName", clientName)
-            put("mechanicName", mechanicName)
-            put("vehicleInfo", vehicleInfo)
+    suspend fun markInviteSent(jobId: String): Result<Unit> = runCatching {
+        jobsTable.update({
+            set("invite_sent", true)
+        }) {
+            filter { eq("id", jobId) }
         }
-        client.functions.invoke(
-            function = "send-mechanic-invite",
-            body = body,
-            headers = Headers.build {
-                append("Authorization", "Bearer ${session.accessToken}")
-            },
-        )
     }
 }

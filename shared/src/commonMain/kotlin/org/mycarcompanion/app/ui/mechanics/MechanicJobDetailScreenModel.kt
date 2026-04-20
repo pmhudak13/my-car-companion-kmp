@@ -13,6 +13,7 @@ import org.mycarcompanion.app.data.models.MechanicJobLog
 import org.mycarcompanion.app.data.models.MechanicJobLogInsert
 import org.mycarcompanion.app.data.repository.MechanicJobRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
+import org.mycarcompanion.app.platform.shareText
 
 data class MechanicJobDetailState(
     val job: MechanicJob? = null,
@@ -147,32 +148,27 @@ class MechanicJobDetailScreenModel(
 
     fun sendInvite() {
         val job = _state.value.job ?: return
-        val email = job.clientEmail ?: return
         val mechanicName = _state.value.mechanicShopName ?: "Your Mechanic"
         val vehicleInfo = "${job.vehicleYear} ${job.vehicleMake} ${job.vehicleModel}"
 
+        val message = buildString {
+            appendLine("Hi ${job.clientName},")
+            appendLine()
+            appendLine("$mechanicName has invited you to track your $vehicleInfo service history on My Car Companion.")
+            appendLine()
+            append("Download the app: https://mycarcompanion.app")
+        }
+
+        shareText(title = "Invite to My Car Companion", text = message)
+
         screenModelScope.launch {
-            _state.value = _state.value.copy(isSendingInvite = true, inviteMessage = null)
-            jobRepository.sendInvite(
-                jobId = job.id,
-                clientEmail = email,
-                clientName = job.clientName,
-                mechanicName = mechanicName,
-                vehicleInfo = vehicleInfo,
+            _state.value = _state.value.copy(isSendingInvite = true)
+            jobRepository.markInviteSent(job.id)
+            _state.value = _state.value.copy(
+                isSendingInvite = false,
+                inviteMessage = "Invite shared",
+                job = _state.value.job?.copy(inviteSent = true),
             )
-                .onSuccess {
-                    _state.value = _state.value.copy(
-                        isSendingInvite = false,
-                        inviteMessage = "Invite sent to $email",
-                        job = _state.value.job?.copy(inviteSent = true),
-                    )
-                }
-                .onFailure { e ->
-                    _state.value = _state.value.copy(
-                        isSendingInvite = false,
-                        inviteMessage = "Failed to send invite: ${e.message}",
-                    )
-                }
         }
     }
 
