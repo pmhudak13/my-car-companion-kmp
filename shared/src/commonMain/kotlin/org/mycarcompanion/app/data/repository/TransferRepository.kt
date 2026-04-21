@@ -24,7 +24,10 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.postgrest.rpc
 import kotlinx.datetime.Clock
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.models.VehicleTransfer
 import org.mycarcompanion.app.data.models.VehicleTransferInsert
 
@@ -69,15 +72,12 @@ class TransferRepository(private val client: SupabaseClient) {
 
     suspend fun claimTransfer(transfer: VehicleTransfer): Result<Unit> = runCatching {
         val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
-        vehicles.update({ set("owner_id", userId) }) {
-            filter { eq("id", transfer.vehicleId) }
-        }
-        val now = Clock.System.now().toString()
-        table.update({
-            set("claimed_by_id", userId)
-            set("claimed_at", now)
-        }) {
-            filter { eq("id", transfer.id) }
-        }
+        client.postgrest.rpc(
+            function = "claim_vehicle_transfer",
+            parameters = buildJsonObject {
+                put("p_code", transfer.transferCode)
+                put("p_user_id", userId)
+            },
+        )
     }
 }
