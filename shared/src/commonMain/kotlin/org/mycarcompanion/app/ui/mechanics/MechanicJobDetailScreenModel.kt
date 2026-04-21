@@ -43,12 +43,11 @@ class MechanicJobDetailScreenModel(
     fun load(jobId: String) {
         screenModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
-            val jobsDeferred = async { jobRepository.getMyJobs() }
+            val jobDeferred = async { jobRepository.getJobById(jobId) }
             val profileDeferred = async { profileRepository.getMyMechanicProfile() }
 
-            val jobs = jobsDeferred.await().getOrNull() ?: emptyList()
+            val job = jobDeferred.await().getOrNull()
             val profile = profileDeferred.await().getOrNull()
-            val job = jobs.firstOrNull { it.id == jobId }
 
             if (job == null) {
                 _state.value = _state.value.copy(isLoading = false, error = "Job not found")

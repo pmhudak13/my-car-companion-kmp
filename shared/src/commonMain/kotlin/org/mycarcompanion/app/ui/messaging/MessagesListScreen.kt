@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
@@ -119,18 +120,12 @@ private fun ThreadRow(
                 }
             },
         ) {
-            // Simple avatar circle placeholder
-            Box(
-                modifier = Modifier
-                    .then(Modifier.padding(4.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = thread.otherUserId.take(1).uppercase(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(4.dp),
+            )
         }
 
         Spacer(modifier = Modifier.width(12.dp))

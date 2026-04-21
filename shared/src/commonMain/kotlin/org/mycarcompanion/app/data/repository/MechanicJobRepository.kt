@@ -29,6 +29,16 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         }.decodeList<MechanicJob>()
     }
 
+    suspend fun getJobById(jobId: String): Result<MechanicJob?> = runCatching {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
+        jobsTable.select {
+            filter {
+                eq("id", jobId)
+                eq("mechanic_user_id", userId)
+            }
+        }.decodeList<MechanicJob>().firstOrNull()
+    }
+
     suspend fun createJob(insert: MechanicJobInsert): Result<MechanicJob> = runCatching {
         val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
         jobsTable.insert(insert.copy(mechanicUserId = userId)) {

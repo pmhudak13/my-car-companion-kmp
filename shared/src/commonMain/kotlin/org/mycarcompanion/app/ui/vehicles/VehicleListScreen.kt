@@ -46,11 +46,13 @@ class VehicleListScreen : Screen {
 
         Scaffold(
             floatingActionButton = {
-                FloatingActionButton(
-                    onClick = { navigator.push(AddVehicleScreen()) },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                ) {
-                    Text("+", style = MaterialTheme.typography.headlineSmall)
+                if (!state.isLoading && state.error == null) {
+                    FloatingActionButton(
+                        onClick = { navigator.push(AddVehicleScreen()) },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                    ) {
+                        Text("+", style = MaterialTheme.typography.headlineSmall)
+                    }
                 }
             }
         ) { paddingValues ->

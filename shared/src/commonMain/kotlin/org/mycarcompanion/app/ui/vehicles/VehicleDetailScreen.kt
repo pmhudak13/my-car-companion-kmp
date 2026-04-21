@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -29,6 +31,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -54,6 +59,9 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
         val navigator = LocalNavigator.currentOrThrow
         val model: VehicleDetailScreenModel = koinScreenModel()
         val state by model.state.collectAsState()
+        var deleteVehicleConfirm by remember { mutableStateOf(false) }
+        var deleteLogId by remember { mutableStateOf<String?>(null) }
+        var deleteReminderId by remember { mutableStateOf<String?>(null) }
 
         LaunchedEffect(vehicleId) { model.load(vehicleId) }
         LaunchedEffect(state.deleted) {
@@ -132,7 +140,7 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
                             }
                         } else {
                             items(state.reminders, key = { it.id }) { reminder ->
-                                ReminderCard(reminder, onDelete = { model.deleteReminder(reminder.id) })
+                                ReminderCard(reminder, onDelete = { deleteReminderId = reminder.id })
                             }
                         }
 
@@ -183,7 +191,7 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
                                     fontWeight = FontWeight.Bold,
                                 )
                                 TextButton(
-                                    onClick = model::deleteVehicle,
+                                    onClick = { deleteVehicleConfirm = true },
                                 ) {
                                     Text("Delete Vehicle", color = MaterialTheme.colorScheme.error)
                                 }
@@ -200,12 +208,69 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
                             }
                         } else {
                             items(state.logs, key = { it.id }) { log ->
-                                MaintenanceLogCard(log, onDelete = { model.deleteLog(log.id) })
+                                MaintenanceLogCard(log, onDelete = { deleteLogId = log.id })
                             }
                         }
                     }
                 }
             }
+        }
+
+        if (deleteVehicleConfirm) {
+            AlertDialog(
+                onDismissRequest = { deleteVehicleConfirm = false },
+                title = { Text("Delete Vehicle") },
+                text = { Text("This will permanently delete this vehicle and all its data. Continue?") },
+                confirmButton = {
+                    Button(
+                        onClick = { deleteVehicleConfirm = false; model.deleteVehicle() },
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) { Text("Delete") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { deleteVehicleConfirm = false }) { Text("Cancel") }
+                },
+            )
+        }
+
+        deleteLogId?.let { logId ->
+            AlertDialog(
+                onDismissRequest = { deleteLogId = null },
+                title = { Text("Delete Log Entry") },
+                text = { Text("Remove this maintenance record?") },
+                confirmButton = {
+                    Button(
+                        onClick = { deleteLogId = null; model.deleteLog(logId) },
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) { Text("Delete") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { deleteLogId = null }) { Text("Cancel") }
+                },
+            )
+        }
+
+        deleteReminderId?.let { reminderId ->
+            AlertDialog(
+                onDismissRequest = { deleteReminderId = null },
+                title = { Text("Delete Reminder") },
+                text = { Text("Remove this reminder?") },
+                confirmButton = {
+                    Button(
+                        onClick = { deleteReminderId = null; model.deleteReminder(reminderId) },
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) { Text("Delete") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { deleteReminderId = null }) { Text("Cancel") }
+                },
+            )
         }
     }
 }

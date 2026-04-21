@@ -9,6 +9,11 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
+const ALLOWED_PRICE_IDS = new Set([
+  Deno.env.get("STRIPE_PRICE_PREMIUM") ?? "",
+  Deno.env.get("STRIPE_PRICE_MECHANIC_PRO") ?? "",
+].filter(Boolean));
+
 Deno.serve(async (req) => {
   // Only allow POST
   if (req.method !== "POST") {
@@ -46,6 +51,13 @@ Deno.serve(async (req) => {
 
     if (!price_id) {
       return new Response(JSON.stringify({ error: "price_id is required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (!ALLOWED_PRICE_IDS.has(price_id)) {
+      return new Response(JSON.stringify({ error: "Invalid price_id" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });

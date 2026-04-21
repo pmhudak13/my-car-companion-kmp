@@ -115,13 +115,9 @@ class ProfileRepository(private val client: SupabaseClient) {
         }) {
             filter { eq("user_id", userId) }
         }
-        // Insert role, ignore if it already exists
-        runCatching {
-            client.postgrest["user_roles"].insert(
-                mapOf("user_id" to userId, "role" to "mechanic")
-            )
-        }
-        Unit
+        client.postgrest["user_roles"].insert(
+            mapOf("user_id" to userId, "role" to "mechanic")
+        )
     }
 
     suspend fun convertToMechanic(userId: String): Result<Unit> = runCatching {

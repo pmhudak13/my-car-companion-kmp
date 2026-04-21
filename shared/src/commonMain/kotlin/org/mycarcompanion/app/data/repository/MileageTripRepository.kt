@@ -12,9 +12,11 @@ class MileageTripRepository(private val client: SupabaseClient) {
     private val table get() = client.postgrest["mileage_trips"]
 
     suspend fun getTrips(vehicleId: String? = null): Result<List<MileageTrip>> = runCatching {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
         table.select {
-            if (vehicleId != null) {
-                filter { eq("vehicle_id", vehicleId) }
+            filter {
+                eq("user_id", userId)
+                if (vehicleId != null) eq("vehicle_id", vehicleId)
             }
             order("started_at", Order.DESCENDING)
         }.decodeList<MileageTrip>()
@@ -54,7 +56,10 @@ class MileageTripRepository(private val client: SupabaseClient) {
             set("end_lng", endLng)
             set("ended_at", Clock.System.now().toString())
         }) {
-            filter { eq("id", tripId) }
+            filter {
+                eq("id", tripId)
+                isNull("ended_at")
+            }
             select()
         }.decodeSingle<MileageTrip>()
     }

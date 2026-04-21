@@ -32,11 +32,13 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -59,6 +61,13 @@ class AdminScreen : Screen {
         var giftDialogUser by remember { mutableStateOf<AdminUserEntry?>(null) }
         var giftReason by remember { mutableStateOf("") }
         var selectedTab by remember { mutableStateOf(0) }
+
+        LaunchedEffect(state.successMessage) {
+            if (state.successMessage != null) {
+                delay(3000)
+                model.clearMessage()
+            }
+        }
 
         Scaffold { paddingValues ->
             Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
