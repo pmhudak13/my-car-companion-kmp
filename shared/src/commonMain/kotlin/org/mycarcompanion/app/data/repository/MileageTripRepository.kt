@@ -58,7 +58,7 @@ class MileageTripRepository(private val client: SupabaseClient) {
         }) {
             filter {
                 eq("id", tripId)
-                isNull("ended_at")
+                exact("ended_at", null)
             }
             select()
         }.decodeSingle<MileageTrip>()
