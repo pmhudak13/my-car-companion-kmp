@@ -141,7 +141,7 @@ class RemindersListScreen : Screen {
                         modifier = Modifier.padding(24.dp),
                     ) {
                         Text(
-                            errorMsg,
+                            errorMsg ?: "An error occurred",
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodyMedium,
                         )
