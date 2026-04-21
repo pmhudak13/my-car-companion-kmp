@@ -9,7 +9,7 @@ data class MechanicReview(
     @SerialName("mechanic_user_id") val mechanicUserId: String = "",
     @SerialName("reviewer_user_id") val reviewerId: String = "",
     val rating: Int = 0,
-    val comment: String? = null,
+    @SerialName("review_text") val comment: String? = null,
     @SerialName("created_at") val createdAt: String = "",
 )
 
@@ -18,5 +18,5 @@ data class MechanicReviewInsert(
     @SerialName("mechanic_user_id") val mechanicUserId: String,
     @SerialName("reviewer_user_id") val reviewerId: String,
     val rating: Int,
-    val comment: String? = null,
+    @SerialName("review_text") val comment: String? = null,
 )

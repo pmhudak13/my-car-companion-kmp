@@ -1,21 +1,7 @@
 package org.mycarcompanion.app.data.repository
 
-// Required Supabase table:
-// CREATE TABLE mechanic_reviews (
-//   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-//   mechanic_user_id UUID NOT NULL REFERENCES auth.users(id),
-//   reviewer_id UUID NOT NULL REFERENCES auth.users(id),
-//   rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
-//   comment TEXT,
-//   created_at TIMESTAMPTZ DEFAULT NOW(),
-//   UNIQUE(mechanic_user_id, reviewer_id)
-// );
-// ALTER TABLE mechanic_reviews ENABLE ROW LEVEL SECURITY;
-// CREATE POLICY "Anyone can read reviews" ON mechanic_reviews FOR SELECT USING (true);
-// CREATE POLICY "Users can insert their own reviews"
-//   ON mechanic_reviews FOR INSERT WITH CHECK (reviewer_id = auth.uid());
-// CREATE POLICY "Users can update their own reviews"
-//   ON mechanic_reviews FOR UPDATE USING (reviewer_id = auth.uid());
+// Actual mechanic_reviews schema:
+//   id, mechanic_user_id, reviewer_user_id, assignment_id, rating, review_text, created_at, updated_at
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -52,7 +38,7 @@ class ReviewRepository(private val client: SupabaseClient) {
         if (existing != null) {
             table.update({
                 set("rating", rating)
-                set("comment", trimmedComment)
+                set("review_text", trimmedComment)
             }) {
                 filter {
                     eq("mechanic_user_id", mechanicUserId)

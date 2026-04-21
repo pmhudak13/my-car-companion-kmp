@@ -1,24 +1,8 @@
 package org.mycarcompanion.app.data.repository
 
 // Required Supabase table:
-// CREATE TABLE vehicle_transfers (
-//   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-//   vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
-//   from_user_id UUID NOT NULL REFERENCES auth.users(id),
-//   transfer_code TEXT NOT NULL UNIQUE,
-//   claimed_by_id UUID REFERENCES auth.users(id),
-//   claimed_at TIMESTAMPTZ,
-//   expires_at TIMESTAMPTZ NOT NULL,
-//   created_at TIMESTAMPTZ DEFAULT NOW()
-// );
-// ALTER TABLE vehicle_transfers ENABLE ROW LEVEL SECURITY;
-// -- Owners can manage their transfers
-// CREATE POLICY "Owners can manage their own transfers"
-//   ON vehicle_transfers FOR ALL USING (from_user_id = auth.uid());
-// -- Authenticated users can look up unclaimed transfers by code (to claim)
-// CREATE POLICY "Authenticated users can read unclaimed transfers"
-//   ON vehicle_transfers FOR SELECT
-//   USING (auth.uid() IS NOT NULL AND claimed_by_id IS NULL);
+// Actual vehicle_transfers schema:
+//   id, vehicle_id, sender_id, transfer_code, expires_at, claimed_at, claimed_by, status, created_at
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -55,7 +39,7 @@ class TransferRepository(private val client: SupabaseClient) {
         table.select {
             filter {
                 eq("vehicle_id", vehicleId)
-                eq("from_user_id", userId)
+                eq("sender_id", userId)
             }
             order("created_at", Order.DESCENDING)
         }.decodeList<VehicleTransfer>()
