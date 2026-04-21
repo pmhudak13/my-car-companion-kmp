@@ -7,9 +7,9 @@ import kotlinx.serialization.Serializable
 data class VehicleTransfer(
     val id: String = "",
     @SerialName("vehicle_id") val vehicleId: String = "",
-    @SerialName("from_user_id") val fromUserId: String = "",
+    @SerialName("sender_id") val fromUserId: String = "",
     @SerialName("transfer_code") val transferCode: String = "",
-    @SerialName("claimed_by_id") val claimedById: String? = null,
+    @SerialName("claimed_by") val claimedById: String? = null,
     @SerialName("claimed_at") val claimedAt: String? = null,
     @SerialName("expires_at") val expiresAt: String = "",
     @SerialName("created_at") val createdAt: String = "",
@@ -18,7 +18,7 @@ data class VehicleTransfer(
 @Serializable
 data class VehicleTransferInsert(
     @SerialName("vehicle_id") val vehicleId: String,
-    @SerialName("from_user_id") val fromUserId: String,
+    @SerialName("sender_id") val fromUserId: String,
     @SerialName("transfer_code") val transferCode: String,
     @SerialName("expires_at") val expiresAt: String,
 )
