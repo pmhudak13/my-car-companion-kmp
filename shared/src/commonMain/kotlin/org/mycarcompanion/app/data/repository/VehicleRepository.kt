@@ -34,7 +34,17 @@ class VehicleRepository(private val client: SupabaseClient) {
     }
 
     suspend fun updateVehicle(vehicle: Vehicle): Result<Vehicle> = runCatching {
-        table.update(vehicle) {
+        table.update({
+            set("make", vehicle.make)
+            set("model", vehicle.model)
+            set("year", vehicle.year)
+            set("color", vehicle.color)
+            set("license_plate", vehicle.licensePlate)
+            set("vin", vehicle.vin)
+            set("odometer", vehicle.odometer)
+            set("unit", vehicle.unit)
+            set("image_url", vehicle.imageUrl)
+        }) {
             select()
             filter { eq("id", vehicle.id) }
         }.decodeSingle<Vehicle>()

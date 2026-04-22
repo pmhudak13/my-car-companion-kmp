@@ -61,7 +61,8 @@ class MileageTripRepository(private val client: SupabaseClient) {
                 exact("ended_at", null)
             }
             select()
-        }.decodeSingle<MileageTrip>()
+        }.decodeSingleOrNull<MileageTrip>()
+            ?: error("Trip has already ended or does not exist")
     }
 
     suspend fun deleteTrip(id: String): Result<Unit> = runCatching {

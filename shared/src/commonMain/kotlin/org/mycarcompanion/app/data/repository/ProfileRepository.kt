@@ -122,8 +122,8 @@ class ProfileRepository(private val client: SupabaseClient) {
 
     suspend fun convertToMechanic(userId: String): Result<Unit> = runCatching {
         val now = Clock.System.now().toString()
-        // Insert a minimal profile if one doesn't exist yet (ignore if it does)
-        runCatching {
+        // Insert a minimal profile if one doesn't exist yet (idempotent — ignore duplicate-key conflicts)
+        val insertResult = runCatching {
             client.postgrest["mechanic_profiles"].insert(
                 MechanicProfileInsert(
                     userId = userId,
@@ -132,6 +132,12 @@ class ProfileRepository(private val client: SupabaseClient) {
                     updatedAt = now,
                 )
             )
+        }
+        insertResult.onFailure { e ->
+            val isDuplicate = e.message?.contains("23505") == true
+                || e.message?.contains("duplicate") == true
+                || e.message?.contains("already exists") == true
+            if (!isDuplicate) throw e
         }
         // Mark verified and grant mechanic role
         approveMechanic(userId).getOrThrow()

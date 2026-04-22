@@ -1,8 +1,10 @@
 package org.mycarcompanion.app.data.repository
 
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.functions.functions
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.Headers
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
@@ -21,12 +23,17 @@ class SubscriptionRepository(private val client: SupabaseClient) {
 
     /** Returns the Stripe Checkout URL for the given price ID, or throws on error. */
     suspend fun createCheckoutSession(priceId: String): Result<String> = runCatching {
+        val session = client.auth.currentSessionOrNull()
+            ?: error("Session expired — please sign out and sign back in")
         val response = client.functions.invoke(
             function = "create-checkout",
             body = buildJsonObject {
                 put("price_id", priceId)
                 put("success_url", "org.mycarcompanion.app://subscription/success")
                 put("cancel_url", "org.mycarcompanion.app://subscription/cancel")
+            },
+            headers = Headers.build {
+                append("Authorization", "Bearer ${session.accessToken}")
             },
         )
         val body = response.bodyAsText()

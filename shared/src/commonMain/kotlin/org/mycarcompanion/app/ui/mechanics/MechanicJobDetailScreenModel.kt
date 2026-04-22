@@ -104,10 +104,15 @@ class MechanicJobDetailScreenModel(
             return
         }
         screenModelScope.launch {
+            val userId = authRepository.getCurrentUserId()
+            if (userId == null) {
+                _state.value = _state.value.copy(logError = "Not authenticated — please sign in again")
+                return@launch
+            }
             _state.value = _state.value.copy(isSavingLog = true, logError = null)
             val insert = MechanicJobLogInsert(
                 mechanicJobId = jobId,
-                mechanicUserId = authRepository.getCurrentUserId() ?: "",
+                mechanicUserId = userId,
                 category = form.category,
                 description = form.description.trim(),
                 date = form.date.trim(),

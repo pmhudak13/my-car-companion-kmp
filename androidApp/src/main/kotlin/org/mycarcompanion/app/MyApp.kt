@@ -2,20 +2,12 @@ package org.mycarcompanion.app
 
 import android.app.Application
 import io.sentry.android.core.SentryAndroid
-import kotlinx.coroutines.CoroutineExceptionHandler
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.mycarcompanion.androidapp.BuildConfig
 import org.mycarcompanion.app.di.appModule
 
 class MyApp : Application() {
-
-    // Global handler for unhandled coroutine exceptions.
-    // Sentry will also capture these automatically once initialized,
-    // but this ensures nothing silently disappears in debug builds.
-    val coroutineExceptionHandler = CoroutineExceptionHandler { _, throwable ->
-        throwable.printStackTrace()
-    }
 
     override fun onCreate() {
         super.onCreate()

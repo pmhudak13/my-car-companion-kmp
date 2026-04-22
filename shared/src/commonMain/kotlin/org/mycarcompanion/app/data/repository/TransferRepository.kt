@@ -35,23 +35,26 @@ class TransferRepository(private val client: SupabaseClient) {
     suspend fun getActiveTransfersForVehicle(vehicleId: String): Result<List<VehicleTransfer>> = runCatching {
         val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
         val now = Clock.System.now().toString()
-        // Fetch all transfers for this vehicle/user, filter active ones client-side
         table.select {
             filter {
                 eq("vehicle_id", vehicleId)
                 eq("sender_id", userId)
+                exact("claimed_by", null)
+                gt("expires_at", now)
             }
             order("created_at", Order.DESCENDING)
         }.decodeList<VehicleTransfer>()
-            .filter { it.claimedById == null && it.expiresAt > now }
     }
 
     suspend fun lookupByCode(code: String): Result<VehicleTransfer?> = runCatching {
         val now = Clock.System.now().toString()
         table.select {
-            filter { eq("transfer_code", code.trim().uppercase()) }
-        }.decodeList<VehicleTransfer>()
-            .firstOrNull { it.claimedById == null && it.expiresAt > now }
+            filter {
+                eq("transfer_code", code.trim().uppercase())
+                exact("claimed_by", null)
+                gt("expires_at", now)
+            }
+        }.decodeList<VehicleTransfer>().firstOrNull()
     }
 
     suspend fun claimTransfer(transfer: VehicleTransfer): Result<Unit> = runCatching {

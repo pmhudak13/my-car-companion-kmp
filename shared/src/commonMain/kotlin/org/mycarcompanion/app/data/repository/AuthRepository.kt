@@ -6,12 +6,15 @@ import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -24,6 +27,7 @@ import org.mycarcompanion.app.platform.googleAuthRedirectUrl
 class AuthRepository(
     private val client: SupabaseClient,
     private val profileRepository: ProfileRepository,
+    private val appScope: CoroutineScope,
 ) {
 
     val authState: Flow<AuthState> = client.auth.sessionStatus.mapLatest { status ->
@@ -67,6 +71,7 @@ class AuthRepository(
             is SessionStatus.RefreshFailure -> AuthState.Unauthenticated
         }
     }.flowOn(Dispatchers.Default)
+        .shareIn(appScope, SharingStarted.Eagerly, replay = 1)
 
     suspend fun signIn(email: String, password: String): AuthResult = try {
         client.auth.signInWith(Email) {

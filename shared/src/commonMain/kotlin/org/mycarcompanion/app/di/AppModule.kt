@@ -1,6 +1,10 @@
 package org.mycarcompanion.app.di
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.koin.core.module.dsl.factoryOf
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.mycarcompanion.app.data.repository.AuthRepository
 import org.mycarcompanion.app.data.repository.MaintenanceRepository
@@ -44,7 +48,8 @@ import org.mycarcompanion.app.ui.vehicles.VehicleListScreenModel
 
 val appModule = module {
     single { supabaseClient }
-    single { AuthRepository(get(), get()) }
+    single(named("appScope")) { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
+    single { AuthRepository(get(), get(), get(named("appScope"))) }
     single { VehicleRepository(get()) }
     single { MaintenanceRepository(get()) }
     single { ReminderRepository(get()) }
