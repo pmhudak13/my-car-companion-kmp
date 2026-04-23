@@ -56,6 +56,16 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+        if (invoice.subscription && invoice.billing_reason !== "subscription_create") {
+          // subscription_create is already handled by checkout.session.completed.
+          // This covers renewals and payment lapse recovery (card updated after failure).
+          await handlePaymentSucceeded(invoice.subscription as string);
+        }
+        break;
+      }
+
       default:
         // Unhandled event — not an error, just ignore
         break;
@@ -127,6 +137,26 @@ async function handlePaymentFailed(subscriptionId: string) {
     is_premium: false,
     is_mechanic_pro: false,
     subscription_tier: "past_due",
+  }).eq("stripe_customer_id", customerId);
+}
+
+async function handlePaymentSucceeded(subscriptionId: string) {
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  // Only restore access if the subscription is genuinely active
+  if (subscription.status !== "active" && subscription.status !== "trialing") return;
+
+  const customerId = subscription.customer as string;
+  const priceId = subscription.items.data[0]?.price.id;
+  const tier = tierFromPriceId(priceId);
+  if (!tier) {
+    console.warn("handlePaymentSucceeded: unknown priceId, skipping restore", priceId);
+    return;
+  }
+
+  await supabase.from("profiles").update({
+    is_premium: true,
+    is_mechanic_pro: tier === "mechanic_pro",
+    subscription_tier: tier,
   }).eq("stripe_customer_id", customerId);
 }
 

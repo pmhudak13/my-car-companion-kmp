@@ -10,8 +10,10 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 const ALLOWED_PRICE_IDS = new Set([
-  Deno.env.get("STRIPE_PRICE_PREMIUM") ?? "",
-  Deno.env.get("STRIPE_PRICE_MECHANIC_PRO") ?? "",
+  Deno.env.get("STRIPE_PRICE_PREMIUM_MONTHLY") ?? "",
+  Deno.env.get("STRIPE_PRICE_PREMIUM_YEARLY") ?? "",
+  Deno.env.get("STRIPE_PRICE_MECHANIC_MONTHLY") ?? "",
+  Deno.env.get("STRIPE_PRICE_MECHANIC_YEARLY") ?? "",
 ].filter(Boolean));
 
 Deno.serve(async (req) => {

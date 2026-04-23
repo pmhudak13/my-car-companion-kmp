@@ -4,6 +4,7 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import com.google.firebase.FirebaseApp
 import io.sentry.android.core.SentryAndroid
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -14,6 +15,12 @@ class MyApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Some OEM devices (e.g. OnePlus OxygenOS) don't reliably run FirebaseInitProvider
+        // on cold start, causing FirebaseMessaging.getInstance() to throw later.
+        if (FirebaseApp.getApps(this).isEmpty()) {
+            FirebaseApp.initializeApp(this)
+        }
 
         if (BuildConfig.SENTRY_DSN.isNotEmpty()) {
             SentryAndroid.init(this) { options ->
