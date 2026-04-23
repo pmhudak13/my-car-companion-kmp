@@ -46,13 +46,14 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         }.decodeSingle<MechanicJob>()
     }
 
-    suspend fun completeJob(jobId: String): Result<Unit> = runCatching {
+    suspend fun completeJob(jobId: String, clientEmail: String? = null): Result<Unit> = runCatching {
         jobsTable.update({
             set("status", "completed")
             set("completed_at", kotlinx.datetime.Clock.System.now().toString())
         }) {
             filter { eq("id", jobId) }
         }
+        triggerJobUpdatePush(clientEmail, "Job Completed", "Your mechanic has marked your job as complete.")
     }
 
     suspend fun getLogsForJob(jobId: String): Result<List<MechanicJobLog>> = runCatching {
@@ -62,16 +63,39 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         }.decodeList<MechanicJobLog>()
     }
 
-    suspend fun addLog(log: MechanicJobLogInsert): Result<MechanicJobLog> = runCatching {
+    suspend fun addLog(log: MechanicJobLogInsert, clientEmail: String? = null): Result<MechanicJobLog> = runCatching {
         val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
-        logsTable.insert(log.copy(mechanicUserId = userId)) {
+        val result = logsTable.insert(log.copy(mechanicUserId = userId)) {
             select()
         }.decodeSingle<MechanicJobLog>()
+        triggerJobUpdatePush(clientEmail, "Job Updated", "Your mechanic has added a new update to your job.")
+        result
     }
 
     suspend fun deleteLog(logId: String): Result<Unit> = runCatching {
         logsTable.delete {
             filter { eq("id", logId) }
+        }
+    }
+
+    private suspend fun triggerJobUpdatePush(clientEmail: String?, title: String, body: String) {
+        if (clientEmail == null) return
+        try {
+            val accessToken = client.auth.currentSessionOrNull()?.accessToken ?: return
+            client.functions.invoke(
+                "send-push-notification",
+                body = buildJsonObject {
+                    put("client_email", clientEmail)
+                    put("title", title)
+                    put("body", body)
+                    put("type", "mechanic_update")
+                },
+                headers = Headers.build {
+                    append("Authorization", "Bearer $accessToken")
+                },
+            )
+        } catch (_: Exception) {
+            // Best-effort
         }
     }
 

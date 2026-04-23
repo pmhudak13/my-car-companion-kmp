@@ -67,7 +67,7 @@ class MechanicJobDetailScreenModel(
     fun completeJob(jobId: String) {
         screenModelScope.launch {
             _state.value = _state.value.copy(isCompleting = true)
-            jobRepository.completeJob(jobId)
+            jobRepository.completeJob(jobId, _state.value.job?.clientEmail)
                 .onSuccess {
                     _state.value = _state.value.copy(isCompleting = false, completed = true)
                 }
@@ -120,7 +120,7 @@ class MechanicJobDetailScreenModel(
                 cost = form.cost.toDoubleOrNull(),
                 notes = form.notes.trim().ifBlank { null },
             )
-            jobRepository.addLog(insert)
+            jobRepository.addLog(insert, _state.value.job?.clientEmail)
                 .onSuccess { log ->
                     _state.value = _state.value.copy(
                         isSavingLog = false,

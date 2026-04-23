@@ -1,5 +1,6 @@
 package org.mycarcompanion.app.ui.notifications
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -23,14 +25,13 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 
@@ -40,15 +41,8 @@ class NotificationsScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-
-        // Preferences stored in composition state — persisting across app restarts
-        // would require a preferences repository wired to DataStore or Supabase
-        var oilChange by rememberSaveable { mutableStateOf(true) }
-        var tireRotation by rememberSaveable { mutableStateOf(true) }
-        var registration by rememberSaveable { mutableStateOf(true) }
-        var customReminders by rememberSaveable { mutableStateOf(true) }
-        var newMessages by rememberSaveable { mutableStateOf(true) }
-        var mechanicUpdates by rememberSaveable { mutableStateOf(true) }
+        val screenModel = koinScreenModel<NotificationsScreenModel>()
+        val state by screenModel.state.collectAsState()
 
         Scaffold(
             topBar = {
@@ -62,6 +56,16 @@ class NotificationsScreen : Screen {
                 )
             },
         ) { paddingValues ->
+            if (state.loading) {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+                return@Scaffold
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -77,13 +81,13 @@ class NotificationsScreen : Screen {
                 Spacer(modifier = Modifier.height(8.dp))
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                        NotifToggle("Oil Change", oilChange) { oilChange = it }
+                        NotifToggle("Oil Change", state.oilChange, screenModel::setOilChange)
                         Divider()
-                        NotifToggle("Tire Rotation", tireRotation) { tireRotation = it }
+                        NotifToggle("Tire Rotation", state.tireRotation, screenModel::setTireRotation)
                         Divider()
-                        NotifToggle("Registration", registration) { registration = it }
+                        NotifToggle("Registration", state.registration, screenModel::setRegistration)
                         Divider()
-                        NotifToggle("Custom Reminders", customReminders) { customReminders = it }
+                        NotifToggle("Custom Reminders", state.customReminders, screenModel::setCustomReminders)
                     }
                 }
 
@@ -97,9 +101,9 @@ class NotificationsScreen : Screen {
                 Spacer(modifier = Modifier.height(8.dp))
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                        NotifToggle("New Messages", newMessages) { newMessages = it }
+                        NotifToggle("New Messages", state.newMessages, screenModel::setNewMessages)
                         Divider()
-                        NotifToggle("Mechanic Updates", mechanicUpdates) { mechanicUpdates = it }
+                        NotifToggle("Mechanic Updates", state.mechanicUpdates, screenModel::setMechanicUpdates)
                     }
                 }
 

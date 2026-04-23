@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.google.services)
 }
 
 // CMP resource bridge — the AGP 9+ KMP library plugin in :shared does not merge
@@ -125,5 +126,7 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.androidx.activity.compose)
     implementation(libs.sentry.android)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
     debugImplementation(libs.leakcanary.android)
 }

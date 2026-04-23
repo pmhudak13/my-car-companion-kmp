@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "79729952090",
+    "project_id": "my-car-companion-16e0f",
+    "storage_bucket": "my-car-companion-16e0f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:79729952090:android:76b88cdcf8438641691f63",
+        "android_client_info": {
+          "package_name": "org.mycarcompanion.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGDWbjos8olxZEioMfE7bTrUZaczUpVyE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
