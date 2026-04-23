@@ -57,6 +57,8 @@ class MessagingScreenModel(
             messageRepository.getConversation(otherUserId)
                 .onSuccess { messages ->
                     _state.value = _state.value.copy(messages = messages, isLoading = false)
+                    messages.filter { !it.isRead && it.recipientId == currentUserId }
+                        .forEach { messageRepository.markAsRead(it.id) }
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(error = e.message ?: "Failed to load conversation", isLoading = false)

@@ -18,7 +18,8 @@ class NotificationPreferencesRepository(private val client: SupabaseClient) {
     }
 
     suspend fun savePreferences(prefs: NotificationPreferences): Result<Unit> = runCatching {
-        table.upsert(prefs) {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
+        table.upsert(prefs.copy(userId = userId)) {
             onConflict = "user_id"
         }
         Unit

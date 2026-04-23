@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.update
 import org.mycarcompanion.app.data.repository.AuthRepository
+import org.mycarcompanion.app.data.repository.DeviceTokenRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
 
 data class SettingsUiState(
@@ -19,6 +20,7 @@ data class SettingsUiState(
 class SettingsScreenModel(
     private val authRepository: AuthRepository,
     private val profileRepository: ProfileRepository,
+    private val deviceTokenRepository: DeviceTokenRepository,
 ) : ScreenModel {
 
     private val _state = MutableStateFlow(SettingsUiState())
@@ -35,6 +37,7 @@ class SettingsScreenModel(
     fun signOut() {
         screenModelScope.launch {
             _state.value = _state.value.copy(signingOut = true)
+            deviceTokenRepository.deleteToken("android")
             authRepository.signOut()
             _state.value = _state.value.copy(signingOut = false, signedOut = true)
         }

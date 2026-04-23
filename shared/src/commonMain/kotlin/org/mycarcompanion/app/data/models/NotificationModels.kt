@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class DeviceToken(
-    val id: String = "",
+    @kotlinx.serialization.Transient val id: String = "",
     @SerialName("user_id") val userId: String = "",
     val token: String = "",
     val platform: String = "",
