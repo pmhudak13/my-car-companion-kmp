@@ -2,9 +2,15 @@ package org.mycarcompanion.app.data.repository
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import io.ktor.http.Headers
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import org.mycarcompanion.app.data.models.Reminder
 import org.mycarcompanion.app.data.models.Vehicle
+import org.mycarcompanion.app.data.models.reminderTypeLabels
 
 class VehicleRepository(private val client: SupabaseClient) {
 
@@ -34,7 +40,7 @@ class VehicleRepository(private val client: SupabaseClient) {
     }
 
     suspend fun updateVehicle(vehicle: Vehicle): Result<Vehicle> = runCatching {
-        table.update({
+        val updated = table.update({
             set("make", vehicle.make)
             set("model", vehicle.model)
             set("year", vehicle.year)
@@ -48,6 +54,43 @@ class VehicleRepository(private val client: SupabaseClient) {
             select()
             filter { eq("id", vehicle.id) }
         }.decodeSingle<Vehicle>()
+        checkMileageReminders(vehicle.id, vehicle.odometer)
+        updated
+    }
+
+    private suspend fun checkMileageReminders(vehicleId: String, odometer: Int) {
+        try {
+            val userId = client.auth.currentUserOrNull()?.id ?: return
+            val reminders = client.postgrest["reminders"].select {
+                filter {
+                    eq("vehicle_id", vehicleId)
+                    eq("is_active", true)
+                }
+            }.decodeList<Reminder>()
+
+            val accessToken = client.auth.currentSessionOrNull()?.accessToken ?: return
+
+            reminders.forEach { reminder ->
+                val dueMileage = reminder.nextDueMileage ?: return@forEach
+                if (odometer >= dueMileage) {
+                    val label = reminderTypeLabels[reminder.type] ?: reminder.customName ?: "Maintenance"
+                    client.functions.invoke(
+                        "send-push-notification",
+                        body = buildJsonObject {
+                            put("recipient_id", userId)
+                            put("title", "$label Reminder")
+                            put("body", "Your $label is due at $dueMileage miles.")
+                            put("type", reminder.type)
+                        },
+                        headers = Headers.build {
+                            append("Authorization", "Bearer $accessToken")
+                        },
+                    )
+                }
+            }
+        } catch (_: Exception) {
+            // Best-effort — never fail the vehicle update
+        }
     }
 
     suspend fun deleteVehicle(id: String): Result<Unit> = runCatching {

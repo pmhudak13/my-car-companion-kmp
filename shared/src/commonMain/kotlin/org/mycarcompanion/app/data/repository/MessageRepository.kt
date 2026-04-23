@@ -18,8 +18,12 @@ package org.mycarcompanion.app.data.repository
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import io.ktor.http.Headers
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.models.Message
 import org.mycarcompanion.app.data.models.MessageInsert
 
@@ -63,7 +67,33 @@ class MessageRepository(private val client: SupabaseClient) {
             vehicleId = vehicleId,
         )
         table.insert(payload)
+        triggerPushNotification(recipientId, "New Message", content, "new_message")
         Unit
+    }
+
+    private suspend fun triggerPushNotification(
+        recipientId: String,
+        title: String,
+        body: String,
+        type: String,
+    ) {
+        try {
+            val accessToken = client.auth.currentSessionOrNull()?.accessToken ?: return
+            client.functions.invoke(
+                "send-push-notification",
+                body = buildJsonObject {
+                    put("recipient_id", recipientId)
+                    put("title", title)
+                    put("body", body)
+                    put("type", type)
+                },
+                headers = Headers.build {
+                    append("Authorization", "Bearer $accessToken")
+                },
+            )
+        } catch (_: Exception) {
+            // Push notification is best-effort — never fail the message send
+        }
     }
 
     suspend fun markAsRead(id: String): Result<Unit> = runCatching {

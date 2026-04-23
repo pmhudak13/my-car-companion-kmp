@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <application
@@ -18,6 +19,18 @@
             android:name="io.sentry.android.core.SentryInitProvider"
             android:authorities="${applicationId}.SentryInitProvider"
             tools:node="remove" />
+
+        <service
+            android:name="org.mycarcompanion.app.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="mycarcompanion_default" />
 
         <activity
             android:name="org.mycarcompanion.app.MainActivity"

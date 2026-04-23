@@ -1,6 +1,9 @@
 package org.mycarcompanion.app
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import io.sentry.android.core.SentryAndroid
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -15,12 +18,8 @@ class MyApp : Application() {
         if (BuildConfig.SENTRY_DSN.isNotEmpty()) {
             SentryAndroid.init(this) { options ->
                 options.dsn = BuildConfig.SENTRY_DSN
-                // Only send sessions data in release builds
                 options.isEnableAutoSessionTracking = !BuildConfig.DEBUG
-                // Attach screenshots to crash reports so you can see exactly
-                // what was on screen when the crash happened
                 options.isAttachScreenshot = true
-                // Capture 100% of transactions in debug, 20% in production
                 options.tracesSampleRate = if (BuildConfig.DEBUG) 1.0 else 0.2
             }
         }
@@ -29,5 +28,19 @@ class MyApp : Application() {
             androidContext(this@MyApp)
             modules(appModule)
         }
+
+        createNotificationChannel()
+    }
+
+    private fun createNotificationChannel() {
+        val channel = NotificationChannel(
+            MyFirebaseMessagingService.CHANNEL_ID,
+            "My Car Companion",
+            NotificationManager.IMPORTANCE_DEFAULT,
+        ).apply {
+            description = "Vehicle reminders and mechanic updates"
+        }
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.createNotificationChannel(channel)
     }
 }
