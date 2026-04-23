@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.mycarcompanion.app.data.models.AuthResult
 import org.mycarcompanion.app.data.repository.AuthRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
 
@@ -76,13 +77,10 @@ class ProfileScreenModel(
     fun sendPasswordReset() {
         val email = _state.value.email.ifEmpty { return }
         screenModelScope.launch {
-            authRepository.sendPasswordReset(email)
-                .onSuccess {
-                    _state.value = _state.value.copy(resetEmailSent = true)
-                }
-                .onFailure { e ->
-                    _state.value = _state.value.copy(error = e.message ?: "Failed to send reset email")
-                }
+            when (val result = authRepository.sendPasswordReset(email)) {
+                is AuthResult.Success -> _state.value = _state.value.copy(resetEmailSent = true)
+                is AuthResult.Error -> _state.value = _state.value.copy(error = result.message)
+            }
         }
     }
 

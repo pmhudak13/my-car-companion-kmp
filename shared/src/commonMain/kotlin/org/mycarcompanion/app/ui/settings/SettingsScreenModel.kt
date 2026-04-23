@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.update
+import org.mycarcompanion.app.data.models.AuthResult
 import org.mycarcompanion.app.data.repository.AuthRepository
 import org.mycarcompanion.app.data.repository.DeviceTokenRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
@@ -49,16 +50,13 @@ class SettingsScreenModel(
         screenModelScope.launch {
             _state.value = _state.value.copy(deletingAccount = true, deleteError = null)
             runCatching { deviceTokenRepository.deleteToken("android") }
-            authRepository.deleteAccount()
-                .onSuccess {
-                    _state.value = _state.value.copy(deletingAccount = false, signedOut = true)
-                }
-                .onFailure { e ->
-                    _state.value = _state.value.copy(
-                        deletingAccount = false,
-                        deleteError = e.message ?: "Failed to delete account",
-                    )
-                }
+            when (val result = authRepository.deleteAccount()) {
+                is AuthResult.Success -> _state.value = _state.value.copy(deletingAccount = false, signedOut = true)
+                is AuthResult.Error -> _state.value = _state.value.copy(
+                    deletingAccount = false,
+                    deleteError = result.message,
+                )
+            }
         }
     }
 
