@@ -10,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
@@ -81,6 +82,11 @@ class MainActivity : ComponentActivity() {
             if (storedToken != null) {
                 deviceTokenRepository.upsertToken(storedToken, "android")
             } else {
+                // Belt-and-suspenders: OEM devices (e.g. OnePlus OxygenOS) can skip
+                // FirebaseInitProvider, leaving Firebase uninitialised even after MyApp.onCreate().
+                if (FirebaseApp.getApps(applicationContext).isEmpty()) {
+                    FirebaseApp.initializeApp(applicationContext)
+                }
                 FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
                     lifecycleScope.launch { deviceTokenRepository.upsertToken(token, "android") }
                 }
