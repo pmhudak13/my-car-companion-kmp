@@ -118,6 +118,7 @@ class AdminScreenModel(
                         mechanics = updated,
                         processingMechanicId = null,
                     )
+                    loadUsers()
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(
@@ -140,6 +141,7 @@ class AdminScreenModel(
                         mechanics = updated,
                         processingMechanicId = null,
                     )
+                    loadUsers()
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(

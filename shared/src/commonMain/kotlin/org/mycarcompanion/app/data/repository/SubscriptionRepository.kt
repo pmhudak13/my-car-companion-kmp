@@ -21,6 +21,22 @@ class SubscriptionRepository(private val client: SupabaseClient) {
         const val PRICE_MECHANIC_YEARLY  = "price_1TFfCIEEo6NSMXCBXTQaAI5x"
     }
 
+    /** Returns the Stripe Billing Portal URL for the current user's subscription management. */
+    suspend fun createPortalSession(): Result<String> = runCatching {
+        val session = client.auth.currentSessionOrNull()
+            ?: error("Session expired — please sign out and sign back in")
+        val response = client.functions.invoke(
+            function = "create-portal",
+            headers = Headers.build {
+                append("Authorization", "Bearer ${session.accessToken}")
+            },
+        )
+        val body = response.bodyAsText()
+        val json = Json.parseToJsonElement(body).jsonObject
+        json["url"]?.jsonPrimitive?.content
+            ?: error("Missing url in response: $body")
+    }
+
     /** Returns the Stripe Checkout URL for the given price ID, or throws on error. */
     suspend fun createCheckoutSession(priceId: String): Result<String> = runCatching {
         val session = client.auth.currentSessionOrNull()

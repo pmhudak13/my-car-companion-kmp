@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.HelpOutline
@@ -31,6 +32,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -68,9 +71,17 @@ class SettingsScreen : Screen {
         val model: SettingsScreenModel = koinScreenModel()
         val state by model.state.collectAsState()
         var showSignOutConfirm by remember { mutableStateOf(false) }
+        var showDeleteConfirm by remember { mutableStateOf(false) }
+        val snackbarState = remember { SnackbarHostState() }
 
         LaunchedEffect(state.signedOut) {
             if (state.signedOut) navigator.replaceAll(LoginScreen())
+        }
+
+        LaunchedEffect(state.deleteError) {
+            val err = state.deleteError ?: return@LaunchedEffect
+            snackbarState.showSnackbar(err)
+            model.clearDeleteError()
         }
 
         if (showSignOutConfirm) {
@@ -90,7 +101,35 @@ class SettingsScreen : Screen {
             )
         }
 
+        if (showDeleteConfirm) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirm = false },
+                title = { Text("Delete Account") },
+                text = {
+                    Text(
+                        "This will permanently delete your account and all associated data. " +
+                        "This action cannot be undone."
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteConfirm = false
+                            model.deleteAccount()
+                        },
+                        colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) { Text("Delete Account") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
+                },
+            )
+        }
+
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarState) },
             topBar = {
                 TopAppBar(
                     title = { Text("Settings") },
@@ -102,7 +141,7 @@ class SettingsScreen : Screen {
                 )
             },
         ) { paddingValues ->
-            if (state.signingOut) {
+            if (state.signingOut || state.deletingAccount) {
                 Box(
                     modifier = Modifier.fillMaxSize().padding(paddingValues),
                     contentAlignment = Alignment.Center,
@@ -122,14 +161,12 @@ class SettingsScreen : Screen {
                         label = "Profile",
                         onClick = { navigator.push(ProfileScreen()) },
                     )
-                    if (!state.isPremium) {
-                        SettingsRow(
-                            icon = Icons.Default.Star,
-                            label = "Upgrade to Premium",
-                            onClick = { navigator.push(SubscribeScreen()) },
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
+                    SettingsRow(
+                        icon = Icons.Default.Star,
+                        label = if (state.isPremium) "Manage Subscription" else "Upgrade to Premium",
+                        onClick = { navigator.push(SubscribeScreen()) },
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
                     SettingsRow(
                         icon = Icons.Default.Notifications,
                         label = "Reminders",
@@ -144,6 +181,20 @@ class SettingsScreen : Screen {
                         icon = Icons.Default.SwapHoriz,
                         label = "Receive Vehicle Transfer",
                         onClick = { navigator.push(ReceiveTransferScreen()) },
+                    )
+                    Divider(modifier = Modifier.padding(horizontal = 16.dp))
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    SectionHeader("Legal")
+                    SettingsRow(
+                        icon = Icons.Default.Email,
+                        label = "Privacy Policy",
+                        onClick = { uriHandler.openUri("https://mycarcompanion.app/privacy") },
+                    )
+                    SettingsRow(
+                        icon = Icons.Default.Email,
+                        label = "Terms of Service",
+                        onClick = { uriHandler.openUri("https://mycarcompanion.app/terms") },
                     )
                     Divider(modifier = Modifier.padding(horizontal = 16.dp))
 
@@ -169,6 +220,12 @@ class SettingsScreen : Screen {
                         icon = Icons.Default.ExitToApp,
                         label = "Sign Out",
                         onClick = { showSignOutConfirm = true },
+                        tint = MaterialTheme.colorScheme.error,
+                    )
+                    SettingsRow(
+                        icon = Icons.Default.Delete,
+                        label = "Delete Account",
+                        onClick = { showDeleteConfirm = true },
                         tint = MaterialTheme.colorScheme.error,
                     )
                 }

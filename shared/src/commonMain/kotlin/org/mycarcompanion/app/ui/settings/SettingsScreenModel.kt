@@ -15,6 +15,8 @@ data class SettingsUiState(
     val signingOut: Boolean = false,
     val signedOut: Boolean = false,
     val isPremium: Boolean = false,
+    val deletingAccount: Boolean = false,
+    val deleteError: String? = null,
 )
 
 class SettingsScreenModel(
@@ -41,5 +43,26 @@ class SettingsScreenModel(
             authRepository.signOut()
             _state.value = _state.value.copy(signingOut = false, signedOut = true)
         }
+    }
+
+    fun deleteAccount() {
+        screenModelScope.launch {
+            _state.value = _state.value.copy(deletingAccount = true, deleteError = null)
+            runCatching { deviceTokenRepository.deleteToken("android") }
+            authRepository.deleteAccount()
+                .onSuccess {
+                    _state.value = _state.value.copy(deletingAccount = false, signedOut = true)
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        deletingAccount = false,
+                        deleteError = e.message ?: "Failed to delete account",
+                    )
+                }
+        }
+    }
+
+    fun clearDeleteError() {
+        _state.value = _state.value.copy(deleteError = null)
     }
 }

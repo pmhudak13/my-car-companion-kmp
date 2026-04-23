@@ -50,7 +50,7 @@ private val faqs = listOf(
     ),
     FaqItem(
         "How do I message a mechanic?",
-        "Open the mechanic's profile from the directory and tap 'Message'. You can also view all your conversations from Settings → Messages.",
+        "Open the mechanic's profile from the directory and tap 'Message'. You can also view all your conversations by tapping 'Messages' on the home screen.",
     ),
     FaqItem(
         "How do I log a maintenance service?",

@@ -39,3 +39,9 @@ data class AdminUserEntry(
     val subscriptionTier: String,
     val role: String,
 )
+
+@Serializable
+data class UserRoleInsert(
+    @SerialName("user_id") val userId: String,
+    val role: String,
+)

@@ -26,9 +26,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
@@ -40,6 +42,7 @@ class SignUpScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
+        val uriHandler = LocalUriHandler.current
         val model: AuthScreenModel = koinScreenModel()
         val uiState by model.uiState.collectAsState()
 
@@ -190,6 +193,31 @@ class SignUpScreen : Screen {
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "By signing up you agree to our",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                TextButton(onClick = { uriHandler.openUri("https://mycarcompanion.app/terms") }) {
+                    Text("Terms of Service", style = MaterialTheme.typography.bodySmall)
+                }
+                Text(
+                    "and",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                )
+                TextButton(onClick = { uriHandler.openUri("https://mycarcompanion.app/privacy") }) {
+                    Text("Privacy Policy", style = MaterialTheme.typography.bodySmall)
+                }
+            }
 
             TextButton(onClick = { navigator.pop() }) {
                 Text("Already have an account? Sign In")

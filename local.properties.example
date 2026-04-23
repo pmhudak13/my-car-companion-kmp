@@ -2,5 +2,16 @@
 # local.properties is gitignored — never commit it
 
 sdk.dir=/path/to/android/sdk
-SUPABASE_URL=https://eoqycogokelfmgwqydkj.supabase.co
+
+# Supabase
+SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# Sentry (optional — leave empty to disable Sentry in local/dev builds)
+SENTRY_DSN=
+
+# Android release signing (required for release builds)
+RELEASE_STORE_FILE=/path/to/your/keystore.jks
+RELEASE_STORE_PASSWORD=your_keystore_password
+RELEASE_KEY_ALIAS=your_key_alias
+RELEASE_KEY_PASSWORD=your_key_password

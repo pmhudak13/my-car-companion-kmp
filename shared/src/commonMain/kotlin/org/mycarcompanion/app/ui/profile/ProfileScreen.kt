@@ -18,14 +18,18 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -42,6 +46,7 @@ class ProfileScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val model: ProfileScreenModel = koinScreenModel()
         val state by model.state.collectAsState()
+        val snackbarState = remember { SnackbarHostState() }
 
         LaunchedEffect(state.saved) {
             if (state.saved) {
@@ -50,7 +55,15 @@ class ProfileScreen : Screen {
             }
         }
 
+        LaunchedEffect(state.resetEmailSent) {
+            if (state.resetEmailSent) {
+                snackbarState.showSnackbar("Password reset email sent to ${state.email}")
+                model.clearResetSent()
+            }
+        }
+
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarState) },
             topBar = {
                 TopAppBar(
                     title = { Text("Profile") },
@@ -132,6 +145,16 @@ class ProfileScreen : Screen {
                             )
                         } else {
                             Text("Save")
+                        }
+                    }
+
+                    if (state.email.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = { model.sendPasswordReset() },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Send Password Reset Email")
                         }
                     }
                 }

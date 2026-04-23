@@ -59,14 +59,18 @@ class SubscribeScreen : Screen {
         val uriHandler = LocalUriHandler.current
         val snackbarState = remember { SnackbarHostState() }
 
-        // When a checkout URL arrives, open it in the browser
         LaunchedEffect(state.checkoutUrl) {
             val url = state.checkoutUrl ?: return@LaunchedEffect
             uriHandler.openUri(url)
             model.clearCheckoutUrl()
         }
 
-        // Show errors as snackbar
+        LaunchedEffect(state.portalUrl) {
+            val url = state.portalUrl ?: return@LaunchedEffect
+            uriHandler.openUri(url)
+            model.clearPortalUrl()
+        }
+
         LaunchedEffect(state.error) {
             val err = state.error ?: return@LaunchedEffect
             snackbarState.showSnackbar(err)
@@ -90,6 +94,48 @@ class SubscribeScreen : Screen {
                     modifier = Modifier.fillMaxSize().padding(paddingValues),
                     contentAlignment = Alignment.Center,
                 ) { CircularProgressIndicator() }
+            } else if (state.isPremium) {
+                // Already subscribed — show management options only
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(horizontal = 20.dp)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Text(
+                        text = "You're already subscribed!",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val tierLabel = when (state.subscriptionTier) {
+                        "mechanic_pro" -> "Mechanic Pro"
+                        "premium" -> "Premium"
+                        else -> state.subscriptionTier
+                    }
+                    Text(
+                        text = "Current plan: $tierLabel",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Button(
+                        onClick = { model.openPortal() },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Manage Subscription")
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Cancel or change your plan in the Stripe billing portal.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
             } else {
                 Column(
                     modifier = Modifier
