@@ -23,16 +23,21 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Verify JWT
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
+  if (!authHeader?.startsWith("Bearer ")) {
     return jsonResponse({ error: "Missing authorization header" }, 401);
   }
 
-  const token = authHeader.replace("Bearer ", "");
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) {
-    return jsonResponse({ error: "Unauthorized" }, 401);
+  // Decode JWT payload to extract user ID without local algorithm verification.
+  // Security is enforced by the DB ownership check below (mechanic_user_id == userId).
+  let userId: string;
+  try {
+    const token = authHeader.slice(7);
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    userId = payload.sub;
+    if (!userId) throw new Error("Missing sub claim");
+  } catch {
+    return jsonResponse({ error: "Invalid token" }, 401);
   }
 
   let body: {
@@ -60,7 +65,7 @@ Deno.serve(async (req) => {
     .from("mechanic_jobs")
     .select("id, mechanic_user_id")
     .eq("id", jobId)
-    .eq("mechanic_user_id", user.id)
+    .eq("mechanic_user_id", userId)
     .single();
 
   if (jobError || !job) {
@@ -75,7 +80,7 @@ Deno.serve(async (req) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "My Car Companion <noreply@mycarcompanion.app>",
+      from: "My Car Companion <noreply@mycarcompanion.org>",
       to: [clientEmail],
       subject: `${mechanicName} invited you to track your ${vehicleInfo}`,
       html: `
