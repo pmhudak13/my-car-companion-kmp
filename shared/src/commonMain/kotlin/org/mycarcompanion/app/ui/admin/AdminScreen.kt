@@ -61,6 +61,8 @@ class AdminScreen : Screen {
         var giftDialogUser by remember { mutableStateOf<AdminUserEntry?>(null) }
         var giftReason by remember { mutableStateOf("") }
         var selectedTab by remember { mutableStateOf(0) }
+        var revokeUserConfirm by remember { mutableStateOf<AdminUserEntry?>(null) }
+        var revokeMechanicConfirm by remember { mutableStateOf<MechanicProfile?>(null) }
 
         LaunchedEffect(state.successMessage) {
             if (state.successMessage != null) {
@@ -152,7 +154,7 @@ class AdminScreen : Screen {
                                             onGiftPremium = { giftDialogUser = user },
                                             onRevokePremium = { model.revokePremium(user.userId) },
                                             onConvertToMechanic = { model.convertToMechanic(user.userId) },
-                                            onRevokeMechanic = { model.revokeMechanicRole(user.userId) },
+                                            onRevokeMechanic = { revokeUserConfirm = user },
                                         )
                                     }
                                 }
@@ -200,6 +202,7 @@ class AdminScreen : Screen {
                                             processingId = state.processingMechanicId,
                                             onApprove = { model.approveMechanic(mechanic.userId) },
                                             onReject = { model.rejectMechanic(mechanic.userId) },
+                                            onRevoke = { revokeMechanicConfirm = mechanic },
                                         )
                                     }
                                 }
@@ -208,6 +211,52 @@ class AdminScreen : Screen {
                     }
                 }
             }
+        }
+
+        // Revoke mechanic role confirmation (from Users tab)
+        revokeUserConfirm?.let { user ->
+            AlertDialog(
+                onDismissRequest = { revokeUserConfirm = null },
+                title = { Text("Revoke Mechanic Role") },
+                text = { Text("Remove mechanic access for ${user.email}? They will lose their mechanic dashboard and profile.") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            model.revokeMechanicRole(user.userId)
+                            revokeUserConfirm = null
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) { Text("Revoke") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { revokeUserConfirm = null }) { Text("Cancel") }
+                },
+            )
+        }
+
+        // Revoke mechanic access confirmation (from Mechanics tab)
+        revokeMechanicConfirm?.let { mechanic ->
+            AlertDialog(
+                onDismissRequest = { revokeMechanicConfirm = null },
+                title = { Text("Revoke Mechanic Access") },
+                text = { Text("Remove mechanic access for ${mechanic.shopName ?: "this mechanic"}? They will lose their mechanic dashboard.") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            model.revokeMechanicRole(mechanic.userId)
+                            revokeMechanicConfirm = null
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) { Text("Revoke") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { revokeMechanicConfirm = null }) { Text("Cancel") }
+                },
+            )
         }
 
         // Gift premium dialog
@@ -363,6 +412,7 @@ private fun MechanicAdminCard(
     processingId: String?,
     onApprove: () -> Unit,
     onReject: () -> Unit,
+    onRevoke: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -445,12 +495,30 @@ private fun MechanicAdminCard(
                     }
                 }
                 "verified" -> {
-                    Text(
-                        text = "✓ Verified",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "✓ Verified",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        if (processingId == mechanic.userId) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                        } else {
+                            OutlinedButton(
+                                onClick = onRevoke,
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error,
+                                ),
+                            ) {
+                                Text("Revoke Access", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
                 }
                 "rejected" -> {
                     Text(

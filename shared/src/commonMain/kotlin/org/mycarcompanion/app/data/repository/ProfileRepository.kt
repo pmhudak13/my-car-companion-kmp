@@ -10,6 +10,7 @@ import org.mycarcompanion.app.data.models.MechanicProfile
 import org.mycarcompanion.app.data.models.MechanicProfileInsert
 import org.mycarcompanion.app.data.models.UserProfile
 import org.mycarcompanion.app.data.models.UserRole
+import org.mycarcompanion.app.data.models.UserRoleInsert
 
 class ProfileRepository(private val client: SupabaseClient) {
 
@@ -116,7 +117,7 @@ class ProfileRepository(private val client: SupabaseClient) {
             filter { eq("user_id", userId) }
         }
         client.postgrest["user_roles"].insert(
-            mapOf("user_id" to userId, "role" to "mechanic")
+            UserRoleInsert(userId = userId, role = "mechanic")
         )
     }
 
