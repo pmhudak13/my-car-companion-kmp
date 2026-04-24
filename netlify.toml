@@ -1,12 +1,6 @@
 [build]
-  # Try to build the wasmJs app; fall through gracefully if Gradle unavailable.
-  # site/public/app/index.html is committed as a fallback so /app always resolves.
-  command = "mkdir -p site/public/app && (./gradlew :webApp:wasmJsBrowserProductionWebpack && cp -r webApp/build/dist/wasmJs/productionExecutable/. site/public/app/) || echo 'wasmJs Gradle build skipped — using committed fallback'"
+  # Static site — no build step needed. All files are pre-built and committed.
   publish = "site/public"
-
-[build.environment]
-  GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
-  JAVA_VERSION = "21"
 
 # Bare /app path
 [[redirects]]
@@ -14,11 +8,8 @@
   to = "/app/index.html"
   status = 200
 
-# SPA fallback so deep links inside the Compose wasmJs app work
+# Auth callback deep-links (OAuth redirects back to /app/)
 [[redirects]]
   from = "/app/*"
   to = "/app/index.html"
   status = 200
-
-[context.production.environment]
-  SUPABASE_ANON_KEY = ""  # Set this in Netlify dashboard → Site settings → Environment variables
