@@ -15,11 +15,9 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
-import org.mycarcompanion.androidapp.BuildConfig
 import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.data.repository.AuthRepository
 import org.mycarcompanion.app.data.repository.DeviceTokenRepository
-import org.mycarcompanion.app.data.supabase.SupabaseConfig
 import org.mycarcompanion.app.platform.handleAuthDeepLinkIntent
 import org.mycarcompanion.app.platform.initGeolocation
 
@@ -35,10 +33,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        SupabaseConfig.init(
-            url = BuildConfig.SUPABASE_URL,
-            anonKey = BuildConfig.SUPABASE_ANON_KEY,
-        )
         initGeolocation(applicationContext)
         requestNotificationPermissionIfNeeded()
         registerFcmTokenWhenAuthenticated()
