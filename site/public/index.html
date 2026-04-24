@@ -220,6 +220,12 @@
       .hero h1 { font-size: 2rem; }
     }
   </style>
+  <script>
+    // Forward OAuth tokens to /app/ if Supabase redirected here instead of /app/
+    if (window.location.hash.includes('access_token=') || window.location.hash.includes('error=')) {
+      window.location.replace('/app/' + window.location.hash);
+    }
+  </script>
 </head>
 <body>
 
