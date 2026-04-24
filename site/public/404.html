@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Not Found — My Car Companion</title>
+  <link rel="stylesheet" href="/assets/style.css">
+  <style>
+    .not-found {
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 48px 24px;
+    }
+    .not-found-code {
+      font-size: 6rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 16px;
+      opacity: 0.6;
+    }
+    .not-found h1 {
+      font-size: 1.75rem;
+      margin-bottom: 12px;
+    }
+    .not-found p {
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      max-width: 400px;
+    }
+    .not-found-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="container nav-inner">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">🚗</div>
+      <span class="nav-logo-text">My Car Companion</span>
+    </a>
+  </div>
+</nav>
+
+<div class="not-found">
+  <div class="not-found-code">404</div>
+  <h1>Page not found</h1>
+  <p>That page doesn't exist. Head back home or open the app.</p>
+  <div class="not-found-actions">
+    <a href="/" class="btn btn-primary">Back to Home</a>
+    <a href="/app" class="btn btn-secondary">Open App</a>
+  </div>
+</div>
+
+</body>
+</html>
