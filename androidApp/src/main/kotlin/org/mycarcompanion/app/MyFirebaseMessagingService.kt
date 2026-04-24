@@ -5,20 +5,10 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
-import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
-
-    override fun onCreate() {
-        // Guard against OEM devices that skip FirebaseInitProvider before the service starts.
-        if (FirebaseApp.getApps(applicationContext).isEmpty()) {
-            FirebaseApp.initializeApp(applicationContext)
-        }
-        super.onCreate()
-    }
-
 
     override fun onNewToken(token: String) {
         // Persist token so MainActivity can register it with Supabase after auth init

@@ -16,11 +16,9 @@ class MyApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        // Some OEM devices (e.g. OnePlus OxygenOS) don't reliably run FirebaseInitProvider
-        // on cold start, causing FirebaseMessaging.getInstance() to throw later.
-        if (FirebaseApp.getApps(this).isEmpty()) {
-            FirebaseApp.initializeApp(this)
-        }
+        // FirebaseInitProvider is disabled in the manifest (OEM devices like OnePlus
+        // OxygenOS can leave it in a broken partial state). We are the sole init point.
+        FirebaseApp.initializeApp(this)
 
         if (BuildConfig.SENTRY_DSN.isNotEmpty()) {
             SentryAndroid.init(this) { options ->

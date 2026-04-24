@@ -20,6 +20,15 @@
             android:authorities="${applicationId}.SentryInitProvider"
             tools:node="remove" />
 
+        <!-- Disable Firebase auto-init provider. On OEM devices (OnePlus OxygenOS)
+             FirebaseInitProvider can run in a broken/partial state that leaves
+             getApps() non-empty but getInstance() still throwing. We init manually
+             in MyApp.onCreate() as the single, reliable init point. -->
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            android:authorities="${applicationId}.firebaseinitprovider"
+            tools:node="remove" />
+
         <service
             android:name="org.mycarcompanion.app.MyFirebaseMessagingService"
             android:exported="false">
