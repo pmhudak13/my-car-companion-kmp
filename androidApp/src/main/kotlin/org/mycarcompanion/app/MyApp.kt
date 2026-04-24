@@ -5,16 +5,15 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import com.google.firebase.FirebaseApp
-import io.github.jan.supabase.SupabaseClient
 import io.sentry.android.core.SentryAndroid
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
-import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.mycarcompanion.androidapp.BuildConfig
 import org.mycarcompanion.app.data.supabase.SupabaseConfig
+import org.mycarcompanion.app.data.supabase.prewarmSupabaseClient
 import org.mycarcompanion.app.di.appModule
 
 class MyApp : Application() {
@@ -50,7 +49,7 @@ class MyApp : Application() {
         // initializers (ServiceLoader, reflection) are slow and would ANR the main thread
         // if triggered lazily during the first Compose frame (ANDROID-8).
         CoroutineScope(Dispatchers.IO).launch {
-            GlobalContext.get().get<SupabaseClient>()
+            prewarmSupabaseClient()
         }
 
         createNotificationChannel()
