@@ -24,3 +24,7 @@ val supabaseClient by lazy {
     }
 }
 
+fun prewarmSupabaseClient() {
+    supabaseClient
+}
+
