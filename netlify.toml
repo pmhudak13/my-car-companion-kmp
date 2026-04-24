@@ -20,12 +20,5 @@
   to = "/app/index.html"
   status = 200
 
-# Canonical www redirect
-[[redirects]]
-  from = "https://mycarcompanion.org/*"
-  to = "https://www.mycarcompanion.org/:splat"
-  status = 301
-  force = true
-
 [context.production.environment]
   SUPABASE_ANON_KEY = ""  # Set this in Netlify dashboard → Site settings → Environment variables
