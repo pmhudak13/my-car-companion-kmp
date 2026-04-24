@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Car Companion for Mechanics — Manage Jobs, Clients &amp; Reputation</title>
+  <meta name="description" content="The mechanic dashboard built to grow your business. Manage jobs, message clients, collect reviews, and get discovered by local car owners.">
+  <link rel="canonical" href="https://www.mycarcompanion.org/mechanics">
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    .mech-hero {
+      padding: 96px 0 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .mech-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 30% 50%, rgba(107,188,222,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .mech-hero-inner { position: relative; max-width: 720px; }
+    .mech-hero h1 { font-size: clamp(2.2rem, 4.5vw, 3.2rem); font-weight: 700; line-height: 1.12; letter-spacing: -0.02em; margin-bottom: 20px; }
+    .mech-hero p { font-size: 1.15rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 36px; max-width: 520px; }
+    .mech-hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
+
+    .steps { counter-reset: step; }
+    .step {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 20px;
+      padding: 28px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      width: 48px; height: 48px;
+      background: rgba(107,188,222,0.12);
+      border: 1px solid rgba(107,188,222,0.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 700; color: var(--accent);
+      flex-shrink: 0;
+    }
+    .step h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 6px; }
+    .step p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 40px;
+    }
+    .compare-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 28px;
+    }
+    .compare-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .compare-card ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .compare-card li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.9rem; color: var(--text-muted); }
+    .compare-card.pro li::before { content: '✓'; color: var(--success); font-weight: 700; flex-shrink: 0; }
+    .compare-card.con li::before { content: '✗'; color: #e05555; font-weight: 700; flex-shrink: 0; }
+
+    .cta-banner {
+      background: linear-gradient(135deg, var(--surface) 0%, #1e3060 100%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 64px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(107,188,222,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cta-banner h2 { font-size: clamp(1.6rem, 3vw, 2rem); margin-bottom: 14px; position: relative; }
+    .cta-banner p { color: var(--text-muted); margin-bottom: 32px; font-size: 1rem; position: relative; }
+    .cta-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; position: relative; }
+
+    @media (max-width: 640px) {
+      .compare-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+  <div class="container nav-inner">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">🚗</div>
+      <span class="nav-logo-text">My Car Companion</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/#features">Features</a></li>
+      <li><a href="/mechanics.html" style="color:var(--text);">For Mechanics</a></li>
+      <li><a href="/#pricing">Pricing</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="/app" class="btn btn-secondary btn-sm">Sign In</a>
+      <a href="/app" class="btn btn-primary btn-sm">Get Started Free</a>
+    </div>
+    <button class="nav-hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="mech-hero">
+  <div class="container">
+    <div class="mech-hero-inner">
+      <span class="section-label">For Mechanics &amp; Shops</span>
+      <h1>Run your shop smarter.<br><span style="color:var(--accent);">Grow your reputation.</span></h1>
+      <p>My Car Companion gives independent mechanics and shops a professional dashboard to manage jobs, communicate with clients, and get discovered by car owners in your area.</p>
+      <div class="mech-hero-ctas">
+        <a href="/app" class="btn btn-primary">Start Free — Mechanic Plan</a>
+        <a href="/#pricing" class="btn btn-secondary">See Pricing</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Proof bar -->
+<div class="proof-bar">
+  <div class="container proof-inner">
+    <div class="proof-pill"><div class="proof-pill-dot"></div>Mechanic directory listing</div>
+    <div class="proof-pill"><div class="proof-pill-dot"></div>Job tracking dashboard</div>
+    <div class="proof-pill"><div class="proof-pill-dot"></div>Client messaging built in</div>
+    <div class="proof-pill"><div class="proof-pill-dot"></div>Verified reviews</div>
+  </div>
+</div>
+
+<!-- Features -->
+<section class="py-80" id="features">
+  <div class="container">
+    <div class="mb-48">
+      <span class="section-label">What you get</span>
+      <h2 class="section-title">Everything in one dashboard</h2>
+      <p class="section-subtitle">No more juggling texts, paper invoices, and memory. Keep everything organized in one place.</p>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📂</div>
+        <h3>Job Management</h3>
+        <p>Create jobs, attach client vehicles, set status (Pending → In Progress → Complete), and track every job through your pipeline.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🚗</div>
+        <h3>Vehicle View</h3>
+        <p>See the full maintenance history of any customer vehicle before you even open the hood. Fewer surprises, better service.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>Client Messaging</h3>
+        <p>Message car owners directly in the app. Send updates, ask questions, and share estimates — no phone tag required.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⭐</div>
+        <h3>Reviews &amp; Ratings</h3>
+        <p>Clients can leave reviews directly on your profile. Build a verified reputation that attracts new customers automatically.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📍</div>
+        <h3>Directory Listing</h3>
+        <p>Get listed in the mechanic directory. Car owners in your area searching for a mechanic can find you, see your reviews, and message you directly.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔗</div>
+        <h3>Shareable Profile</h3>
+        <p>Every mechanic gets a shareable profile link. Put it on your website, your business cards, or anywhere customers might look you up.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="py-80" style="background:var(--surface-2);">
+  <div class="container">
+    <div class="mb-48">
+      <span class="section-label">How it works</span>
+      <h2 class="section-title">Up and running in minutes</h2>
+    </div>
+    <div class="steps" style="max-width:640px;">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h3>Create your free account</h3>
+          <p>Sign up with your email. No credit card needed to get started on the Mechanic Pro free trial.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h3>Set up your mechanic profile</h3>
+          <p>Add your shop name, specialties, location, and contact info. Your profile goes live in the mechanic directory immediately.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h3>Start managing jobs</h3>
+          <p>Create your first job, attach a customer vehicle, and start messaging your client — all from the dashboard.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div>
+          <h3>Collect reviews &amp; grow</h3>
+          <p>As clients leave reviews, your profile ranking improves. More visibility means more customers finding you organically.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Before / After -->
+<section class="py-80">
+  <div class="container">
+    <div class="section-center mb-32">
+      <span class="section-label">The difference</span>
+      <h2 class="section-title">Before vs. after My Car Companion</h2>
+    </div>
+    <div class="compare-grid">
+      <div class="compare-card con">
+        <h3>❌ Without My Car Companion</h3>
+        <ul>
+          <li>Jobs tracked on paper or memory</li>
+          <li>Customer follow-ups via text or missed calls</li>
+          <li>No visibility into a car's service history</li>
+          <li>Reviews scattered across Google/Yelp</li>
+          <li>New clients find you by chance</li>
+        </ul>
+      </div>
+      <div class="compare-card pro" style="border-color:var(--accent);">
+        <h3>✅ With My Car Companion</h3>
+        <ul>
+          <li>Every job tracked with status and history</li>
+          <li>Clients message you directly in the app</li>
+          <li>Full vehicle maintenance history on every job</li>
+          <li>Verified reviews build your reputation automatically</li>
+          <li>Car owners in your area discover you in the directory</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="py-80">
+  <div class="container">
+    <div class="cta-banner">
+      <h2>Ready to grow your mechanic business?</h2>
+      <p>Create your free account and start your Mechanic Pro trial. No credit card required.</p>
+      <div class="cta-btns">
+        <a href="/app" class="btn btn-primary">Start Free — Mechanic Plan</a>
+        <a href="/#pricing" class="btn btn-secondary">View Pricing</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="/" class="nav-logo" style="display:inline-flex;">
+          <div class="nav-logo-icon">🚗</div>
+          <span class="nav-logo-text">My Car Companion</span>
+        </a>
+        <p>Track maintenance, find trusted mechanics, and manage your vehicle history — all in one place.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="/#features">Features</a></li>
+          <li><a href="/#pricing">Pricing</a></li>
+          <li><a href="/mechanics.html">For Mechanics</a></li>
+          <li><a href="/app">Web App</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="/privacy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 My Car Companion. All rights reserved.</p>
+      <p><a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

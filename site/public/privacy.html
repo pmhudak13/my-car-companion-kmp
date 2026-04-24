@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — My Car Companion</title>
+  <meta name="description" content="Privacy Policy for My Car Companion. Learn how we collect, use, and protect your personal information.">
+  <link rel="canonical" href="https://www.mycarcompanion.org/privacy">
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    .legal-hero { padding: 64px 0 40px; }
+    .legal-hero h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 12px; }
+    .legal-hero p { color: var(--text-muted); font-size: 0.9rem; }
+    .legal-body { padding: 0 0 80px; }
+    .legal-grid { display: grid; grid-template-columns: 220px 1fr; gap: 48px; align-items: start; }
+    .legal-toc {
+      position: sticky;
+      top: 88px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 20px;
+    }
+    .legal-toc h4 { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 12px; }
+    .legal-toc ol { list-style: none; counter-reset: toc; display: flex; flex-direction: column; gap: 8px; }
+    .legal-toc li { counter-increment: toc; }
+    .legal-toc a { font-size: 0.82rem; color: var(--text-muted); display: flex; gap: 6px; align-items: baseline; }
+    .legal-toc a:hover { color: var(--text); }
+    .legal-toc a::before { content: counter(toc) "."; color: var(--accent); font-size: 0.75rem; flex-shrink: 0; }
+    .legal-content { padding-top: 4px; }
+    .legal-content h2 {
+      font-size: 1.2rem; font-weight: 600; margin: 40px 0 12px;
+      padding-bottom: 10px; border-bottom: 1px solid var(--border);
+      scroll-margin-top: 88px;
+    }
+    .legal-content h2:first-child { margin-top: 0; }
+    .legal-content h3 { font-size: 1rem; font-weight: 600; margin: 24px 0 8px; color: var(--accent); }
+    .legal-content p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.75; margin-bottom: 14px; }
+    .legal-content ul, .legal-content ol { padding-left: 20px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
+    .legal-content li { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
+    .legal-content strong { color: var(--text); font-weight: 600; }
+    .legal-content a { color: var(--accent); }
+    .info-box {
+      background: rgba(107,188,222,0.06);
+      border: 1px solid rgba(107,188,222,0.15);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 20px 0;
+    }
+    .info-box p { margin: 0; font-size: 0.88rem; }
+    @media (max-width: 768px) {
+      .legal-grid { grid-template-columns: 1fr; }
+      .legal-toc { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="container nav-inner">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">🚗</div>
+      <span class="nav-logo-text">My Car Companion</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/#features">Features</a></li>
+      <li><a href="/mechanics.html">For Mechanics</a></li>
+      <li><a href="/#pricing">Pricing</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="/app" class="btn btn-secondary btn-sm">Sign In</a>
+      <a href="/app" class="btn btn-primary btn-sm">Get Started Free</a>
+    </div>
+    <button class="nav-hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<section class="legal-hero">
+  <div class="container">
+    <span class="section-label">Legal</span>
+    <h1>Privacy Policy</h1>
+    <p>Last updated: April 23, 2025 · Effective: April 23, 2025</p>
+  </div>
+</section>
+
+<div class="legal-body">
+  <div class="container">
+    <div class="legal-grid">
+
+      <!-- TOC -->
+      <aside class="legal-toc">
+        <h4>Contents</h4>
+        <ol>
+          <li><a href="#information-we-collect">Information We Collect</a></li>
+          <li><a href="#how-we-use">How We Use Your Information</a></li>
+          <li><a href="#information-sharing">Information Sharing</a></li>
+          <li><a href="#data-storage">Data Storage &amp; Security</a></li>
+          <li><a href="#your-rights">Your Rights &amp; Choices</a></li>
+          <li><a href="#children">Children's Privacy</a></li>
+          <li><a href="#third-party">Third-Party Services</a></li>
+          <li><a href="#push-notifications">Push Notifications</a></li>
+          <li><a href="#payments">Payments &amp; Billing</a></li>
+          <li><a href="#changes">Changes to This Policy</a></li>
+          <li><a href="#contact">Contact Us</a></li>
+        </ol>
+      </aside>
+
+      <!-- Content -->
+      <div class="legal-content">
+
+        <div class="info-box">
+          <p><strong>Plain English summary:</strong> We collect what you give us (your account info, vehicles, maintenance records) and data we need to make the app work (like device tokens for push notifications). We never sell your data. You can delete your account and all data at any time.</p>
+        </div>
+
+        <p>My Car Companion ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and website (collectively, the "Service").</p>
+
+        <p>By using My Car Companion, you agree to the collection and use of information in accordance with this policy.</p>
+
+        <h2 id="information-we-collect">1. Information We Collect</h2>
+
+        <h3>Information You Provide Directly</h3>
+        <ul>
+          <li><strong>Account information:</strong> Your name, email address, and password when you create an account.</li>
+          <li><strong>Profile information:</strong> Optional profile details such as a display name and profile photo.</li>
+          <li><strong>Vehicle information:</strong> Make, model, year, VIN, mileage, and other details about vehicles you add to your account.</li>
+          <li><strong>Maintenance records:</strong> Service history, maintenance logs, mileage entries, and related notes you create.</li>
+          <li><strong>Mechanic profile (mechanics only):</strong> Shop name, location, specialties, contact information, and professional details.</li>
+          <li><strong>Messages:</strong> Content of messages you send to or receive from other users through the in-app messaging feature.</li>
+          <li><strong>Reviews:</strong> Ratings and reviews you submit for mechanics.</li>
+        </ul>
+
+        <h3>Information Collected Automatically</h3>
+        <ul>
+          <li><strong>Device tokens:</strong> A unique device identifier used to send you push notifications. Collected when you grant notification permission.</li>
+          <li><strong>Usage data:</strong> Information about how you interact with the app, such as features used and pages visited (aggregated and anonymized).</li>
+          <li><strong>Log data:</strong> Standard server log information including your IP address, browser type, and access times, collected by our hosting infrastructure.</li>
+        </ul>
+
+        <h3>Information from Third Parties</h3>
+        <ul>
+          <li><strong>Google Sign-In:</strong> If you choose to sign in with Google, we receive your name and email address from Google.</li>
+          <li><strong>Payment processors:</strong> If you subscribe, our payment processor (Stripe) handles your payment information. We receive only a confirmation of your subscription status — we never see or store your full credit card number.</li>
+        </ul>
+
+        <h2 id="how-we-use">2. How We Use Your Information</h2>
+
+        <p>We use the information we collect to:</p>
+        <ul>
+          <li>Create and manage your account</li>
+          <li>Provide and improve the Service, including vehicle tracking, maintenance reminders, and mechanic discovery features</li>
+          <li>Send push notifications for maintenance reminders and in-app activity (only if you grant permission)</li>
+          <li>Facilitate messaging between car owners and mechanics</li>
+          <li>Process subscription payments</li>
+          <li>Respond to your questions and support requests</li>
+          <li>Send transactional emails (account confirmations, password resets, subscription receipts)</li>
+          <li>Detect and prevent fraud or abuse</li>
+          <li>Comply with legal obligations</li>
+        </ul>
+
+        <p>We do <strong>not</strong> use your data for advertising, and we do <strong>not</strong> sell your personal information to any third party.</p>
+
+        <h2 id="information-sharing">3. Information Sharing</h2>
+
+        <p>We share your information only in the following circumstances:</p>
+
+        <h3>With Other Users (by design)</h3>
+        <ul>
+          <li>When you message a mechanic, that mechanic sees your message and the vehicle information relevant to the conversation.</li>
+          <li>When you submit a review for a mechanic, your display name and review are visible on that mechanic's public profile.</li>
+          <li>Mechanic profiles (including shop name, specialties, and reviews) are visible to all users of the Service.</li>
+        </ul>
+
+        <h3>With Service Providers</h3>
+        <p>We share data with trusted third-party service providers who assist us in operating the Service:</p>
+        <ul>
+          <li><strong>Supabase</strong> — database hosting and authentication (data stored in the United States)</li>
+          <li><strong>Stripe</strong> — payment processing (your full payment details are handled directly by Stripe)</li>
+          <li><strong>Firebase (Google)</strong> — push notification delivery via Firebase Cloud Messaging</li>
+          <li><strong>Resend</strong> — transactional email delivery</li>
+        </ul>
+        <p>All service providers are contractually obligated to use your data only to provide their services to us and not for any other purpose.</p>
+
+        <h3>Legal Requirements</h3>
+        <p>We may disclose your information if required to do so by law, court order, or government authority, or if we believe in good faith that such action is necessary to comply with legal obligations or protect the rights, property, or safety of My Car Companion, our users, or others.</p>
+
+        <h3>Business Transfers</h3>
+        <p>If My Car Companion is involved in a merger, acquisition, or sale of assets, your information may be transferred as part of that transaction. We will notify you before your information is transferred and becomes subject to a different privacy policy.</p>
+
+        <h2 id="data-storage">4. Data Storage &amp; Security</h2>
+
+        <p>Your data is stored on Supabase-managed infrastructure hosted in the United States. We implement industry-standard security measures including:</p>
+        <ul>
+          <li>All data transmitted between your device and our servers is encrypted using TLS (HTTPS)</li>
+          <li>Passwords are hashed using bcrypt — we never store plain-text passwords</li>
+          <li>Database access is restricted using row-level security policies</li>
+          <li>API endpoints are protected with JWT authentication</li>
+        </ul>
+
+        <p>No method of transmission over the internet or electronic storage is 100% secure. While we strive to use commercially acceptable means to protect your information, we cannot guarantee absolute security.</p>
+
+        <h2 id="your-rights">5. Your Rights &amp; Choices</h2>
+
+        <h3>Access &amp; Correction</h3>
+        <p>You can view and update your account information at any time from the Profile section of the app.</p>
+
+        <h3>Data Deletion</h3>
+        <p>You can delete your account from <strong>Settings → Delete Account</strong> in the app. This permanently and irreversibly deletes your account, all vehicles, maintenance records, messages, and associated data. This action cannot be undone.</p>
+
+        <h3>Push Notifications</h3>
+        <p>You can disable push notifications at any time from your device's notification settings or from <strong>Settings → Notifications</strong> in the app.</p>
+
+        <h3>Marketing Emails</h3>
+        <p>We do not currently send marketing emails. If we do in the future, every email will include an unsubscribe link.</p>
+
+        <h3>Data Portability</h3>
+        <p>To request a copy of your data, contact us at the email address below. We will respond within 30 days.</p>
+
+        <h2 id="children">6. Children's Privacy</h2>
+
+        <p>My Car Companion is not directed at children under the age of 13 (or 16 in the European Union). We do not knowingly collect personal information from children. If you are a parent or guardian and believe your child has provided us with personal information, please contact us so we can delete it.</p>
+
+        <h2 id="third-party">7. Third-Party Services</h2>
+
+        <p>The Service may contain links to third-party websites or services (such as the Google Play Store or mechanic review platforms). This Privacy Policy does not apply to those services. We encourage you to review the privacy policies of any third-party services you use.</p>
+
+        <h2 id="push-notifications">8. Push Notifications</h2>
+
+        <p>If you grant permission, we use Firebase Cloud Messaging (FCM) to send push notifications for:</p>
+        <ul>
+          <li>Upcoming maintenance reminders</li>
+          <li>New messages from mechanics or car owners</li>
+          <li>Job status updates (mechanics)</li>
+          <li>Account activity</li>
+        </ul>
+        <p>Your device token is stored securely and deleted from our servers when you sign out or delete your account. You can revoke notification permission at any time in your device settings.</p>
+
+        <h2 id="payments">9. Payments &amp; Billing</h2>
+
+        <p>Subscription payments are processed by <strong>Stripe</strong>. When you subscribe, you are entering into a payment relationship directly with Stripe. My Car Companion does not store your credit card number, CVV, or full billing information.</p>
+
+        <p>We receive from Stripe: your subscription status, plan type, and renewal dates. This information is used solely to manage your subscription access within the app.</p>
+
+        <p>You can manage or cancel your subscription at any time from <strong>Settings → Manage Subscription</strong> in the app, which opens the Stripe customer portal.</p>
+
+        <h2 id="changes">10. Changes to This Policy</h2>
+
+        <p>We may update this Privacy Policy from time to time. When we make material changes, we will notify you by updating the "Last updated" date at the top of this page and, where appropriate, by sending you a notification via the app or email.</p>
+
+        <p>We encourage you to review this policy periodically. Your continued use of the Service after any changes constitutes your acceptance of the updated policy.</p>
+
+        <h2 id="contact">11. Contact Us</h2>
+
+        <p>If you have any questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact us:</p>
+
+        <ul>
+          <li><strong>Email:</strong> <a href="mailto:paul@thecooconsultant.com">paul@thecooconsultant.com</a></li>
+          <li><strong>Website:</strong> <a href="https://www.mycarcompanion.org">www.mycarcompanion.org</a></li>
+        </ul>
+
+        <p>We will respond to all privacy-related inquiries within 30 days.</p>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="/" class="nav-logo" style="display:inline-flex;">
+          <div class="nav-logo-icon">🚗</div>
+          <span class="nav-logo-text">My Car Companion</span>
+        </a>
+        <p>Track maintenance, find trusted mechanics, and manage your vehicle history — all in one place.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="/#features">Features</a></li>
+          <li><a href="/#pricing">Pricing</a></li>
+          <li><a href="/mechanics.html">For Mechanics</a></li>
+          <li><a href="/app">Web App</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="/privacy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 My Car Companion. All rights reserved.</p>
+      <p><a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

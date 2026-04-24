@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Car Companion — Track Maintenance, Find Mechanics</title>
+  <meta name="description" content="Track your vehicle maintenance, manage service history, and connect with trusted local mechanics. Free to get started on Android and web.">
+  <meta property="og:title" content="My Car Companion">
+  <meta property="og:description" content="Your car. Your history. Your mechanic. Free to get started.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.mycarcompanion.org">
+  <link rel="canonical" href="https://www.mycarcompanion.org/">
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    /* ---- Hero ---- */
+    .hero {
+      padding: 96px 0 80px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 70% 50%, rgba(107,188,222,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 80% at 20% 80%, rgba(36,52,96,0.6) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+      position: relative;
+    }
+    .hero h1 {
+      font-size: clamp(2.2rem, 4.5vw, 3.5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+    .hero h1 .highlight {
+      color: var(--accent);
+    }
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 36px;
+      max-width: 460px;
+    }
+    .hero-ctas {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .hero-visual {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .hero-mockup {
+      width: 100%;
+      max-width: 440px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: var(--shadow-lg), 0 0 60px rgba(107,188,222,0.08);
+    }
+    .mockup-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mockup-dot:nth-child(1) { background: #FF5F57; }
+    .mockup-dot:nth-child(2) { background: #FEBC2E; }
+    .mockup-dot:nth-child(3) { background: #28C840; }
+    .mockup-url {
+      flex: 1;
+      background: rgba(0,0,0,0.2);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+    .mockup-vehicle-card {
+      background: rgba(27,43,80,0.8);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .mockup-vehicle-card h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
+    .mockup-vehicle-card span { font-size: 0.8rem; color: var(--text-muted); }
+    .mockup-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .mockup-stat {
+      background: rgba(107,188,222,0.08);
+      border: 1px solid rgba(107,188,222,0.15);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    .mockup-stat strong { display: block; font-size: 1.1rem; color: var(--accent); }
+    .mockup-stat small { font-size: 0.72rem; color: var(--text-muted); }
+    .mockup-reminder {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(52,201,138,0.08);
+      border: 1px solid rgba(52,201,138,0.2);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-top: 12px;
+    }
+    .mockup-reminder-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+    .mockup-reminder p { font-size: 0.82rem; color: var(--text-muted); }
+    .mockup-reminder strong { color: var(--text); }
+
+    /* ---- Proof bar ---- */
+    .proof-bar {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 0;
+    }
+    .proof-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+    .proof-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .proof-divider { color: var(--border); }
+    .proof-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .proof-pill-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+    }
+
+    /* ---- Features ---- */
+    .features { background: var(--bg); }
+    .features-alt { background: var(--surface-2); }
+
+    /* ---- Pricing ---- */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+    }
+    .pricing-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 32px;
+      position: relative;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+    .pricing-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+    .pricing-card.featured {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), var(--shadow);
+    }
+    .pricing-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: var(--bg);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 14px;
+      border-radius: 20px;
+    }
+    .pricing-tier { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 8px; }
+    .pricing-price { font-size: 2.5rem; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+    .pricing-price span { font-size: 1rem; font-weight: 400; color: var(--text-muted); }
+    .pricing-alt { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 20px; }
+    .pricing-desc { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 24px; line-height: 1.6; }
+    .pricing-features { list-style: none; margin-bottom: 28px; display: flex; flex-direction: column; gap: 10px; }
+    .pricing-features li {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 0.9rem; color: var(--text-muted);
+    }
+    .pricing-features li::before {
+      content: '✓';
+      color: var(--success);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ---- CTA banner ---- */
+    .cta-banner {
+      background: linear-gradient(135deg, var(--surface) 0%, #1e3060 100%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 64px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-banner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(107,188,222,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cta-banner h2 { font-size: clamp(1.6rem, 3vw, 2rem); margin-bottom: 14px; position: relative; }
+    .cta-banner p { color: var(--text-muted); margin-bottom: 32px; font-size: 1rem; position: relative; }
+    .cta-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; position: relative; }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-visual { display: none; }
+      .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; }
+    }
+    @media (max-width: 768px) {
+      .hero { padding: 64px 0 56px; }
+      .hero h1 { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+  <div class="container nav-inner">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">🚗</div>
+      <span class="nav-logo-text">My Car Companion</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="/mechanics.html">For Mechanics</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="/app" class="btn btn-secondary btn-sm">Sign In</a>
+      <a href="/app" class="btn btn-primary btn-sm">Get Started Free</a>
+    </div>
+    <button class="nav-hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="hero-content">
+      <span class="section-label">Free to get started</span>
+      <h1>Your Car.<br>Your History.<br><span class="highlight">Your Mechanic.</span></h1>
+      <p>Track vehicle maintenance, manage service records, and connect with trusted local mechanics — all in one place.</p>
+      <div class="hero-ctas">
+        <a href="/app" class="btn btn-primary">Create Free Account</a>
+        <a href="/mechanics.html" class="btn btn-secondary">I'm a Mechanic →</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot"></div>
+          <div class="mockup-dot"></div>
+          <div class="mockup-dot"></div>
+          <div class="mockup-url">mycarcompanion.org/app</div>
+        </div>
+        <div class="mockup-vehicle-card">
+          <h4>2021 Honda Civic</h4>
+          <span>42,850 miles · Last service 3 months ago</span>
+        </div>
+        <div class="mockup-stats">
+          <div class="mockup-stat"><strong>12</strong><small>Services logged</small></div>
+          <div class="mockup-stat"><strong>2</strong><small>Reminders</small></div>
+          <div class="mockup-stat"><strong>4.9★</strong><small>Mechanic</small></div>
+        </div>
+        <div class="mockup-reminder">
+          <div class="mockup-reminder-dot"></div>
+          <p><strong>Oil Change</strong> due in 850 miles</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Social Proof Bar -->
+<div class="proof-bar">
+  <div class="container proof-inner">
+    <span class="proof-label">Trusted by car owners and mechanics</span>
+    <span class="proof-divider">·</span>
+    <div class="proof-pill"><div class="proof-pill-dot"></div>Free to start</div>
+    <div class="proof-pill"><div class="proof-pill-dot"></div>Android &amp; Web</div>
+    <div class="proof-pill"><div class="proof-pill-dot"></div>Mechanic directory included</div>
+    <div class="proof-pill"><div class="proof-pill-dot"></div>No credit card required</div>
+  </div>
+</div>
+
+<!-- Features — Car Owners -->
+<section class="features py-80" id="features">
+  <div class="container">
+    <div class="section-center mb-48">
+      <span class="section-label">For Car Owners</span>
+      <h2 class="section-title">Everything your car needs, in one place</h2>
+      <p class="section-subtitle">Stop losing track of service records. Stay ahead of maintenance and find mechanics you can actually trust.</p>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🚗</div>
+        <h3>Vehicle Tracking</h3>
+        <p>Add all your vehicles. Track mileage, maintenance history, and service documents in one organized place.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔔</div>
+        <h3>Maintenance Reminders</h3>
+        <p>Never miss an oil change again. Set reminders by mileage or date and get push notifications before they're due.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔧</div>
+        <h3>Find a Mechanic</h3>
+        <p>Browse verified local mechanics. Read real reviews, message directly in the app, and book with confidence.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <h3>Service History</h3>
+        <p>Every oil change, tire rotation, and repair — logged and searchable. Know exactly what's been done and when.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>Direct Messaging</h3>
+        <p>Talk to your mechanic directly in the app. No more phone tag — get updates and ask questions in real time.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h3>Android &amp; Web</h3>
+        <p>Use the Android app on the go or access everything from your browser. Your data syncs automatically.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features — Mechanics -->
+<section class="features-alt py-80">
+  <div class="container">
+    <div class="section-center mb-48">
+      <span class="section-label">For Mechanics</span>
+      <h2 class="section-title">Built for mechanics who mean business</h2>
+      <p class="section-subtitle">Manage jobs, communicate with clients, and build your reputation — all from one dashboard.</p>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📂</div>
+        <h3>Job Management</h3>
+        <p>Create jobs, attach vehicles, and track status from intake to completion. Stay organized without the paperwork.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>Client Messaging</h3>
+        <p>Message car owners directly in the app. No phone tag, no missed calls — just clear communication.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⭐</div>
+        <h3>Reviews &amp; Reputation</h3>
+        <p>Collect verified reviews from clients and build your reputation. Share your profile link to attract new customers.</p>
+      </div>
+    </div>
+    <div class="mt-48" style="text-align:center;">
+      <a href="/mechanics.html" class="btn btn-primary">See Everything For Mechanics →</a>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="py-80" id="pricing">
+  <div class="container">
+    <div class="section-center">
+      <span class="section-label">Pricing</span>
+      <h2 class="section-title">Simple, transparent pricing</h2>
+      <p class="section-subtitle">Start free. Upgrade when you're ready. No hidden fees, no long-term contracts.</p>
+    </div>
+    <div class="pricing-grid">
+
+      <!-- Free -->
+      <div class="pricing-card">
+        <div class="pricing-tier">Free</div>
+        <div class="pricing-price">$0</div>
+        <div class="pricing-alt">Forever free</div>
+        <p class="pricing-desc">Get started with essential vehicle tracking — no credit card required.</p>
+        <ul class="pricing-features">
+          <li>Up to 2 vehicles</li>
+          <li>Basic maintenance logging</li>
+          <li>Mechanic directory access</li>
+          <li>Android &amp; web access</li>
+        </ul>
+        <a href="/app" class="btn btn-secondary" style="width:100%;justify-content:center;">Get Started Free</a>
+      </div>
+
+      <!-- Premium -->
+      <div class="pricing-card featured">
+        <div class="pricing-badge">Most Popular</div>
+        <div class="pricing-tier">Premium</div>
+        <div class="pricing-price">$4.99<span>/month</span></div>
+        <div class="pricing-alt">or $49.99/year — save 17%</div>
+        <p class="pricing-desc">Unlimited vehicles, full history, and reminders. Everything a car owner needs.</p>
+        <ul class="pricing-features">
+          <li>Unlimited vehicles</li>
+          <li>Full maintenance history</li>
+          <li>Mileage &amp; date reminders</li>
+          <li>Push notifications</li>
+          <li>Direct mechanic messaging</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="/app" class="btn btn-primary" style="width:100%;justify-content:center;">Start Free Trial</a>
+      </div>
+
+      <!-- Mechanic Pro -->
+      <div class="pricing-card">
+        <div class="pricing-tier">Mechanic Pro</div>
+        <div class="pricing-price">$14.99<span>/month</span></div>
+        <div class="pricing-alt">or $149.99/year — save 17%</div>
+        <p class="pricing-desc">The full mechanic dashboard. Manage jobs, clients, and your shop's reputation.</p>
+        <ul class="pricing-features">
+          <li>Full mechanic dashboard</li>
+          <li>Unlimited job management</li>
+          <li>Client messaging</li>
+          <li>Vehicle inspection view</li>
+          <li>Review &amp; reputation tools</li>
+          <li>Profile &amp; directory listing</li>
+        </ul>
+        <a href="/app" class="btn btn-secondary" style="width:100%;justify-content:center;">Start Free Trial</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- CTA Banner -->
+<section class="py-80">
+  <div class="container">
+    <div class="cta-banner">
+      <h2>Ready to take control of your car care?</h2>
+      <p>Join car owners and mechanics already using My Car Companion. Free to start, no credit card needed.</p>
+      <div class="cta-btns">
+        <a href="/app" class="btn btn-primary">Open Web App</a>
+        <a href="https://play.google.com/store" class="btn btn-secondary" target="_blank" rel="noopener">
+          ▶ Download for Android
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="/" class="nav-logo" style="display:inline-flex;">
+          <div class="nav-logo-icon">🚗</div>
+          <span class="nav-logo-text">My Car Companion</span>
+        </a>
+        <p>Track maintenance, find trusted mechanics, and manage your vehicle history — all in one place.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="/mechanics.html">For Mechanics</a></li>
+          <li><a href="/app">Web App</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="/privacy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 My Car Companion. All rights reserved.</p>
+      <p><a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

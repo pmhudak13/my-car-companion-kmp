@@ -1,0 +1,22 @@
+[build]
+  command = "./gradlew :webApp:wasmJsBrowserProductionWebpack && mkdir -p site/public/app && cp -r webApp/build/dist/wasmJs/productionExecutable/. site/public/app/"
+  publish = "site/public"
+
+[build.environment]
+  GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
+
+# Serve the Compose wasmJs app at /app — SPA fallback so deep links work
+[[redirects]]
+  from = "/app/*"
+  to = "/app/index.html"
+  status = 200
+
+# Canonical www redirect
+[[redirects]]
+  from = "https://mycarcompanion.org/*"
+  to = "https://www.mycarcompanion.org/:splat"
+  status = 301
+  force = true
+
+[context.production.environment]
+  SUPABASE_ANON_KEY = ""  # Set this in Netlify dashboard → Site settings → Environment variables

@@ -189,12 +189,12 @@ class SettingsScreen : Screen {
                     SettingsRow(
                         icon = Icons.Default.Email,
                         label = "Privacy Policy",
-                        onClick = { uriHandler.openUri("https://mycarcompanion.app/privacy") },
+                        onClick = { uriHandler.openUri("https://www.mycarcompanion.org/privacy") },
                     )
                     SettingsRow(
                         icon = Icons.Default.Email,
                         label = "Terms of Service",
-                        onClick = { uriHandler.openUri("https://mycarcompanion.app/terms") },
+                        onClick = { uriHandler.openUri("https://www.mycarcompanion.org/terms") },
                     )
                     Divider(modifier = Modifier.padding(horizontal = 16.dp))
 

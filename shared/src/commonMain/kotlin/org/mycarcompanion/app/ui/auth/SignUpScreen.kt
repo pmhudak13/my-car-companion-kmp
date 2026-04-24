@@ -205,7 +205,7 @@ class SignUpScreen : Screen {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
             ) {
-                TextButton(onClick = { uriHandler.openUri("https://mycarcompanion.app/terms") }) {
+                TextButton(onClick = { uriHandler.openUri("https://www.mycarcompanion.org/terms") }) {
                     Text("Terms of Service", style = MaterialTheme.typography.bodySmall)
                 }
                 Text(
@@ -214,7 +214,7 @@ class SignUpScreen : Screen {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.align(Alignment.CenterVertically),
                 )
-                TextButton(onClick = { uriHandler.openUri("https://mycarcompanion.app/privacy") }) {
+                TextButton(onClick = { uriHandler.openUri("https://www.mycarcompanion.org/privacy") }) {
                     Text("Privacy Policy", style = MaterialTheme.typography.bodySmall)
                 }
             }
