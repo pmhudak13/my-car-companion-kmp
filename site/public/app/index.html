@@ -418,6 +418,24 @@
         <button class="btn-primary" id="reset-btn" onclick="doReset()">Send Reset Link</button>
       </div>
 
+      <!-- New password view (PASSWORD_RECOVERY flow) -->
+      <div id="new-password-view" style="display:none;">
+        <span class="back-link" onclick="showAuth()">← Back to sign in</span>
+        <div class="card-title">Set New Password</div>
+        <div class="card-sub">Choose a strong new password for your account.</div>
+        <div class="alert" id="newpw-alert"></div>
+        <div class="field">
+          <label>New Password</label>
+          <input type="password" id="newpw-password" placeholder="Min. 8 characters" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label>Confirm Password</label>
+          <input type="password" id="newpw-confirm" placeholder="Repeat password" autocomplete="new-password"
+                 onkeydown="if(event.key==='Enter') doSetNewPassword()">
+        </div>
+        <button class="btn-primary" id="newpw-btn" onclick="doSetNewPassword()">Update Password</button>
+      </div>
+
       <!-- Signed-in view -->
       <div id="signed-in-view">
         <div class="avatar">🚗</div>
@@ -458,19 +476,35 @@
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvcXljb2dva2VsZm1nd3F5ZGtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzMzMjcsImV4cCI6MjA4OTYwOTMyN30.F1wDENidEb7impi5ZP-lBQW6OueZiv9-yv1TcqZor4g';
 
   const { createClient } = supabase;
-  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
-    auth: { redirectTo: window.location.origin + '/app/' }
-  });
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-  // ── Boot: check existing session ────────────────────────────
-  sb.auth.getSession().then(({ data: { session } }) => {
+  // ── Detect OAuth errors in redirect URL ──────────────────────
+  const _up = new URLSearchParams(window.location.search);
+  const _oauthError = _up.get('error_description') || _up.get('error');
+
+  // ── Auth state — single source of truth ──────────────────────
+  // INITIAL_SESSION fires once on load (after any code exchange), so we
+  // hide the loader here instead of in a separate getSession() call.
+  sb.auth.onAuthStateChange((event, session) => {
     document.getElementById('init-loader').style.display = 'none';
-    if (session) showSignedIn(session.user);
-  });
-
-  // ── Auth state listener ──────────────────────────────────────
-  sb.auth.onAuthStateChange((_event, session) => {
-    if (session) showSignedIn(session.user);
+    if (event === 'INITIAL_SESSION') {
+      if (session) {
+        showSignedIn(session.user);
+      } else if (_oauthError) {
+        showAlert('signin-alert', 'error', decodeURIComponent(_oauthError.replace(/\+/g, ' ')));
+      }
+    } else if (event === 'SIGNED_IN') {
+      showSignedIn(session.user);
+    } else if (event === 'SIGNED_OUT') {
+      document.getElementById('signed-in-view').style.display    = 'none';
+      document.getElementById('new-password-view').style.display = 'none';
+      document.getElementById('auth-view').style.display         = 'block';
+      clearAlerts();
+    } else if (event === 'PASSWORD_RECOVERY') {
+      showNewPasswordView();
+    } else if (event === 'USER_UPDATED' && session) {
+      showSignedIn(session.user);
+    }
   });
 
   // ── Tab switching ────────────────────────────────────────────
@@ -550,10 +584,11 @@
 
   // ── View helpers ─────────────────────────────────────────────
   function showSignedIn(user) {
-    document.getElementById('auth-view').style.display       = 'none';
-    document.getElementById('reset-view').style.display      = 'none';
-    document.getElementById('signed-in-view').style.display  = 'block';
-    document.getElementById('user-email-display').textContent = user.email || '';
+    document.getElementById('auth-view').style.display          = 'none';
+    document.getElementById('reset-view').style.display         = 'none';
+    document.getElementById('new-password-view').style.display  = 'none';
+    document.getElementById('signed-in-view').style.display     = 'block';
+    document.getElementById('user-email-display').textContent   = user.email || '';
   }
 
   function showReset() {
@@ -562,8 +597,37 @@
   }
 
   function showAuth() {
-    document.getElementById('reset-view').style.display = 'none';
-    document.getElementById('auth-view').style.display  = 'block';
+    document.getElementById('reset-view').style.display         = 'none';
+    document.getElementById('new-password-view').style.display  = 'none';
+    document.getElementById('auth-view').style.display          = 'block';
+  }
+
+  function showNewPasswordView() {
+    document.getElementById('auth-view').style.display          = 'none';
+    document.getElementById('reset-view').style.display         = 'none';
+    document.getElementById('new-password-view').style.display  = 'block';
+  }
+
+  // ── Set new password (PASSWORD_RECOVERY flow) ────────────────
+  async function doSetNewPassword() {
+    const pw      = document.getElementById('newpw-password').value;
+    const confirm = document.getElementById('newpw-confirm').value;
+    if (!pw)           { showAlert('newpw-alert', 'error', 'Please enter a new password.'); return; }
+    if (pw.length < 8) { showAlert('newpw-alert', 'error', 'Password must be at least 8 characters.'); return; }
+    if (pw !== confirm) { showAlert('newpw-alert', 'error', 'Passwords do not match.'); return; }
+
+    setLoading('newpw-btn', true);
+    const { error } = await sb.auth.updateUser({ password: pw });
+    setLoading('newpw-btn', false);
+    if (error) {
+      showAlert('newpw-alert', 'error', error.message);
+    } else {
+      showAlert('newpw-alert', 'success', 'Password updated! Taking you to your account…');
+      setTimeout(async () => {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) showSignedIn(session.user);
+      }, 1500);
+    }
   }
 
   // ── Utility ──────────────────────────────────────────────────
