@@ -1,6 +1,8 @@
 [build]
-  # Static site — no build step needed. All files are pre-built and committed.
+  # All builds and deploys are handled by GitHub Actions (deploy-web.yml).
+  # This ignore script prevents Netlify from double-deploying on git push.
   publish = "site/public"
+  ignore = "exit 0"
 
 # Bare /app path
 [[redirects]]
