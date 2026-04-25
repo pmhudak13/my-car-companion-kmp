@@ -16,6 +16,13 @@ kotlin {
             }
         }
         binaries.executable()
+        compilations.configureEach {
+            compileTaskProvider.configure {
+                compilerOptions {
+                    freeCompilerArgs.add("-Xklib-duplicated-unique-name-strategy=allow-all-with-warning")
+                }
+            }
+        }
     }
 
     sourceSets {
