@@ -41,11 +41,11 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.materialIconsExtended)
-            implementation(compose.ui)
+            api(compose.ui)
             implementation(compose.components.resources)
 
             implementation(libs.bundles.supabase)
-            implementation(libs.koin.core)
+            api(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.bundles.voyager)
             implementation(libs.ktor.client.core)
