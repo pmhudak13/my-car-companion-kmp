@@ -23,8 +23,6 @@ kotlin {
             dependencies {
                 implementation(projects.shared)
                 implementation(libs.ktor.client.js)
-                implementation(compose.ui)
-                implementation(libs.koin.core)
             }
         }
     }
