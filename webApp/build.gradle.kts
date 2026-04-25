@@ -34,3 +34,9 @@ kotlin {
         }
     }
 }
+
+// kotlinx-coroutines-core:1.9.0 ships an old kotlin-stdlib-wasm (Kotlin 1.9 era) KLIB
+// that conflicts with kotlin-stdlib-wasm-js from Kotlin 2.x. Exclude it project-wide.
+configurations.all {
+    exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-wasm")
+}
