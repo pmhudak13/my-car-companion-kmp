@@ -18,8 +18,8 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.models.AppUser
 import org.mycarcompanion.app.data.models.AuthResult
@@ -46,7 +46,7 @@ class AuthRepository(
                             val isMechanic = isMechanicDeferred.await()
                             val profile = profileDeferred.await()
                             val hasGoogleLinked = user.identities?.any { it.provider == "google" } ?: false
-                            val intendedRole = user.userMetadata?.get("role")?.jsonPrimitive?.contentOrNull
+                            val intendedRole = (user.userMetadata?.get("role") as? JsonPrimitive)?.contentOrNull
                             AuthState.Authenticated(
                                 AppUser(
                                     id = user.id,
