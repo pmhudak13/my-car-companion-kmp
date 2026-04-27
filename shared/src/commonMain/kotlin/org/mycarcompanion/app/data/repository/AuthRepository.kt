@@ -9,14 +9,14 @@ import io.github.jan.supabase.functions.functions
 import io.ktor.http.Headers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -38,27 +38,47 @@ class AuthRepository(
                 val user = client.auth.currentUserOrNull()
                 if (user != null) {
                     try {
-                        coroutineScope {
-                            val isAdminDeferred = async { profileRepository.hasRole("admin").getOrDefault(false) }
-                            val isMechanicDeferred = async { profileRepository.hasRole("mechanic").getOrDefault(false) }
-                            val profileDeferred = async { profileRepository.getMyProfile().getOrNull() }
-                            val isAdmin = isAdminDeferred.await()
-                            val isMechanic = isMechanicDeferred.await()
-                            val profile = profileDeferred.await()
-                            val hasGoogleLinked = user.identities?.any { it.provider == "google" } ?: false
-                            val intendedRole = (user.userMetadata?.get("role") as? JsonPrimitive)?.contentOrNull
-                            AuthState.Authenticated(
-                                AppUser(
-                                    id = user.id,
-                                    email = user.email ?: "",
-                                    isAdmin = isAdmin,
-                                    isMechanic = isMechanic,
-                                    isPremium = profile?.isPremium ?: false,
-                                    hasGoogleLinked = hasGoogleLinked,
-                                    intendedRole = intendedRole,
+                        // 15s safety net: if PostgREST queries hang (common on wasmJs single thread),
+                        // emit Authenticated with defaults rather than spinning forever.
+                        withTimeout(15_000) {
+                            coroutineScope {
+                                val isAdminDeferred = async { profileRepository.hasRole("admin").getOrDefault(false) }
+                                val isMechanicDeferred = async { profileRepository.hasRole("mechanic").getOrDefault(false) }
+                                val profileDeferred = async { profileRepository.getMyProfile().getOrNull() }
+                                val isAdmin = isAdminDeferred.await()
+                                val isMechanic = isMechanicDeferred.await()
+                                val profile = profileDeferred.await()
+                                val hasGoogleLinked = user.identities?.any { it.provider == "google" } ?: false
+                                val intendedRole = (user.userMetadata?.get("role") as? JsonPrimitive)?.contentOrNull
+                                AuthState.Authenticated(
+                                    AppUser(
+                                        id = user.id,
+                                        email = user.email ?: "",
+                                        isAdmin = isAdmin,
+                                        isMechanic = isMechanic,
+                                        isPremium = profile?.isPremium ?: false,
+                                        hasGoogleLinked = hasGoogleLinked,
+                                        intendedRole = intendedRole,
+                                    )
                                 )
-                            )
+                            }
                         }
+                    } catch (e: TimeoutCancellationException) {
+                        // Queries timed out — let the user through with basic info (no roles/profile).
+                        // Server-side RLS still enforces permissions; no privilege escalation risk.
+                        val hasGoogleLinked = user.identities?.any { it.provider == "google" } ?: false
+                        val intendedRole = (user.userMetadata?.get("role") as? JsonPrimitive)?.contentOrNull
+                        AuthState.Authenticated(
+                            AppUser(
+                                id = user.id,
+                                email = user.email ?: "",
+                                isAdmin = false,
+                                isMechanic = false,
+                                isPremium = false,
+                                hasGoogleLinked = hasGoogleLinked,
+                                intendedRole = intendedRole,
+                            )
+                        )
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
@@ -72,8 +92,7 @@ class AuthRepository(
             is SessionStatus.Initializing -> AuthState.Loading
             is SessionStatus.RefreshFailure -> AuthState.Unauthenticated
         }
-    }.flowOn(Dispatchers.Default)
-        .shareIn(appScope, SharingStarted.Eagerly, replay = 1)
+    }.shareIn(appScope, SharingStarted.Eagerly, replay = 1)
 
     suspend fun signIn(email: String, password: String): AuthResult = try {
         client.auth.signInWith(Email) {

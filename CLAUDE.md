@@ -23,10 +23,13 @@ On `SessionStatus.Authenticated` it fires 3 concurrent Supabase queries
 
 - **First fix (Apr 9 2026):** Added `flowOn(Dispatchers.Default)` + `coroutineScope { async {} }` to move work off the main thread and run queries in parallel.
 - **Second fix (Apr 15 2026):** Changed `map` → `mapLatest` so that if `sessionStatus` emits again while queries are in flight (e.g. rapid Initializing → Authenticated on startup), the stale computation is cancelled instead of queuing up and starving `Dispatchers.Default`. This eliminated the recurring production ANR (`3e1c3f95e4ca41e092d59f3293629978`).
+- **Third fix (Apr 27 2026):** Removed `flowOn(Dispatchers.Default)` and added `withTimeout(15_000)` around the 3 queries. `flowOn` was redundant (the `shareIn(appScope, ...)` already dispatches to `Dispatchers.Default`) and in kotlinx-coroutines 1.9.0 on wasmJs it introduced an extra buffering channel that caused the authenticated state to be silently lost — the queries completed but the result never reached the `shareIn` downstream, leaving `authState` stuck at `Loading` and the login screen spinning forever. The timeout is a safety net: on timeout the user is let through with basic info (no admin/mechanic flags) rather than stuck spinning; server-side RLS still enforces permissions.
 
 **Rule:** Always use `mapLatest` (not `map`) when the flow transform makes network/IO calls. Never use `map` with `coroutineScope` inside a flow that can emit rapidly.
 
-**Note (web):** On wasmJs `Dispatchers.Default` is the same as `Dispatchers.Main` (single browser thread). The `flowOn`/`async` mitigations above have no parallelism effect on web — the 3 Supabase queries execute serially. This is a known limitation; no ANR risk on web but auth state takes longer to resolve.
+**Rule:** Do NOT add `flowOn(Dispatchers.Default)` to a flow that is already collected via `shareIn(appScope, ...)` where `appScope` uses `Dispatchers.Default`. The extra buffering channel is redundant on all platforms and harmful on wasmJs.
+
+**Note (web):** On wasmJs `Dispatchers.Default` is the same as `Dispatchers.Main` (single browser thread). The `async` blocks in `coroutineScope` still initiate all 3 HTTP requests before any completes (the fetch calls are dispatched to the browser's I/O layer), so total wait time is roughly the slowest request, not the sum. But if the queries hang (no response, no error), `withTimeout(15_000)` fires after 15 s and emits `Authenticated` with empty roles/profile so the user is not stuck.
 
 ### Web (wasmJs) crash fixes — Apr 26 2026
 Seven crash/failure modes were identified and fixed in one commit:
