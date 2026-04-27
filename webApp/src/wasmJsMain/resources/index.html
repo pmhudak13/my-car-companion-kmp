@@ -41,12 +41,32 @@
     <canvas id="ComposeTarget"></canvas>
     <script type="application/javascript" src="webApp.js"></script>
     <script>
-        // Remove loading screen once Compose is ready
+        function showFatalError(msg) {
+            var el = document.getElementById('loading');
+            if (el) {
+                el.innerHTML = '<div style="text-align:center;padding:32px;max-width:480px">'
+                    + '<p style="color:#FF6B6B;font-size:18px;margin-bottom:12px">Something went wrong</p>'
+                    + '<p style="color:#aaa;font-size:13px;word-break:break-word">' + (msg || 'Unknown error') + '</p>'
+                    + '<button onclick="location.reload()" style="margin-top:20px;padding:10px 24px;background:#6BBCDE;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px">Reload</button>'
+                    + '</div>';
+            }
+        }
+
+        // Surface any JS/Wasm crash that escapes the Kotlin error boundary.
+        window.onerror = function(msg, src, line, col, err) {
+            showFatalError(err ? err.toString() : msg);
+        };
+        window.addEventListener('unhandledrejection', function(e) {
+            showFatalError(e.reason ? e.reason.toString() : 'Unhandled promise rejection');
+        });
+
+        // Remove loading screen once Compose is ready.
         document.addEventListener('DOMContentLoaded', function() {
-            const canvas = document.getElementById('ComposeTarget');
+            var canvas = document.getElementById('ComposeTarget');
             if (canvas) {
-                const observer = new MutationObserver(function() {
-                    document.getElementById('loading').style.display = 'none';
+                var observer = new MutationObserver(function() {
+                    var loading = document.getElementById('loading');
+                    if (loading) loading.style.display = 'none';
                 });
                 observer.observe(canvas, { attributes: true, childList: true });
             }

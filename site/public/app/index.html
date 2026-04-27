@@ -475,12 +475,43 @@
 </div>
 
 <script>
+  // ── Fatal error handler (catches JS errors and Supabase CDN failures) ──
+  function showInitError(msg) {
+    var loader = document.getElementById('init-loader');
+    if (loader) {
+      loader.innerHTML =
+        '<div style="text-align:center;padding:32px;max-width:420px">'
+        + '<p style="color:#f08080;font-size:17px;margin-bottom:10px">Something went wrong</p>'
+        + '<p style="color:#8fa3bf;font-size:13px;margin-bottom:20px">' + (msg || 'Unknown error') + '</p>'
+        + '<button onclick="location.reload()" style="padding:10px 24px;background:#6bbcde;color:#0f1c38;'
+        + 'border:none;border-radius:8px;cursor:pointer;font-weight:700">Reload</button>'
+        + '</div>';
+    }
+  }
+  // Only intercept errors that occur while the init-loader is still blocking.
+  // Post-init errors (e.g. from button handlers) are handled inline by each function.
+  window.onerror = function(msg, src, line, col, err) {
+    var loader = document.getElementById('init-loader');
+    if (loader && loader.style.display !== 'none') {
+      showInitError(err ? err.toString() : msg);
+    }
+  };
+
   // ── Supabase init ────────────────────────────────────────────
   const SUPABASE_URL  = 'https://eoqycogokelfmgwqydkj.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvcXljb2dva2VsZm1nd3F5ZGtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzMzMjcsImV4cCI6MjA4OTYwOTMyN30.F1wDENidEb7impi5ZP-lBQW6OueZiv9-yv1TcqZor4g';
 
   const { createClient } = supabase;
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  // Safety net: if onAuthStateChange never fires (e.g. network issue before
+  // Supabase can reach its servers), stop the infinite spinner after 12s.
+  var _initTimer = setTimeout(function() {
+    var loader = document.getElementById('init-loader');
+    if (loader && loader.style.display !== 'none') {
+      showInitError('Connection timed out. Please check your network and reload.');
+    }
+  }, 12000);
 
   // ── Detect OAuth errors in redirect URL ──────────────────────
   const _up = new URLSearchParams(window.location.search);
@@ -490,6 +521,7 @@
   // INITIAL_SESSION fires once on load (after any code exchange), so we
   // hide the loader here instead of in a separate getSession() call.
   sb.auth.onAuthStateChange((event, session) => {
+    clearTimeout(_initTimer);
     document.getElementById('init-loader').style.display = 'none';
     if (event === 'INITIAL_SESSION') {
       if (session) {
@@ -529,9 +561,14 @@
     if (!email || !password) { showAlert('signin-alert', 'error', 'Please enter your email and password.'); return; }
 
     setLoading('signin-btn', true);
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    setLoading('signin-btn', false);
-    if (error) showAlert('signin-alert', 'error', error.message);
+    try {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) showAlert('signin-alert', 'error', error.message);
+    } catch (e) {
+      showAlert('signin-alert', 'error', 'Network error — please check your connection and try again.');
+    } finally {
+      setLoading('signin-btn', false);
+    }
   }
 
   // ── Sign Up ──────────────────────────────────────────────────
@@ -544,12 +581,17 @@
     if (password !== confirm)  { showAlert('signup-alert', 'error', 'Passwords do not match.'); return; }
 
     setLoading('signup-btn', true);
-    const { error } = await sb.auth.signUp({ email, password });
-    setLoading('signup-btn', false);
-    if (error) {
-      showAlert('signup-alert', 'error', error.message);
-    } else {
-      showAlert('signup-alert', 'success', 'Account created! Check your email to confirm your address, then sign in.');
+    try {
+      const { error } = await sb.auth.signUp({ email, password });
+      if (error) {
+        showAlert('signup-alert', 'error', error.message);
+      } else {
+        showAlert('signup-alert', 'success', 'Account created! Check your email to confirm your address, then sign in.');
+      }
+    } catch (e) {
+      showAlert('signup-alert', 'error', 'Network error — please check your connection and try again.');
+    } finally {
+      setLoading('signup-btn', false);
     }
   }
 
@@ -567,14 +609,19 @@
     if (!email) { showAlert('reset-alert', 'error', 'Please enter your email address.'); return; }
 
     setLoading('reset-btn', true);
-    const { error } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/app/'
-    });
-    setLoading('reset-btn', false);
-    if (error) {
-      showAlert('reset-alert', 'error', error.message);
-    } else {
-      showAlert('reset-alert', 'success', 'Reset link sent! Check your inbox.');
+    try {
+      const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/app/'
+      });
+      if (error) {
+        showAlert('reset-alert', 'error', error.message);
+      } else {
+        showAlert('reset-alert', 'success', 'Reset link sent! Check your inbox.');
+      }
+    } catch (e) {
+      showAlert('reset-alert', 'error', 'Network error — please check your connection and try again.');
+    } finally {
+      setLoading('reset-btn', false);
     }
   }
 
@@ -621,16 +668,21 @@
     if (pw !== confirm) { showAlert('newpw-alert', 'error', 'Passwords do not match.'); return; }
 
     setLoading('newpw-btn', true);
-    const { error } = await sb.auth.updateUser({ password: pw });
-    setLoading('newpw-btn', false);
-    if (error) {
-      showAlert('newpw-alert', 'error', error.message);
-    } else {
-      showAlert('newpw-alert', 'success', 'Password updated! Taking you to your account…');
-      setTimeout(async () => {
-        const { data: { session } } = await sb.auth.getSession();
-        if (session) showSignedIn(session.user);
-      }, 1500);
+    try {
+      const { error } = await sb.auth.updateUser({ password: pw });
+      if (error) {
+        showAlert('newpw-alert', 'error', error.message);
+      } else {
+        showAlert('newpw-alert', 'success', 'Password updated! Taking you to your account…');
+        setTimeout(async () => {
+          const { data: { session } } = await sb.auth.getSession();
+          if (session) showSignedIn(session.user);
+        }, 1500);
+      }
+    } catch (e) {
+      showAlert('newpw-alert', 'error', 'Network error — please check your connection and try again.');
+    } finally {
+      setLoading('newpw-btn', false);
     }
   }
 

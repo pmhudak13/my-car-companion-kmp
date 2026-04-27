@@ -9,6 +9,10 @@ Kotlin Multiplatform (KMP) app targeting Android, iOS, and Web. Backend is Supab
 - `shared/.../data/repository/ProfileRepository.kt` — role checks (`hasRole`), profile fetch
 - `shared/.../ui/auth/LoginScreen.kt` — login UI, collects `authState` via `collectAsState`
 - `androidApp/src/main/kotlin/.../MainActivity.kt` — Android entry point
+- `webApp/src/wasmJsMain/kotlin/.../main.kt` — Web (wasmJs) entry point
+- `shared/src/wasmJsMain/.../data/supabase/SupabaseConfig.wasmJs.kt` — reads Supabase URL/key from `window.__SUPABASE_URL__` / `window.__SUPABASE_ANON_KEY__` injected by the Netlify build step
+- `shared/src/commonMain/.../data/supabase/SupabaseConfig.kt` — expect object; also declares platform-specific `authScheme`, `authHost`, `authAutoSaveToStorage`
+- `shared/src/commonMain/.../data/supabase/SupabaseClientProvider.kt` — lazy `supabaseClient` val; uses `SupabaseConfig` for all Auth plugin config
 
 ## Known issues & patterns
 
@@ -19,9 +23,46 @@ On `SessionStatus.Authenticated` it fires 3 concurrent Supabase queries
 
 - **First fix (Apr 9 2026):** Added `flowOn(Dispatchers.Default)` + `coroutineScope { async {} }` to move work off the main thread and run queries in parallel.
 - **Second fix (Apr 15 2026):** Changed `map` → `mapLatest` so that if `sessionStatus` emits again while queries are in flight (e.g. rapid Initializing → Authenticated on startup), the stale computation is cancelled instead of queuing up and starving `Dispatchers.Default`. This eliminated the recurring production ANR (`3e1c3f95e4ca41e092d59f3293629978`).
+- **Third fix (Apr 27 2026):** Removed `flowOn(Dispatchers.Default)` and added `withTimeout(15_000)` around the 3 queries. `flowOn` was redundant (the `shareIn(appScope, ...)` already dispatches to `Dispatchers.Default`) and in kotlinx-coroutines 1.9.0 on wasmJs it introduced an extra buffering channel that caused the authenticated state to be silently lost — the queries completed but the result never reached the `shareIn` downstream, leaving `authState` stuck at `Loading` and the login screen spinning forever. The timeout is a safety net: on timeout the user is let through with basic info (no admin/mechanic flags) rather than stuck spinning; server-side RLS still enforces permissions.
 
 **Rule:** Always use `mapLatest` (not `map`) when the flow transform makes network/IO calls. Never use `map` with `coroutineScope` inside a flow that can emit rapidly.
 
+**Rule:** Do NOT add `flowOn(Dispatchers.Default)` to a flow that is already collected via `shareIn(appScope, ...)` where `appScope` uses `Dispatchers.Default`. The extra buffering channel is redundant on all platforms and harmful on wasmJs.
+
+**Note (web):** On wasmJs `Dispatchers.Default` is the same as `Dispatchers.Main` (single browser thread). The `async` blocks in `coroutineScope` still initiate all 3 HTTP requests before any completes (the fetch calls are dispatched to the browser's I/O layer), so total wait time is roughly the slowest request, not the sum. But if the queries hang (no response, no error), `withTimeout(15_000)` fires after 15 s and emits `Authenticated` with empty roles/profile so the user is not stuck.
+
+### Web (wasmJs) crash fixes — Apr 26 2026
+Seven crash/failure modes were identified and fixed in one commit:
+
+1. **OAuth callback 404** (`netlify.toml`): Google OAuth redirects to `https://mycarcompanion.org/auth/callback` but no Netlify rule handled that path. Fixed by adding a `302` redirect `/auth/callback` → `/app/` so the PKCE auth code query param is forwarded to the running Compose app.
+   - **Rule:** `googleAuthRedirectUrl` (`GoogleAuth.wasmJs.kt`) and `netlify.toml` redirect rules must stay in sync.
+
+2. **`jsonPrimitive` crash** (`AuthRepository.kt:49`): `user.userMetadata?.get("role")?.jsonPrimitive` throws `IllegalArgumentException` when the `role` field in user metadata is a JSON object/array (not a primitive). Fixed to `(value as? JsonPrimitive)?.contentOrNull`.
+   - **Rule:** Never use `.jsonPrimitive` directly on an unknown `JsonElement`; always safe-cast with `as? JsonPrimitive`.
+
+3. **Silent startup crash** (`main.kt`): No `try/catch` around `startKoin`/`ComposeViewport` meant any exception left a frozen loading spinner with no user feedback. Fixed with a top-level `try/catch(Throwable)` that shows an error message + Reload button.
+
+4. **Android deep-link scheme leaking onto web** (`SupabaseClientProvider.kt` / `SupabaseConfig`): `scheme = "org.mycarcompanion.app"` and `host = "auth"` were hardcoded in shared code; these are Android deep-link values meaningless (and potentially confusing) on web. Moved to `expect/actual` in `SupabaseConfig`: Android actuals keep the existing values; wasmJs actuals use empty strings.
+
+5. **`localStorage` SecurityError** (`SupabaseConfig.wasmJs.kt`): `autoSaveToStorage = true` always called `localStorage`, which throws `SecurityError` in private browsing / strict browser security. Fixed via `authAutoSaveToStorage` actual that probes `localStorage` at startup and returns `false` when unavailable.
+
+6. **First-frame stall** (`main.kt`): `supabaseClient` was not pre-warmed on web, so the first DI resolve (during first Compose frame) initialized Ktor on the single browser thread. Fixed by calling `prewarmSupabaseClient()` immediately after `startKoin`.
+
+7. **Crashes invisible in production** (`index.html`): No JS error handlers meant Wasm exceptions were silent to the user. Fixed by adding `window.onerror` and `unhandledrejection` handlers that replace the spinner with an error + Reload button.
+
+### Web deploy pipeline
+- Build: `./gradlew :webApp:wasmJsBrowserDistribution` outputs to `webApp/build/dist/wasmJs/productionExecutable/`
+- Key injection: GitHub Actions (`deploy-web.yml`) uses `sed` to replace `SUPABASE_ANON_KEY_PLACEHOLDER` in the built `index.html` with the `SUPABASE_ANON_KEY` secret. **Local dev requires manual replacement** — the placeholder causes 401 errors from Supabase.
+- Deploy: `netlify-cli deploy --dir=site/public --prod` (Netlify, not Vercel)
+- App is served at `https://mycarcompanion.org/app/`
+- The `SUPABASE_URL` is hardcoded in the source `index.html` (not a secret). Only the anon key is injected at build time.
+
+### Web-specific known limitations / open items
+- Voyager `1.1.0-beta03` has known wasmJs screen-state and back-stack issues. The never-destroy Navigator pattern in `AppNavigation.kt` mitigates the auth-driven crash but Voyager beta on wasm is still fragile.
+- No Sentry (or any crash reporter) on web — errors surface only through the `window.onerror` shim added above.
+- Compose Resources (`Res.drawable.*`) on wasmJs load via `fetch()` from a relative `/composeResources/` path. If the app is served from a sub-path (e.g. `/app/`) the fetch resolves correctly only when the HTML base URL matches. Verify resource loading works at the deployed URL if images go missing.
+
 ## Build / run
 - Android: run `androidApp` in Android Studio
+- Web: `./gradlew :webApp:wasmJsBrowserDistribution` then serve `webApp/build/dist/wasmJs/productionExecutable/` (remember to replace `SUPABASE_ANON_KEY_PLACEHOLDER` in `index.html` for local dev)
 - Shared module: `./gradlew :shared:build`

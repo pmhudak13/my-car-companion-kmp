@@ -6,6 +6,9 @@ actual object SupabaseConfig {
 
     actual val url: String get() = _url
     actual val anonKey: String get() = _anonKey
+    actual val authScheme: String = "org.mycarcompanion.app"
+    actual val authHost: String = "auth"
+    actual val authAutoSaveToStorage: Boolean = true
 
     fun init(url: String, anonKey: String) {
         _url = url

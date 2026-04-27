@@ -13,9 +13,9 @@ val supabaseClient by lazy {
         supabaseKey = SupabaseConfig.anonKey
     ) {
         install(Auth) {
-            autoSaveToStorage = true
-            scheme = "org.mycarcompanion.app"
-            host = "auth"
+            autoSaveToStorage = SupabaseConfig.authAutoSaveToStorage
+            scheme = SupabaseConfig.authScheme
+            host = SupabaseConfig.authHost
         }
         install(Postgrest)
         install(Storage)

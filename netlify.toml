@@ -10,6 +10,13 @@
   to = "/app/index.html"
   status = 200
 
+# OAuth callback: redirect to /app/ so the Compose app can handle the auth code from the query string.
+# Must come before the /app/* catch-all so Netlify matches it first.
+[[redirects]]
+  from = "/auth/callback"
+  to = "/app/"
+  status = 302
+
 # Auth callback deep-links (OAuth redirects back to /app/)
 [[redirects]]
   from = "/app/*"
