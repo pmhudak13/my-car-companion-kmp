@@ -373,6 +373,8 @@ img { max-width: 100%; height: auto; }
 @media (max-width: 768px) {
   .nav-links, .nav-actions .btn:not(.btn-sm) { display: none; }
   .nav-hamburger { display: flex; }
+  /* Hide secondary "Sign In" CTA on mobile — sign-in is accessible via the tab on /app */
+  .nav-actions .btn-secondary { display: none; }
   .feature-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; gap: 32px; }
   .footer-bottom { flex-direction: column; text-align: center; }

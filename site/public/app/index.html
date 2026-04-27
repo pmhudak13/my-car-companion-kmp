@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Car Companion — Sign In</title>
   <meta name="description" content="Sign in or create your My Car Companion account.">
+  <link rel="icon" href="/assets/logo.png" type="image/png">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -296,6 +297,7 @@
       display: inline-flex; align-items: center; gap: 6px;
       font-size: 0.82rem; color: var(--text-muted);
       cursor: pointer; margin-bottom: 20px;
+      background: none; border: none; padding: 0; font-family: inherit;
     }
     .back-link:hover { color: var(--accent); }
 
@@ -385,7 +387,7 @@
             <input type="password" id="signin-password" placeholder="••••••••" autocomplete="current-password"
                    onkeydown="if(event.key==='Enter') doSignIn()">
           </div>
-          <a class="forgot-link" onclick="showReset()">Forgot your password?</a>
+          <a class="forgot-link" href="#" onclick="showReset(); return false;">Forgot your password?</a>
           <button class="btn-primary" id="signin-btn" onclick="doSignIn()">Sign In</button>
         </div>
 
@@ -411,7 +413,7 @@
 
       <!-- Reset password view -->
       <div id="reset-view">
-        <span class="back-link" onclick="showAuth()">← Back to sign in</span>
+        <button class="back-link" onclick="showAuth()">← Back to sign in</button>
         <div class="card-title">Reset Password</div>
         <div class="card-sub">We'll email you a reset link.</div>
         <div class="alert" id="reset-alert"></div>
@@ -424,7 +426,7 @@
 
       <!-- New password view (PASSWORD_RECOVERY flow) -->
       <div id="new-password-view" style="display:none;">
-        <span class="back-link" onclick="showAuth()">← Back to sign in</span>
+        <button class="back-link" onclick="showAuth()">← Back to sign in</button>
         <div class="card-title">Set New Password</div>
         <div class="card-sub">Choose a strong new password for your account.</div>
         <div class="alert" id="newpw-alert"></div>
@@ -454,13 +456,13 @@
               <span>Full experience on Android</span>
             </div>
           </a>
-          <div class="app-link" style="cursor:default; opacity:0.6;">
+          <a href="/" class="app-link">
             <span class="app-link-icon">🌐</span>
             <div class="app-link-text">
-              Web App
-              <span>Full web experience coming soon</span>
+              Return to website
+              <span>Back to mycarcompanion.org</span>
             </div>
-          </div>
+          </a>
         </div>
 
         <button class="signout-btn" onclick="doSignOut()">Sign out</button>
@@ -628,9 +630,7 @@
   // ── Sign Out ─────────────────────────────────────────────────
   async function doSignOut() {
     await sb.auth.signOut();
-    document.getElementById('signed-in-view').style.display = 'none';
-    document.getElementById('auth-view').style.display      = 'block';
-    clearAlerts();
+    // DOM cleanup is handled by the SIGNED_OUT branch in onAuthStateChange
   }
 
   // ── View helpers ─────────────────────────────────────────────

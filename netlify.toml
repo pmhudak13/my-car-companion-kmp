@@ -4,6 +4,22 @@
   publish = "site/public"
   ignore = "exit 0"
 
+# Clean-URL redirects for pages served as .html files
+[[redirects]]
+  from = "/mechanics"
+  to = "/mechanics.html"
+  status = 301
+
+[[redirects]]
+  from = "/privacy"
+  to = "/privacy.html"
+  status = 301
+
+[[redirects]]
+  from = "/terms"
+  to = "/terms.html"
+  status = 301
+
 # Bare /app path
 [[redirects]]
   from = "/app"
