@@ -58,9 +58,9 @@ class SubscriptionRepository(private val client: SupabaseClient) {
 
     private fun parseUrlFromResponse(body: String): String {
         val json = runCatching { Json.parseToJsonElement(body).jsonObject }.getOrNull()
-        val serverError = (json?.get("error") as? JsonPrimitive)?.contentOrNull
+        val serverError = (json?.get("error") as? JsonPrimitive)?.content
         if (serverError != null) error(serverError)
-        return (json?.get("url") as? JsonPrimitive)?.contentOrNull
+        return (json?.get("url") as? JsonPrimitive)?.content
             ?: error("Unexpected response from server")
     }
 }
