@@ -6,9 +6,9 @@ import io.github.jan.supabase.functions.functions
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.Headers
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.supabase.SupabaseConfig
 
@@ -35,10 +35,7 @@ class SubscriptionRepository(private val client: SupabaseClient) {
                 append("Authorization", "Bearer ${session.accessToken}")
             },
         )
-        val body = response.bodyAsText()
-        val json = Json.parseToJsonElement(body).jsonObject
-        json["url"]?.jsonPrimitive?.content
-            ?: error("Missing url in response: $body")
+        parseUrlFromResponse(response.bodyAsText())
     }
 
     /** Returns the Stripe Checkout URL for the given price ID, or throws on error. */
@@ -56,9 +53,14 @@ class SubscriptionRepository(private val client: SupabaseClient) {
                 append("Authorization", "Bearer ${session.accessToken}")
             },
         )
-        val body = response.bodyAsText()
-        val json = Json.parseToJsonElement(body).jsonObject
-        json["url"]?.jsonPrimitive?.content
-            ?: error("Missing url in response: $body")
+        parseUrlFromResponse(response.bodyAsText())
+    }
+
+    private fun parseUrlFromResponse(body: String): String {
+        val json = runCatching { Json.parseToJsonElement(body).jsonObject }.getOrNull()
+        val serverError = (json?.get("error") as? JsonPrimitive)?.contentOrNull
+        if (serverError != null) error(serverError)
+        return (json?.get("url") as? JsonPrimitive)?.contentOrNull
+            ?: error("Unexpected response from server")
     }
 }
