@@ -539,8 +539,8 @@
         showAlert('signin-alert', 'error', decodeURIComponent(_oauthError.replace(/\+/g, ' ')));
       } else if (_hasOAuthCode) {
         // A ?code= was present but the PKCE exchange produced no session — likely
-        // the redirect URL isn't in Supabase's allowed list, or the code expired.
-        showAlert('signin-alert', 'error', 'Google sign-in failed. Please try again. If this keeps happening, contact support.');
+        // the redirect URL isn't in Supabase's allowed list, or the code/link expired.
+        showAlert('signin-alert', 'error', 'Sign-in link expired or invalid. Please try signing in again. If this keeps happening, contact support.');
       }
     } else if (event === 'SIGNED_IN') {
       showSignedIn(session.user);
@@ -595,7 +595,11 @@
 
     setLoading('signup-btn', true);
     try {
-      const { error } = await sb.auth.signUp({ email, password });
+      const { error } = await sb.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: window.location.origin + '/app/' }
+      });
       if (error) {
         showAlert('signup-alert', 'error', error.message);
       } else {

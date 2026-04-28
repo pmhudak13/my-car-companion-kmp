@@ -215,6 +215,39 @@
     .cta-banner p { color: var(--text-muted); margin-bottom: 32px; font-size: 1rem; position: relative; }
     .cta-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; position: relative; }
 
+    /* ---- Community Stats ---- */
+    .stats-band {
+      background: var(--surface-2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 48px 0;
+    }
+    .stats-inner {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      text-align: center;
+    }
+    .stat-item {
+      padding: 16px;
+    }
+    .stat-number {
+      font-size: clamp(2.2rem, 4vw, 3.2rem);
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+      min-height: 1.2em;
+    }
+    .stat-label {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-weight: 600;
+    }
+
     /* ---- Responsive ---- */
     @media (max-width: 900px) {
       .hero-grid { grid-template-columns: 1fr; }
@@ -224,13 +257,24 @@
     @media (max-width: 768px) {
       .hero { padding: 64px 0 56px; }
       .hero h1 { font-size: 2rem; }
+      .stats-inner { grid-template-columns: 1fr; gap: 0; }
+      .stat-item { padding: 20px 16px; border-bottom: 1px solid var(--border); }
+      .stat-item:last-child { border-bottom: none; }
     }
   </style>
   <script>
-    // Forward OAuth tokens to /app/ if Supabase redirected here instead of /app/
-    if (window.location.hash.includes('access_token=') || window.location.hash.includes('error=')) {
-      window.location.replace('/app/' + window.location.hash);
-    }
+    // Forward Supabase auth redirects to /app/ if they land on the landing page.
+    // Hash-based (legacy implicit flow): #access_token= or #error=
+    // Query-based (PKCE flow): ?code= (email confirmations, OAuth)
+    (function() {
+      var h = window.location.hash;
+      var q = window.location.search;
+      if (h.includes('access_token=') || h.includes('error=')) {
+        window.location.replace('/app/' + h);
+      } else if (q.includes('code=') || q.includes('error_description=')) {
+        window.location.replace('/app/' + q + h);
+      }
+    })();
   </script>
 </head>
 <body>
@@ -306,6 +350,24 @@
     <div class="proof-pill"><div class="proof-pill-dot"></div>No credit card required</div>
   </div>
 </div>
+
+<!-- Community Stats -->
+<section class="stats-band">
+  <div class="container stats-inner">
+    <div class="stat-item">
+      <div class="stat-number" id="stat-users">—</div>
+      <div class="stat-label">Car Owners</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number" id="stat-mechanics">—</div>
+      <div class="stat-label">Verified Mechanics</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number" id="stat-logs">—</div>
+      <div class="stat-label">Service Logs Made</div>
+    </div>
+  </div>
+</section>
 
 <!-- Features — Car Owners -->
 <section class="features py-80" id="features">
@@ -497,5 +559,51 @@
 </footer>
 
 <script src="/assets/app.js"></script>
+<script>
+  // Live community stats from Supabase
+  (function() {
+    var SUPABASE_URL  = 'https://eoqycogokelfmgwqydkj.supabase.co';
+    var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvcXljb2dva2VsZm1nd3F5ZGtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzMzMjcsImV4cCI6MjA4OTYwOTMyN30.F1wDENidEb7impi5ZP-lBQW6OueZiv9-yv1TcqZor4g';
+
+    function animateCount(el, target) {
+      if (!el || target == null) return;
+      var start = 0;
+      var duration = 1200;
+      var startTime = null;
+      function step(ts) {
+        if (!startTime) startTime = ts;
+        var progress = Math.min((ts - startTime) / duration, 1);
+        // ease-out quad
+        var eased = 1 - (1 - progress) * (1 - progress);
+        var value = Math.round(eased * target);
+        el.textContent = value >= 1000
+          ? (value / 1000).toFixed(value >= 10000 ? 0 : 1) + 'k+'
+          : (value === 0 && progress < 1 ? '—' : value + (progress >= 1 && target > 0 ? '+' : ''));
+        if (progress < 1) requestAnimationFrame(step);
+        else el.textContent = target >= 1000
+          ? (target / 1000).toFixed(target >= 10000 ? 0 : 1) + 'k+'
+          : target + (target > 0 ? '+' : '');
+      }
+      requestAnimationFrame(step);
+    }
+
+    fetch(SUPABASE_URL + '/rest/v1/rpc/get_public_stats', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Content-Type': 'application/json'
+      },
+      body: '{}'
+    })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(data) {
+      if (!data) return;
+      animateCount(document.getElementById('stat-users'),     Number(data.users)     || 0);
+      animateCount(document.getElementById('stat-mechanics'), Number(data.mechanics) || 0);
+      animateCount(document.getElementById('stat-logs'),      Number(data.logs)      || 0);
+    })
+    .catch(function() { /* silently leave dashes if fetch fails */ });
+  })();
+</script>
 </body>
 </html>
