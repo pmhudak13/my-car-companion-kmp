@@ -26,11 +26,23 @@
   to = "/app/index.html"
   status = 200
 
-# OAuth callback: redirect to /app/ so the Compose app can handle the auth code from the query string.
+# Bare /webapp path
+[[redirects]]
+  from = "/webapp"
+  to = "/webapp/index.html"
+  status = 200
+
+# wasmJs app — all paths route to index.html for client-side navigation
+[[redirects]]
+  from = "/webapp/*"
+  to = "/webapp/index.html"
+  status = 200
+
+# OAuth callback: redirect to /webapp/ so the Compose wasmJs app handles the auth code.
 # Must come before the /app/* catch-all so Netlify matches it first.
 [[redirects]]
   from = "/auth/callback"
-  to = "/app/"
+  to = "/webapp/"
   status = 302
 
 # Auth callback deep-links (OAuth redirects back to /app/)
