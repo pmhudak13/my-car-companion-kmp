@@ -10,6 +10,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import org.mycarcompanion.app.data.supabase.SupabaseConfig
 
 class SubscriptionRepository(private val client: SupabaseClient) {
 
@@ -27,6 +28,9 @@ class SubscriptionRepository(private val client: SupabaseClient) {
             ?: error("Session expired — please sign out and sign back in")
         val response = client.functions.invoke(
             function = "create-portal",
+            body = buildJsonObject {
+                put("return_url", SupabaseConfig.portalReturnUrl)
+            },
             headers = Headers.build {
                 append("Authorization", "Bearer ${session.accessToken}")
             },
@@ -45,8 +49,8 @@ class SubscriptionRepository(private val client: SupabaseClient) {
             function = "create-checkout",
             body = buildJsonObject {
                 put("price_id", priceId)
-                put("success_url", "org.mycarcompanion.app://subscription/success")
-                put("cancel_url", "org.mycarcompanion.app://subscription/cancel")
+                put("success_url", SupabaseConfig.checkoutSuccessUrl)
+                put("cancel_url", SupabaseConfig.checkoutCancelUrl)
             },
             headers = Headers.build {
                 append("Authorization", "Bearer ${session.accessToken}")

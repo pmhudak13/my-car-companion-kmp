@@ -1,6 +1,11 @@
 import Stripe from "https://esm.sh/stripe@14?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
   apiVersion: "2024-06-20",
   httpClient: Stripe.createFetchHttpClient(),
@@ -9,26 +14,30 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
+// Hardcoded price IDs — must match SubscriptionRepository.kt and stripe-webhook/index.ts
 const ALLOWED_PRICE_IDS = new Set([
-  Deno.env.get("STRIPE_PRICE_PREMIUM_MONTHLY") ?? "",
-  Deno.env.get("STRIPE_PRICE_PREMIUM_YEARLY") ?? "",
-  Deno.env.get("STRIPE_PRICE_MECHANIC_MONTHLY") ?? "",
-  Deno.env.get("STRIPE_PRICE_MECHANIC_YEARLY") ?? "",
-].filter(Boolean));
+  "price_1TFf16EEo6NSMXCB9SQ29WiZ", // Premium monthly  $4.99/mo
+  "price_1TFfCmEEo6NSMXCBhvpPp5ut", // Premium yearly   $49.99/yr
+  "price_1TFfAGEEo6NSMXCBu8hSzWVq", // Mechanic monthly $14.99/mo
+  "price_1TFfCIEEo6NSMXCBXTQaAI5x", // Mechanic yearly  $149.99/yr
+]);
 
 Deno.serve(async (req) => {
-  // Only allow POST
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
 
   try {
-    // Authenticate the calling user via their JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing authorization" }), {
         status: 401,
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -44,24 +53,23 @@ Deno.serve(async (req) => {
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Parse request body
     const { price_id, success_url, cancel_url } = await req.json();
 
     if (!price_id) {
       return new Response(JSON.stringify({ error: "price_id is required" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (!ALLOWED_PRICE_IDS.has(price_id)) {
       return new Response(JSON.stringify({ error: "Invalid price_id" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -81,39 +89,32 @@ Deno.serve(async (req) => {
       });
       customerId = customer.id;
 
-      // Persist the customer ID so we reuse it on future checkouts
       await supabase
         .from("profiles")
         .update({ stripe_customer_id: customerId })
         .eq("user_id", user.id);
     }
 
-    // Create a Stripe Checkout Session for a subscription
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
       line_items: [{ price: price_id, quantity: 1 }],
-      // Mobile deep-link redirect URLs
-      success_url:
-        success_url ?? "org.mycarcompanion.app://subscription/success?session_id={CHECKOUT_SESSION_ID}",
-      cancel_url:
-        cancel_url ?? "org.mycarcompanion.app://subscription/cancel",
-      // Prefill email so the user doesn't have to type it
-      customer_email: customerId ? undefined : (user.email ?? undefined),
+      success_url: success_url ?? "https://www.mycarcompanion.org/app/?checkout=success",
+      cancel_url: cancel_url ?? "https://www.mycarcompanion.org/app/",
       metadata: { supabase_user_id: user.id },
     });
 
     return new Response(JSON.stringify({ url: session.url }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error("create-checkout-session error:", err);
+    console.error("create-checkout error:", err);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
   }
