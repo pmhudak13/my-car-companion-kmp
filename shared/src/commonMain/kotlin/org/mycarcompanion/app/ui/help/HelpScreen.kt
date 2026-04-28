@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import org.mycarcompanion.app.platform.topBarWindowInsets
 
 private data class FaqItem(val question: String, val answer: String)
 
@@ -90,6 +91,7 @@ class HelpScreen : Screen {
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                         }
                     },
+                    windowInsets = topBarWindowInsets(),
                 )
             },
         ) { paddingValues ->

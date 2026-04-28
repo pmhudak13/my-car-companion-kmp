@@ -53,6 +53,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.help.HelpScreen
 import org.mycarcompanion.app.ui.subscription.SubscribeScreen
@@ -138,6 +139,7 @@ class SettingsScreen : Screen {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },
+                    windowInsets = topBarWindowInsets(),
                 )
             },
         ) { paddingValues ->

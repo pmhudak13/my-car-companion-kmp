@@ -93,7 +93,7 @@ data class MechanicDirectoryScreen(val vehicleId: String? = null) : Screen, Comm
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                     )
-                    TextButton(onClick = { navigator.pop() }) { Text("Back") }
+                    OutlinedButton(onClick = { navigator.pop() }) { Text("Back") }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

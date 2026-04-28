@@ -47,6 +47,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.repository.SubscriptionRepository
+import org.mycarcompanion.app.platform.topBarWindowInsets
 
 class SubscribeScreen : Screen {
 
@@ -85,6 +86,7 @@ class SubscribeScreen : Screen {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },
+                    windowInsets = topBarWindowInsets(),
                 )
             },
             snackbarHost = { SnackbarHost(snackbarState) },

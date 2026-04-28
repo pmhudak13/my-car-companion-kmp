@@ -41,6 +41,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.MaintenanceLog
+import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreen
@@ -72,6 +73,7 @@ data class MechanicVehicleViewScreen(
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                         }
                     },
+                    windowInsets = topBarWindowInsets(),
                 )
             },
             floatingActionButton = {

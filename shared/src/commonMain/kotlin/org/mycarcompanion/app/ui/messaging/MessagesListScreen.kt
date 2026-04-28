@@ -38,6 +38,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import org.mycarcompanion.app.platform.topBarWindowInsets
 
 class MessagesListScreen : Screen {
 
@@ -57,6 +58,7 @@ class MessagesListScreen : Screen {
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                         }
                     },
+                    windowInsets = topBarWindowInsets(),
                 )
             },
         ) { paddingValues ->

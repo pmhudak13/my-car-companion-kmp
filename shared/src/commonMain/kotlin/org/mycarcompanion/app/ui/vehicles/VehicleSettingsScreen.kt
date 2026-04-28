@@ -47,6 +47,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.carMakes
+import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.data.models.carModelsByMake
 import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.ui.transfer.TransferScreen
@@ -108,6 +109,7 @@ data class VehicleSettingsScreen(val vehicleId: String) : Screen, CommonParcelab
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                         }
                     },
+                    windowInsets = topBarWindowInsets(),
                 )
             },
         ) { paddingValues ->

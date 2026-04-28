@@ -58,6 +58,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.MechanicJob
+import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.data.models.MechanicJobLog
 import org.mycarcompanion.app.data.models.maintenanceCategories
 import org.mycarcompanion.app.platform.CommonParcelable
@@ -95,6 +96,7 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                         }
                     },
+                    windowInsets = topBarWindowInsets(),
                 )
             },
             floatingActionButton = {

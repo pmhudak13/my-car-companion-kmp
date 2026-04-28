@@ -85,7 +85,7 @@ class AdminScreen : Screen {
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                     )
-                    TextButton(onClick = { navigator.pop() }) { Text("Back") }
+                    OutlinedButton(onClick = { navigator.pop() }) { Text("Back") }
                 }
 
                 TabRow(selectedTabIndex = selectedTab) {

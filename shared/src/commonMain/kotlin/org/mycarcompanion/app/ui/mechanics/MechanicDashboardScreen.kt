@@ -1,5 +1,6 @@
 package org.mycarcompanion.app.ui.mechanics
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -43,6 +46,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.AuthState
+import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.data.models.MechanicAssignment
 import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.ui.auth.LoginScreen
@@ -80,14 +84,24 @@ class MechanicDashboardScreen : Screen {
                             Icon(Icons.Default.Edit, contentDescription = "Edit Profile")
                         }
                         if (currentUser?.isAdmin == true) {
-                            TextButton(onClick = { navigator.replace(HomeScreen()) }) {
-                                Text("Individual View", color = MaterialTheme.colorScheme.secondary)
+                            OutlinedButton(
+                                onClick = { navigator.replace(HomeScreen()) },
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.secondary),
+                                modifier = Modifier.padding(end = 4.dp),
+                            ) {
+                                Text("Individual View")
                             }
                         }
-                        TextButton(onClick = homeModel::signOut) {
-                            Text("Sign Out", color = MaterialTheme.colorScheme.error)
+                        OutlinedButton(
+                            onClick = homeModel::signOut,
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
+                            modifier = Modifier.padding(end = 4.dp),
+                        ) {
+                            Text("Sign Out")
                         }
                     },
+                    windowInsets = topBarWindowInsets(),
                 )
             },
             floatingActionButton = {
