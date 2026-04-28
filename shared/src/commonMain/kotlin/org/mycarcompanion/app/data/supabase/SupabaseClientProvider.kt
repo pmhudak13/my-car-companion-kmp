@@ -1,6 +1,7 @@
 package org.mycarcompanion.app.data.supabase
 
 import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.postgrest.Postgrest
@@ -26,5 +27,13 @@ val supabaseClient by lazy {
 
 fun prewarmSupabaseClient() {
     supabaseClient
+}
+
+suspend fun importSessionTokens(accessToken: String, refreshToken: String) {
+    supabaseClient.auth.importAuthToken(
+        accessToken = accessToken,
+        refreshToken = refreshToken,
+        retrieveUser = true,
+    )
 }
 

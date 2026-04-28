@@ -456,7 +456,7 @@
               <span>Full experience on Android</span>
             </div>
           </a>
-          <a href="/webapp/" class="app-link">
+          <a href="/webapp/" class="app-link" onclick="openWebApp(event)">
             <span class="app-link-icon">🌐</span>
             <div class="app-link-text">
               Access MyCarCompanion.org Online
@@ -683,6 +683,25 @@
       showAlert('newpw-alert', 'error', 'Network error — please check your connection and try again.');
     } finally {
       setLoading('newpw-btn', false);
+    }
+  }
+
+  // ── Open web app — passes live session via URL hash ──────
+  async function openWebApp(e) {
+    e.preventDefault();
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session && session.access_token) {
+        const hash = 'access_token=' + encodeURIComponent(session.access_token)
+          + '&refresh_token=' + encodeURIComponent(session.refresh_token || '')
+          + '&token_type=bearer'
+          + '&expires_in=' + (session.expires_in || 3600);
+        window.location.href = '/webapp/#' + hash;
+      } else {
+        window.location.href = '/webapp/';
+      }
+    } catch (_) {
+      window.location.href = '/webapp/';
     }
   }
 
