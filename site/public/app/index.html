@@ -261,7 +261,7 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      margin-bottom: 28px;
+      margin-bottom: 20px;
     }
     .app-link {
       display: flex;
@@ -281,6 +281,54 @@
     .app-link-icon { font-size: 1.3rem; }
     .app-link-text { text-align: left; }
     .app-link-text span { display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 1px; }
+
+    /* ── Upgrade section ──────────────────────────────────── */
+    .upgrade-divider {
+      display: flex; align-items: center; gap: 10px;
+      margin: 4px 0 14px;
+      color: var(--text-muted); font-size: 0.8rem;
+    }
+    .upgrade-divider::before, .upgrade-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .upgrade-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; text-align: left; }
+    .upgrade-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+      cursor: pointer; transition: border-color 0.18s;
+      width: 100%; font-family: inherit; color: var(--text);
+    }
+    .upgrade-card:hover:not(:disabled) { border-color: var(--accent); }
+    .upgrade-card:disabled { opacity: 0.6; cursor: not-allowed; }
+    .upgrade-card.featured { border-color: rgba(107,188,222,0.4); }
+    .upgrade-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+    .upgrade-card-name { font-weight: 700; font-size: 0.95rem; }
+    .upgrade-card-price { font-size: 0.85rem; color: var(--accent); font-weight: 600; }
+    .upgrade-card-desc { font-size: 0.78rem; color: var(--text-muted); }
+    .billing-toggle { display: flex; gap: 6px; margin-top: 10px; }
+    .billing-btn {
+      flex: 1; padding: 6px 8px; font-size: 0.74rem; font-weight: 600;
+      border-radius: 6px; border: 1px solid var(--border);
+      background: transparent; color: var(--text-muted);
+      cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .billing-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .billing-btn:hover:not(.active) { border-color: var(--accent); color: var(--text); }
+    .upgrade-submit {
+      display: block; width: 100%; margin-top: 10px;
+      padding: 11px; background: var(--accent); color: var(--bg);
+      border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: background 0.18s;
+    }
+    .upgrade-submit:hover { background: var(--accent-dark); }
+    .upgrade-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+    .manage-sub-btn {
+      font-size: 0.82rem; color: var(--text-muted); cursor: pointer;
+      background: none; border: none; font-family: inherit;
+      text-decoration: underline; margin-bottom: 12px; display: block; width: 100%;
+    }
+    .manage-sub-btn:hover { color: var(--accent); }
+
     .signout-btn {
       background: none;
       border: none;
@@ -290,6 +338,15 @@
       text-decoration: underline;
     }
     .signout-btn:hover { color: var(--error); }
+
+    /* ── Checkout success / error banner ─────────────────── */
+    .checkout-banner {
+      display: none; padding: 12px 14px; border-radius: 9px;
+      font-size: 0.87rem; margin-bottom: 16px; text-align: left; line-height: 1.5;
+    }
+    .checkout-banner.success { background: rgba(52,201,138,0.12); border: 1px solid rgba(52,201,138,0.3); color: #5dd6a0; }
+    .checkout-banner.error   { background: rgba(224,85,85,0.12);  border: 1px solid rgba(224,85,85,0.3);  color: #f08080; }
+    .checkout-banner.show    { display: block; }
 
     /* ── Reset password view ───────────────────────────────── */
     #reset-view { display: none; }
@@ -448,6 +505,9 @@
         <div class="card-title">You're signed in!</div>
         <div class="signed-in-email" id="user-email-display"></div>
 
+        <!-- Checkout result banner (shown after Stripe redirect back) -->
+        <div class="checkout-banner" id="checkout-banner"></div>
+
         <div class="app-links">
           <a href="https://play.google.com/store" target="_blank" rel="noopener" class="app-link">
             <span class="app-link-icon">📱</span>
@@ -463,6 +523,46 @@
               <span>Use the full app in your browser</span>
             </div>
           </a>
+        </div>
+
+        <!-- Upgrade section (hidden when already premium) -->
+        <div id="upgrade-section">
+          <div class="upgrade-divider">Upgrade your plan</div>
+
+          <div class="upgrade-cards">
+            <!-- Premium card -->
+            <div class="upgrade-card featured" id="card-premium">
+              <div class="upgrade-card-header">
+                <span class="upgrade-card-name">⭐ Premium</span>
+                <span class="upgrade-card-price" id="premium-price-label">$49.99 / year</span>
+              </div>
+              <div class="upgrade-card-desc">Unlimited vehicles · Full history · Reminders · Mechanic messaging</div>
+              <div class="billing-toggle">
+                <button class="billing-btn" onclick="setPremiumBilling('monthly')">Monthly — $4.99</button>
+                <button class="billing-btn active" onclick="setPremiumBilling('yearly')">Yearly — $49.99 <span style="color:var(--success)">save 17%</span></button>
+              </div>
+              <button class="upgrade-submit" id="btn-premium" onclick="startCheckout('premium')">Upgrade to Premium</button>
+            </div>
+
+            <!-- Mechanic Pro card -->
+            <div class="upgrade-card" id="card-mechanic">
+              <div class="upgrade-card-header">
+                <span class="upgrade-card-name">🔧 Mechanic Pro</span>
+                <span class="upgrade-card-price" id="mechanic-price-label">$149.99 / year</span>
+              </div>
+              <div class="upgrade-card-desc">Everything in Premium · Job management · Client inbox · Directory listing</div>
+              <div class="billing-toggle">
+                <button class="billing-btn" onclick="setMechanicBilling('monthly')">Monthly — $14.99</button>
+                <button class="billing-btn active" onclick="setMechanicBilling('yearly')">Yearly — $149.99 <span style="color:var(--success)">save 17%</span></button>
+              </div>
+              <button class="upgrade-submit" id="btn-mechanic" onclick="startCheckout('mechanic')">Upgrade to Mechanic Pro</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manage subscription (shown when already subscribed) -->
+        <div id="manage-section" style="display:none; margin-bottom:16px;">
+          <button class="manage-sub-btn" onclick="openPortal()">Manage or cancel subscription →</button>
         </div>
 
         <button class="signout-btn" onclick="doSignOut()">Sign out</button>
@@ -655,6 +755,15 @@
     document.getElementById('new-password-view').style.display  = 'none';
     document.getElementById('signed-in-view').style.display     = 'block';
     document.getElementById('user-email-display').textContent   = user.email || '';
+    // Check checkout=success param and show banner
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('checkout') === 'success') {
+      showCheckoutBanner('success', '🎉 You\'re now subscribed! Your premium features are active. Welcome to My Car Companion Premium.');
+      // Clean the URL so refresh doesn't re-show the banner
+      history.replaceState(null, '', window.location.pathname);
+    }
+    // Load subscription status to show/hide upgrade section
+    loadSubscriptionStatus();
   }
 
   function showReset() {
@@ -720,6 +829,133 @@
     }
   }
 
+  // ── Subscription state ───────────────────────────────────────
+  const PRICE_PREMIUM_MONTHLY  = 'price_1TFf16EEo6NSMXCB9SQ29WiZ';
+  const PRICE_PREMIUM_YEARLY   = 'price_1TFfCmEEo6NSMXCBhvpPp5ut';
+  const PRICE_MECHANIC_MONTHLY = 'price_1TFfAGEEo6NSMXCBu8hSzWVq';
+  const PRICE_MECHANIC_YEARLY  = 'price_1TFfCIEEo6NSMXCBXTQaAI5x';
+
+  // Track which billing period is selected for each plan
+  var _premiumYearly  = true;
+  var _mechanicYearly = true;
+
+  async function loadSubscriptionStatus() {
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) return;
+      const { data: profile } = await sb
+        .from('profiles')
+        .select('is_premium, subscription_tier')
+        .eq('user_id', session.user.id)
+        .single();
+      if (profile?.is_premium) {
+        document.getElementById('upgrade-section').style.display = 'none';
+        document.getElementById('manage-section').style.display  = 'block';
+      }
+    } catch (_) { /* non-fatal — default to showing upgrade section */ }
+  }
+
+  function setPremiumBilling(period) {
+    _premiumYearly = period === 'yearly';
+    const btns = document.querySelectorAll('#card-premium .billing-btn');
+    btns[0].classList.toggle('active', !_premiumYearly);
+    btns[1].classList.toggle('active', _premiumYearly);
+    document.getElementById('premium-price-label').textContent =
+      _premiumYearly ? '$49.99 / year' : '$4.99 / month';
+  }
+
+  function setMechanicBilling(period) {
+    _mechanicYearly = period === 'yearly';
+    const btns = document.querySelectorAll('#card-mechanic .billing-btn');
+    btns[0].classList.toggle('active', !_mechanicYearly);
+    btns[1].classList.toggle('active', _mechanicYearly);
+    document.getElementById('mechanic-price-label').textContent =
+      _mechanicYearly ? '$149.99 / year' : '$14.99 / month';
+  }
+
+  // ── Stripe checkout ──────────────────────────────────────────
+  async function startCheckout(plan) {
+    const priceId = plan === 'premium'
+      ? (_premiumYearly  ? PRICE_PREMIUM_YEARLY  : PRICE_PREMIUM_MONTHLY)
+      : (_mechanicYearly ? PRICE_MECHANIC_YEARLY : PRICE_MECHANIC_MONTHLY);
+
+    const btnId = plan === 'premium' ? 'btn-premium' : 'btn-mechanic';
+    setLoading(btnId, true);
+    showCheckoutBanner('', '');  // clear any previous banner
+
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) {
+        showCheckoutBanner('error', 'Please sign in again to continue.');
+        return;
+      }
+
+      const res = await fetch(SUPABASE_URL + '/functions/v1/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + session.access_token,
+          'apikey': SUPABASE_ANON,
+        },
+        body: JSON.stringify({
+          price_id:    priceId,
+          success_url: window.location.origin + '/app/?checkout=success',
+          cancel_url:  window.location.origin + '/app/',
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        showCheckoutBanner('error', data.error || 'Failed to start checkout. Please try again.');
+        return;
+      }
+      window.location.href = data.url;
+    } catch (e) {
+      showCheckoutBanner('error', 'Network error — please check your connection and try again.');
+    } finally {
+      setLoading(btnId, false);
+    }
+  }
+
+  // ── Stripe billing portal ────────────────────────────────────
+  async function openPortal() {
+    const btn = document.querySelector('.manage-sub-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Opening portal…'; }
+
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { showCheckoutBanner('error', 'Please sign in again.'); return; }
+
+      const res = await fetch(SUPABASE_URL + '/functions/v1/create-portal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + session.access_token,
+          'apikey': SUPABASE_ANON,
+        },
+        body: JSON.stringify({ return_url: window.location.origin + '/app/' }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        showCheckoutBanner('error', data.error || 'Failed to open billing portal.');
+        return;
+      }
+      window.location.href = data.url;
+    } catch (e) {
+      showCheckoutBanner('error', 'Network error — please check your connection and try again.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'Manage or cancel subscription →'; }
+    }
+  }
+
+  function showCheckoutBanner(type, msg) {
+    const el = document.getElementById('checkout-banner');
+    if (!type || !msg) { el.className = 'checkout-banner'; return; }
+    el.className = 'checkout-banner ' + type + ' show';
+    el.textContent = msg;
+  }
+
   // ── Utility ──────────────────────────────────────────────────
   function showAlert(id, type, msg) {
     const el = document.getElementById(id);
@@ -733,6 +969,7 @@
 
   function setLoading(btnId, loading) {
     const btn = document.getElementById(btnId);
+    if (!btn) return;
     btn.disabled = loading;
     if (loading) {
       btn._orig = btn.textContent;

@@ -9,4 +9,10 @@ expect object SupabaseConfig {
     val authHost: String
     /** Whether Supabase Auth may persist sessions to storage. False when storage is unavailable (e.g. private browsing). */
     val authAutoSaveToStorage: Boolean
+    /** Stripe checkout success redirect. Deep-link on mobile, HTTPS URL on web. */
+    val checkoutSuccessUrl: String
+    /** Stripe checkout cancel redirect. Deep-link on mobile, HTTPS URL on web. */
+    val checkoutCancelUrl: String
+    /** Stripe billing portal return URL. Deep-link on mobile, HTTPS URL on web. */
+    val portalReturnUrl: String
 }

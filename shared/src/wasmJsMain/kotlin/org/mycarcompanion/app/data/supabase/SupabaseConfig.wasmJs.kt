@@ -13,4 +13,7 @@ actual object SupabaseConfig {
     actual val authScheme: String = ""
     actual val authHost: String = ""
     actual val authAutoSaveToStorage: Boolean = localStorageAvailable
+    actual val checkoutSuccessUrl: String = "https://www.mycarcompanion.org/app/?checkout=success"
+    actual val checkoutCancelUrl: String = "https://www.mycarcompanion.org/app/"
+    actual val portalReturnUrl: String = "https://www.mycarcompanion.org/app/"
 }

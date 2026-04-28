@@ -9,6 +9,9 @@ actual object SupabaseConfig {
     actual val authScheme: String = "org.mycarcompanion.app"
     actual val authHost: String = "auth"
     actual val authAutoSaveToStorage: Boolean = true
+    actual val checkoutSuccessUrl: String = "org.mycarcompanion.app://subscription/success"
+    actual val checkoutCancelUrl: String = "org.mycarcompanion.app://subscription/cancel"
+    actual val portalReturnUrl: String = "org.mycarcompanion.app://subscription/portal-return"
 
     fun init(url: String, anonKey: String) {
         _url = url
