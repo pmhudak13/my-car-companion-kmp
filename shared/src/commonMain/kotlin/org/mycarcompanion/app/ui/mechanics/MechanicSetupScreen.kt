@@ -43,6 +43,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.shopTypeLabels
+import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.data.models.shopTypes
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,6 +73,7 @@ class MechanicSetupScreen : Screen {
                             )
                         }
                     },
+                    windowInsets = topBarWindowInsets(),
                 )
             },
         ) { paddingValues ->

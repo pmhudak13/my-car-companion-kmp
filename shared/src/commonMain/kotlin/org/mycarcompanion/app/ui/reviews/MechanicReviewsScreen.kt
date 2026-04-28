@@ -49,6 +49,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.MechanicReview
 import org.mycarcompanion.app.platform.CommonParcelable
+import org.mycarcompanion.app.platform.topBarWindowInsets
 
 data class MechanicReviewsScreen(
     val mechanicUserId: String,
@@ -163,6 +164,7 @@ data class MechanicReviewsScreen(
                             Text(if (state.myReview != null) "Edit Review" else "Write Review")
                         }
                     },
+                    windowInsets = topBarWindowInsets(),
                 )
             },
         ) { paddingValues ->

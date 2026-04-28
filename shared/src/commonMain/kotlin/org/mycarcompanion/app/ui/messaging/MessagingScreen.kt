@@ -21,6 +21,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -40,6 +41,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.Message
 import org.mycarcompanion.app.platform.CommonParcelable
+import org.mycarcompanion.app.platform.topBarWindowInsets
 
 // Inbox screen (recipientId == null) shows all received messages.
 // Conversation screen (recipientId != null) shows thread with that user + compose box.
@@ -70,8 +72,12 @@ data class MessagingScreen(val recipientId: String? = null) : Screen, CommonParc
                         Text(if (recipientId == null) "Inbox" else "Conversation")
                     },
                     navigationIcon = {
-                        TextButton(onClick = { navigator.pop() }) { Text("Back") }
+                        OutlinedButton(
+                            onClick = { navigator.pop() },
+                            modifier = Modifier.padding(start = 4.dp),
+                        ) { Text("Back") }
                     },
+                    windowInsets = topBarWindowInsets(),
                 )
             },
         ) { paddingValues ->

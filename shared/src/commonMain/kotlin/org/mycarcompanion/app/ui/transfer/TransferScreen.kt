@@ -38,6 +38,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.VehicleTransfer
 import org.mycarcompanion.app.platform.CommonParcelable
+import org.mycarcompanion.app.platform.topBarWindowInsets
 
 data class TransferScreen(
     val vehicleId: String,
@@ -62,6 +63,7 @@ data class TransferScreen(
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },
+                    windowInsets = topBarWindowInsets(),
                 )
             },
         ) { paddingValues ->
