@@ -7,7 +7,7 @@ const resendApiKey = Deno.env.get("RESEND_API_KEY") ?? "";
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://www.mycarcompanion.org",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -28,17 +28,13 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Missing authorization header" }, 401);
   }
 
-  // Decode JWT payload to extract user ID without local algorithm verification.
-  // Security is enforced by the DB ownership check below (mechanic_user_id == userId).
-  let userId: string;
-  try {
-    const token = authHeader.slice(7);
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    userId = payload.sub;
-    if (!userId) throw new Error("Missing sub claim");
-  } catch {
-    return jsonResponse({ error: "Invalid token" }, 401);
+  // Verify the JWT cryptographically via Supabase auth (not just base64 decode).
+  const token = authHeader.slice(7);
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return jsonResponse({ error: "Unauthorized" }, 401);
   }
+  const userId = user.id;
 
   let body: {
     jobId: string;
