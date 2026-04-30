@@ -20,15 +20,19 @@ fun main() {
         }
         prewarmSupabaseClient()
 
-        val hashSession = parseHashSession()
-        if (hashSession != null) {
-            // Remove tokens from the URL immediately so they don't appear in history or Referer headers
-            cleanHashFromUrl()
+        // Read session handoff from sessionStorage (written by /app/ page).
+        // sessionStorage is tab-scoped and never appears in browser history or Referer headers.
+        // Fall back to URL hash for backwards compatibility with any existing deep-links.
+        val handoffSession = parseStorageSession() ?: parseHashSession()
+        if (handoffSession != null) {
+            if (window.location.hash.contains("access_token=")) {
+                // Clean legacy hash tokens from URL
+                cleanHashFromUrl()
+            }
             // Import the session before Compose starts so the app opens already authenticated.
-            // The HTML loading spinner stays visible while the HTTP round-trip completes.
             CoroutineScope(Dispatchers.Default).launch {
                 try {
-                    importSessionTokens(hashSession.first, hashSession.second)
+                    importSessionTokens(handoffSession.first, handoffSession.second)
                 } catch (_: Throwable) {
                     // Token import failed (e.g. expired) — app will show login screen normally
                 }
@@ -46,6 +50,28 @@ fun main() {
 private fun startCompose() {
     ComposeViewport(document.body!!) {
         App()
+    }
+}
+
+/** Reads session tokens written by /app/ via sessionStorage and clears them immediately. */
+private fun parseStorageSession(): Pair<String, String>? {
+    return try {
+        val raw = js("(function(){ try { return sessionStorage.getItem('_mcc_handoff'); } catch(e){ return null; } })()") as? String
+            ?: return null
+        js("(function(){ try { sessionStorage.removeItem('_mcc_handoff'); } catch(e){} })()")
+        val json = raw.trimStart('{').trimEnd('}')
+        fun extractField(key: String): String? {
+            val marker = "\"$key\":"
+            val start = json.indexOf(marker).takeIf { it >= 0 }?.plus(marker.length) ?: return null
+            val valueStart = json.indexOf('"', start).takeIf { it >= 0 }?.plus(1) ?: return null
+            val valueEnd = json.indexOf('"', valueStart).takeIf { it >= 0 } ?: return null
+            return json.substring(valueStart, valueEnd).ifBlank { null }
+        }
+        val accessToken = extractField("access_token") ?: return null
+        val refreshToken = extractField("refresh_token") ?: ""
+        accessToken to refreshToken
+    } catch (_: Throwable) {
+        null
     }
 }
 

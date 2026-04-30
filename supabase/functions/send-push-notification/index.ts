@@ -86,7 +86,43 @@ async function getAccessToken(serviceAccount: {
   return tokenData.access_token;
 }
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "https://www.mycarcompanion.org",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  // Require a valid JWT from the calling service or authenticated user.
+  // This function is called server-to-server (from other edge functions) or
+  // from authenticated app clients — anonymous access is not allowed.
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Missing authorization" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  // Verify the caller's JWT. Service-role callers pass the service key as Bearer token;
+  // authenticated users pass their access token.
+  const token = authHeader.slice(7);
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+
   try {
     const payload: PushPayload = await req.json();
     const { title, body, type } = payload;
@@ -95,14 +131,9 @@ Deno.serve(async (req) => {
     if (!title || !body) {
       return new Response(JSON.stringify({ error: "Missing title or body" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
 
     // Resolve recipient via client_email if recipient_id not supplied
     if (!recipient_id && payload.client_email) {
@@ -117,7 +148,7 @@ Deno.serve(async (req) => {
     if (!recipient_id) {
       return new Response(JSON.stringify({ skipped: "no recipient resolved" }), {
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
@@ -134,7 +165,7 @@ Deno.serve(async (req) => {
         if (prefs && prefs[prefColumn] === false) {
           return new Response(JSON.stringify({ skipped: "user preference off" }), {
             status: 200,
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...corsHeaders },
           });
         }
       }
@@ -151,7 +182,7 @@ Deno.serve(async (req) => {
     if (tokenErr || !tokenRow?.token) {
       return new Response(JSON.stringify({ skipped: "no device token" }), {
         status: 200,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
@@ -189,13 +220,13 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ success: true, name: fcmData.name }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ error: String(err) }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   }
 });

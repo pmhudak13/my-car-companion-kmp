@@ -625,9 +625,47 @@
   }
 
   // ── Password reset ───────────────────────────────────────────
+  // Rate-limit: max 3 attempts per 10-minute window, then 60s cooldown per send.
+  const RESET_WINDOW_MS  = 10 * 60 * 1000; // 10 minutes
+  const RESET_MAX_TRIES  = 3;
+  const RESET_COOLDOWN_MS = 60 * 1000;      // 60s between sends
+
+  function _resetState() {
+    try {
+      const raw = localStorage.getItem('_pw_reset');
+      return raw ? JSON.parse(raw) : { count: 0, windowStart: 0, lastSent: 0 };
+    } catch { return { count: 0, windowStart: 0, lastSent: 0 }; }
+  }
+  function _saveResetState(s) {
+    try { localStorage.setItem('_pw_reset', JSON.stringify(s)); } catch {}
+  }
+
   async function doReset() {
     const email = document.getElementById('reset-email').value.trim();
     if (!email) { showAlert('reset-alert', 'error', 'Please enter your email address.'); return; }
+
+    const now   = Date.now();
+    const state = _resetState();
+
+    // Reset window if expired
+    if (now - state.windowStart > RESET_WINDOW_MS) {
+      state.count = 0;
+      state.windowStart = now;
+    }
+
+    // Per-send cooldown
+    const cooldownLeft = Math.ceil((RESET_COOLDOWN_MS - (now - state.lastSent)) / 1000);
+    if (state.lastSent && cooldownLeft > 0) {
+      showAlert('reset-alert', 'error', `Please wait ${cooldownLeft}s before requesting another reset link.`);
+      return;
+    }
+
+    // Max attempts in window
+    if (state.count >= RESET_MAX_TRIES) {
+      const windowLeft = Math.ceil((RESET_WINDOW_MS - (now - state.windowStart)) / 60000);
+      showAlert('reset-alert', 'error', `Too many reset attempts. Try again in about ${windowLeft} minute${windowLeft !== 1 ? 's' : ''}.`);
+      return;
+    }
 
     setLoading('reset-btn', true);
     try {
@@ -637,6 +675,9 @@
       if (error) {
         showAlert('reset-alert', 'error', error.message);
       } else {
+        state.count++;
+        state.lastSent = Date.now();
+        _saveResetState(state);
         showAlert('reset-alert', 'success', 'Reset link sent! Check your inbox.');
       }
     } catch (e) {
@@ -709,17 +750,23 @@
     }
   }
 
-  // ── Open web app — passes live session via URL hash ──────
+  // ── Open web app — passes live session via sessionStorage ────
+  // sessionStorage is tab-scoped and not visible in browser history,
+  // server logs, or referrer headers. The webapp reads and clears it immediately.
   async function openWebApp(e) {
     e.preventDefault();
     try {
       const { data: { session } } = await sb.auth.getSession();
       if (session && session.access_token) {
-        const hash = 'access_token=' + encodeURIComponent(session.access_token)
-          + '&refresh_token=' + encodeURIComponent(session.refresh_token || '')
-          + '&token_type=bearer'
-          + '&expires_in=' + (session.expires_in || 3600);
-        window.location.href = '/webapp/#' + hash;
+        try {
+          sessionStorage.setItem('_mcc_handoff', JSON.stringify({
+            access_token:  session.access_token,
+            refresh_token: session.refresh_token || '',
+            token_type:    'bearer',
+            expires_in:    session.expires_in || 3600,
+          }));
+        } catch (_) { /* private browsing — sessionStorage blocked, webapp will use its own session */ }
+        window.location.href = '/webapp/';
       } else {
         window.location.href = '/webapp/';
       }
