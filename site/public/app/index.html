@@ -445,6 +445,9 @@
 
       <!-- Signed-in view -->
       <div id="signed-in-view">
+        <div id="checkout-success-banner" style="display:none;background:rgba(52,201,138,0.12);border:1px solid rgba(52,201,138,0.3);color:#5dd6a0;border-radius:9px;padding:12px 14px;font-size:0.87rem;margin-bottom:18px;text-align:center;">
+          🎉 You're now subscribed! Open the app to unlock all Premium features.
+        </div>
         <div class="avatar">🚗</div>
         <div class="card-title">You're signed in!</div>
         <div class="signed-in-email" id="user-email-display"></div>
@@ -656,6 +659,10 @@
     document.getElementById('new-password-view').style.display  = 'none';
     document.getElementById('signed-in-view').style.display     = 'block';
     document.getElementById('user-email-display').textContent   = user.email || '';
+    if (new URLSearchParams(window.location.search).get('checkout') === 'success') {
+      document.getElementById('checkout-success-banner').style.display = 'block';
+      history.replaceState(null, '', window.location.pathname);
+    }
   }
 
   function showReset() {

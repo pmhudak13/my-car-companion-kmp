@@ -41,14 +41,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    // Pass the JWT directly — edge functions are stateless so getUser() without
+    // an explicit token would look for a stored session (which doesn't exist) and fail.
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
