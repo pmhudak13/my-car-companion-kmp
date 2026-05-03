@@ -533,12 +533,20 @@
   // ── Auth state — single source of truth ──────────────────────
   // INITIAL_SESSION fires once on load (after any code exchange), so we
   // hide the loader here instead of in a separate getSession() call.
+  // _recoveryPending: set to true when PASSWORD_RECOVERY fires so that
+  // a deferred showSignedIn() (from INITIAL_SESSION) is suppressed.
+  var _recoveryPending = false;
+
   sb.auth.onAuthStateChange((event, session) => {
     clearTimeout(_initTimer);
     document.getElementById('init-loader').style.display = 'none';
     if (event === 'INITIAL_SESSION') {
       if (session) {
-        showSignedIn(session.user);
+        // Defer by one microtask so PASSWORD_RECOVERY (which fires async
+        // right after for recovery links) can set _recoveryPending first.
+        Promise.resolve().then(() => {
+          if (!_recoveryPending) showSignedIn(session.user);
+        });
       } else if (_oauthError) {
         showAlert('signin-alert', 'error', decodeURIComponent(_oauthError.replace(/\+/g, ' ')));
       } else if (_hasOAuthCode) {
@@ -554,6 +562,7 @@
       document.getElementById('auth-view').style.display         = 'block';
       clearAlerts();
     } else if (event === 'PASSWORD_RECOVERY') {
+      _recoveryPending = true;
       showNewPasswordView();
     } else if (event === 'USER_UPDATED' && session) {
       showSignedIn(session.user);
@@ -620,7 +629,7 @@
   async function signInWithGoogle() {
     await sb.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + '/app/' }
+      options: { redirectTo: window.location.origin + '/app/callback/' }
     });
   }
 
@@ -720,6 +729,7 @@
   function showNewPasswordView() {
     document.getElementById('auth-view').style.display          = 'none';
     document.getElementById('reset-view').style.display         = 'none';
+    document.getElementById('signed-in-view').style.display     = 'none';
     document.getElementById('new-password-view').style.display  = 'block';
   }
 
