@@ -2,9 +2,16 @@ package org.mycarcompanion.app.ui.messaging
 
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.mycarcompanion.app.data.models.Message
 import org.mycarcompanion.app.data.repository.AuthRepository
@@ -23,10 +30,28 @@ data class MessagingState(
 class MessagingScreenModel(
     private val messageRepository: MessageRepository,
     private val authRepository: AuthRepository,
+    private val supabaseClient: SupabaseClient,
 ) : ScreenModel {
 
     private val _state = MutableStateFlow(MessagingState())
     val state: StateFlow<MessagingState> = _state.asStateFlow()
+
+    private var realtimeRecipientId: String? = null
+
+    fun subscribeToConversation(otherUserId: String) {
+        if (realtimeRecipientId == otherUserId) return
+        realtimeRecipientId = otherUserId
+        screenModelScope.launch {
+            val channel = supabaseClient.channel("conversation_$otherUserId")
+            channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
+                table = "chat_messages"
+            }.onEach {
+                // Reload conversation when a new row arrives
+                loadConversation(otherUserId)
+            }.launchIn(screenModelScope)
+            channel.subscribe()
+        }
+    }
 
     fun loadInbox() {
         screenModelScope.launch {
@@ -68,6 +93,14 @@ class MessagingScreenModel(
 
     fun onComposeChange(text: String) {
         _state.value = _state.value.copy(composeText = text, sendError = null)
+    }
+
+    override fun onDispose() {
+        realtimeRecipientId?.let { otherId ->
+            screenModelScope.launch {
+                runCatching { supabaseClient.realtime.removeChannel(supabaseClient.channel("conversation_$otherId")) }
+            }
+        }
     }
 
     fun sendMessage(recipientId: String, vehicleId: String? = null, onSent: () -> Unit = {}) {

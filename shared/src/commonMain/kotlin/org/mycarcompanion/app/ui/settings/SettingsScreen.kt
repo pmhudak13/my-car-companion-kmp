@@ -16,7 +16,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Notifications
@@ -189,12 +189,12 @@ class SettingsScreen : Screen {
                     Spacer(modifier = Modifier.height(8.dp))
                     SectionHeader("Legal")
                     SettingsRow(
-                        icon = Icons.Default.Email,
+                        icon = Icons.Default.Description,
                         label = "Privacy Policy",
                         onClick = { uriHandler.openUri("https://www.mycarcompanion.org/privacy") },
                     )
                     SettingsRow(
-                        icon = Icons.Default.Email,
+                        icon = Icons.Default.Description,
                         label = "Terms of Service",
                         onClick = { uriHandler.openUri("https://www.mycarcompanion.org/terms") },
                     )

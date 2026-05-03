@@ -22,6 +22,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -96,7 +97,17 @@ data class MechanicDirectoryScreen(val vehicleId: String? = null) : Screen, Comm
                     OutlinedButton(onClick = { navigator.pop() }) { Text("Back") }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = state.searchQuery,
+                    onValueChange = model::onSearchQueryChange,
+                    placeholder = { Text("Search by name, city, or type…") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
 
                 when {
                     state.isLoading -> {
@@ -114,12 +125,13 @@ data class MechanicDirectoryScreen(val vehicleId: String? = null) : Screen, Comm
                         ) {
                             Text(state.error ?: "", color = MaterialTheme.colorScheme.error)
                             Spacer(modifier = Modifier.height(8.dp))
-                            TextButton(onClick = model::loadMechanics) { Text("Retry") }
+                            TextButton(onClick = { model.loadMechanics(vehicleId) }) { Text("Retry") }
                         }
                     }
                     state.mechanics.isEmpty() -> {
                         Text(
-                            "No verified mechanics available yet.",
+                            if (state.searchQuery.isBlank()) "No verified mechanics available yet."
+                            else "No mechanics match \"${state.searchQuery}\".",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(48.dp),

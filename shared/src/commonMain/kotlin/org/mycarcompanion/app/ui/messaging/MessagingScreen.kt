@@ -56,7 +56,11 @@ data class MessagingScreen(val recipientId: String? = null) : Screen, CommonParc
         val listState = rememberLazyListState()
 
         LaunchedEffect(recipientId) {
-            if (recipientId == null) model.loadInbox() else model.loadConversation(recipientId)
+            if (recipientId == null) model.loadInbox()
+            else {
+                model.loadConversation(recipientId)
+                model.subscribeToConversation(recipientId)
+            }
         }
 
         LaunchedEffect(state.messages.size) {

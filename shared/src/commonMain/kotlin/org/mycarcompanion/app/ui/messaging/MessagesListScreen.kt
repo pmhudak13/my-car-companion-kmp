@@ -138,7 +138,7 @@ private fun ThreadRow(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = if (isSentByMe) "You → …" else "User",
+                    text = thread.otherUserDisplayName,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = if (thread.unreadCount > 0) FontWeight.Bold else FontWeight.Normal,
                 )

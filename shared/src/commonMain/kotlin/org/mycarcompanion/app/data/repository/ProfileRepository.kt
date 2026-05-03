@@ -177,6 +177,13 @@ class ProfileRepository(private val client: SupabaseClient) {
         Unit
     }
 
+    suspend fun getProfilesByIds(userIds: List<String>): Result<List<UserProfile>> = runCatching {
+        if (userIds.isEmpty()) return Result.success(emptyList())
+        profiles.select {
+            filter { isIn("user_id", userIds) }
+        }.decodeList<UserProfile>()
+    }
+
     suspend fun updateProfile(firstName: String, lastName: String): Result<Unit> = runCatching {
         val userId = client.auth.currentUserOrNull()?.id
             ?: error("Not authenticated")

@@ -9,9 +9,11 @@ import kotlinx.coroutines.launch
 import org.mycarcompanion.app.data.models.Message
 import org.mycarcompanion.app.data.repository.AuthRepository
 import org.mycarcompanion.app.data.repository.MessageRepository
+import org.mycarcompanion.app.data.repository.ProfileRepository
 
 data class ConversationThread(
     val otherUserId: String,
+    val otherUserDisplayName: String,
     val latestMessage: Message,
     val unreadCount: Int,
 )
@@ -26,6 +28,7 @@ data class MessagesListState(
 class MessagesListScreenModel(
     private val messageRepository: MessageRepository,
     private val authRepository: AuthRepository,
+    private val profileRepository: ProfileRepository,
 ) : ScreenModel {
 
     private val _state = MutableStateFlow(MessagesListState())
@@ -51,10 +54,20 @@ class MessagesListScreenModel(
                         val otherId = if (msg.senderId == currentUserId) msg.recipientId else msg.senderId
                         threadMap.getOrPut(otherId) { mutableListOf() }.add(msg)
                     }
+                    val otherUserIds = threadMap.keys.toList()
+                    val profileMap = profileRepository.getProfilesByIds(otherUserIds)
+                        .getOrNull()
+                        ?.associateBy { it.userId }
+                        ?: emptyMap()
                     val threads = threadMap.entries.map { (otherId, msgs) ->
                         val sorted = msgs.sortedByDescending { it.createdAt }
+                        val profile = profileMap[otherId]
+                        val displayName = listOfNotNull(profile?.firstName, profile?.lastName)
+                            .joinToString(" ")
+                            .ifBlank { profile?.email ?: "User" }
                         ConversationThread(
                             otherUserId = otherId,
+                            otherUserDisplayName = displayName,
                             latestMessage = sorted.first(),
                             unreadCount = sorted.count { !it.isRead && it.recipientId == currentUserId },
                         )

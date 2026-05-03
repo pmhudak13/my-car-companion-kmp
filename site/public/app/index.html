@@ -453,7 +453,7 @@
         <div class="signed-in-email" id="user-email-display"></div>
 
         <div class="app-links">
-          <a href="https://play.google.com/store" target="_blank" rel="noopener" class="app-link">
+          <a href="https://play.google.com/store/apps/details?id=org.mycarcompanion.app" target="_blank" rel="noopener" class="app-link">
             <span class="app-link-icon">📱</span>
             <div class="app-link-text">
               Android App
@@ -704,6 +704,26 @@
 
   // ── View helpers ─────────────────────────────────────────────
   function showSignedIn(user) {
+    // If this sign-in originated from the Compose app (/webapp/), hand the session
+    // back and auto-redirect so the user returns to where they started.
+    if (new URLSearchParams(window.location.search).get('webapp') === 'true') {
+      sb.auth.getSession().then(function(res) {
+        var session = res.data && res.data.session;
+        if (session && session.access_token) {
+          try {
+            sessionStorage.setItem('_mcc_handoff', JSON.stringify({
+              access_token:  session.access_token,
+              refresh_token: session.refresh_token || '',
+              token_type:    'bearer',
+              expires_in:    session.expires_in || 3600,
+            }));
+          } catch (_) {}
+        }
+        window.location.replace('/webapp/');
+      });
+      return;
+    }
+
     document.getElementById('auth-view').style.display          = 'none';
     document.getElementById('reset-view').style.display         = 'none';
     document.getElementById('new-password-view').style.display  = 'none';

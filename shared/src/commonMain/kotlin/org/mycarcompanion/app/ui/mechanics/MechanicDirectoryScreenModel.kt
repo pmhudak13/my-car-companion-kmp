@@ -11,7 +11,9 @@ import org.mycarcompanion.app.data.repository.MechanicAssignmentRepository
 import org.mycarcompanion.app.data.repository.MechanicRepository
 
 data class MechanicDirectoryState(
+    val allMechanics: List<MechanicProfile> = emptyList(),
     val mechanics: List<MechanicProfile> = emptyList(),
+    val searchQuery: String = "",
     val assignedMechanicIds: Set<String> = emptySet(),
     val isLoading: Boolean = true,
     val error: String? = null,
@@ -48,7 +50,8 @@ class MechanicDirectoryScreenModel(
             mechanicsResult
                 .onSuccess { mechanics ->
                     _state.value = _state.value.copy(
-                        mechanics = mechanics,
+                        allMechanics = mechanics,
+                        mechanics = applyFilter(mechanics, _state.value.searchQuery),
                         assignedMechanicIds = assignedIds,
                         isLoading = false,
                     )
@@ -60,6 +63,13 @@ class MechanicDirectoryScreenModel(
                     )
                 }
         }
+    }
+
+    fun onSearchQueryChange(query: String) {
+        _state.value = _state.value.copy(
+            searchQuery = query,
+            mechanics = applyFilter(_state.value.allMechanics, query),
+        )
     }
 
     fun assignMechanic(vehicleId: String, mechanicUserId: String) {
@@ -80,5 +90,17 @@ class MechanicDirectoryScreenModel(
 
     fun clearAssignResult() {
         _state.value = _state.value.copy(assignSuccess = false, assignError = null)
+    }
+
+    private fun applyFilter(mechanics: List<MechanicProfile>, query: String): List<MechanicProfile> {
+        if (query.isBlank()) return mechanics
+        val q = query.trim().lowercase()
+        return mechanics.filter { m ->
+            m.shopName?.lowercase()?.contains(q) == true ||
+            m.city?.lowercase()?.contains(q) == true ||
+            m.state?.lowercase()?.contains(q) == true ||
+            m.shopType?.lowercase()?.contains(q) == true ||
+            m.bio?.lowercase()?.contains(q) == true
+        }
     }
 }
