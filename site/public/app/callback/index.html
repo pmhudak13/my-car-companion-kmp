@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signing In — My Car Companion</title>
+  <meta name="description" content="Completing your sign-in to My Car Companion.">
+  <link rel="icon" href="/assets/logo.png" type="image/png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1c38;
+      --surface:   #1b2b50;
+      --border:    rgba(107,188,222,0.18);
+      --accent:    #6bbcde;
+      --accent-dark: #4fa8cc;
+      --text:      #e8edf5;
+      --text-muted:#8fa3bf;
+      --error:     #e05555;
+      --radius:    12px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .nav {
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .nav-logo-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .nav-logo-icon img {
+      width: 32px; height: 32px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    }
+
+    .logo-wrap {
+      width: 64px; height: 64px;
+      border-radius: 16px;
+      overflow: hidden;
+      margin: 0 auto 28px;
+    }
+    .logo-wrap img { width: 64px; height: 64px; object-fit: cover; }
+
+    .spinner {
+      width: 48px; height: 48px;
+      border: 3px solid rgba(107,188,222,0.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 28px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .card-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .card-sub {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .error-box {
+      display: none;
+      margin-top: 20px;
+      padding: 14px;
+      background: rgba(224,85,85,0.12);
+      border: 1px solid rgba(224,85,85,0.3);
+      border-radius: 10px;
+      font-size: 0.87rem;
+      color: #f08080;
+      line-height: 1.5;
+      text-align: left;
+    }
+
+    .back-link {
+      display: none;
+      margin-top: 20px;
+      font-size: 0.87rem;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .back-link:hover { text-decoration: underline; }
+
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+    .footer a { color: var(--text-muted); text-decoration: none; }
+    .footer a:hover { color: var(--accent); }
+
+    @media (max-width: 480px) {
+      .card { padding: 36px 22px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <nav class="nav">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon"><img src="/assets/logo.png" alt="My Car Companion logo"></div>
+      My Car Companion
+    </a>
+  </nav>
+
+  <div class="main">
+    <div class="card">
+      <div class="logo-wrap"><img src="/assets/logo.png" alt="My Car Companion"></div>
+      <div class="spinner" id="spinner"></div>
+      <div class="card-title" id="status-title">Signing you in…</div>
+      <div class="card-sub" id="status-sub">Just a moment while we complete your Google sign-in.</div>
+      <div class="error-box" id="error-box"></div>
+      <a href="/app/" class="back-link" id="back-link">← Back to sign in</a>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>© 2026 My Car Companion &nbsp;·&nbsp; <a href="/privacy.html">Privacy</a> &nbsp;·&nbsp; <a href="/terms.html">Terms</a></p>
+  </footer>
+</div>
+
+<script>
+  const SUPABASE_URL  = 'https://eoqycogokelfmgwqydkj.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvcXljb2dva2VsZm1nd3F5ZGtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzMzMjcsImV4cCI6MjA4OTYwOTMyN30.F1wDENidEb7impi5ZP-lBQW6OueZiv9-yv1TcqZor4g';
+
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  function showError(msg) {
+    document.getElementById('spinner').style.display        = 'none';
+    document.getElementById('status-title').textContent     = 'Sign-in failed';
+    document.getElementById('status-sub').textContent       = '';
+    var errBox = document.getElementById('error-box');
+    errBox.textContent  = msg;
+    errBox.style.display = 'block';
+    document.getElementById('back-link').style.display = 'inline-block';
+  }
+
+  // Check for OAuth errors returned in the URL.
+  var _up         = new URLSearchParams(window.location.search);
+  var _hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  var _oauthError = _up.get('error_description') || _up.get('error')
+                  || _hashParams.get('error_description') || _hashParams.get('error');
+
+  if (_oauthError) {
+    showError(decodeURIComponent(_oauthError.replace(/\+/g, ' ')));
+  } else if (!_up.has('code') && !_hashParams.has('access_token')) {
+    // Loaded directly (no OAuth params) — send to sign-in page.
+    window.location.replace('/app/');
+  } else {
+    // Safety net: if Supabase never fires a session event, redirect after 15s.
+    var _timeout = setTimeout(function() {
+      window.location.replace('/app/');
+    }, 15000);
+
+    sb.auth.onAuthStateChange(function(event, session) {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        clearTimeout(_timeout);
+        window.location.replace('/app/');
+      }
+    });
+  }
+</script>
+</body>
+</html>
