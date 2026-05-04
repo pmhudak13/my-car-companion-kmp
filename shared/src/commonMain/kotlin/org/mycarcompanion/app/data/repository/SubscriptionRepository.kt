@@ -31,8 +31,11 @@ class SubscriptionRepository(private val client: SupabaseClient) {
             body = buildJsonObject {
                 put("return_url", SupabaseConfig.portalReturnUrl)
             },
+            // The SDK may already add an Authorization header with the anon key or JWT.
+            // Using a separate header avoids duplicate Authorization values that would
+            // be joined by ", " in the edge function and break JWT parsing.
             headers = Headers.build {
-                append("Authorization", "Bearer ${session.accessToken}")
+                append("x-user-jwt", session.accessToken)
             },
         )
         parseUrlFromResponse(response.bodyAsText())
@@ -50,7 +53,7 @@ class SubscriptionRepository(private val client: SupabaseClient) {
                 put("cancel_url", SupabaseConfig.checkoutCancelUrl)
             },
             headers = Headers.build {
-                append("Authorization", "Bearer ${session.accessToken}")
+                append("x-user-jwt", session.accessToken)
             },
         )
         parseUrlFromResponse(response.bodyAsText())
