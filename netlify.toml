@@ -49,13 +49,15 @@
   to = "/webapp/index.html"
   status = 200
 
-# OAuth callback: always land at /app/ (the JS auth page) which handles PKCE exchange.
-# For Google sign-in initiated from inside /webapp/, GoogleAuth.wasmJs.kt appends
-# ?webapp=true so /app/ auto-redirects back to /webapp/ with the session in sessionStorage.
+# OAuth callback for Google sign-in initiated from the Kotlin wasm app (/webapp/).
+# The Kotlin Supabase SDK stores the PKCE code verifier in localStorage under its own key.
+# The JS SDK at /app/ cannot exchange that code (different key), so we must redirect back
+# to /webapp/ where the Kotlin SDK can complete the PKCE exchange itself.
+# Netlify forwards query params (including ?code=) to the destination URL automatically.
 # Must come before the /app/* catch-all so Netlify matches it first.
 [[redirects]]
   from = "/auth/callback"
-  to = "/app/"
+  to = "/webapp/"
   status = 302
 
 # Auth callback deep-links (OAuth redirects back to /app/)
