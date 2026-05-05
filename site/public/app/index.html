@@ -550,9 +550,13 @@
       } else if (_oauthError) {
         showAlert('signin-alert', 'error', decodeURIComponent(_oauthError.replace(/\+/g, ' ')));
       } else if (_hasOAuthCode) {
-        // A ?code= was present but the PKCE exchange produced no session — likely
-        // the redirect URL isn't in Supabase's allowed list, or the code/link expired.
-        showAlert('signin-alert', 'error', 'Sign-in link expired or invalid. Please try signing in again. If this keeps happening, contact support.');
+        // A ?code= was present but the PKCE exchange produced no session.
+        // Most common cause: the link was opened in a different browser than where
+        // sign-up/sign-in was started (PKCE verifier lives in that browser's localStorage).
+        showAlert('signin-alert', 'error',
+          'This link must be opened in the same browser where you started signing in. ' +
+          'Try signing in with your email and password instead, or request a new link.'
+        );
       }
     } else if (event === 'SIGNED_IN') {
       showSignedIn(session.user);
@@ -611,7 +615,8 @@
       const { error } = await sb.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: window.location.origin + '/app/' }
+        // Hardcoded canonical URL — must be in Supabase → Auth → URL Configuration → Redirect URLs.
+        options: { emailRedirectTo: 'https://mycarcompanion.org/app/' }
       });
       if (error) {
         showAlert('signup-alert', 'error', error.message);
@@ -629,7 +634,9 @@
   async function signInWithGoogle() {
     await sb.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + '/app/callback/' }
+      // Hardcoded so the redirect URL is always canonical regardless of www/non-www.
+      // This URL must be in Supabase → Authentication → URL Configuration → Redirect URLs.
+      options: { redirectTo: 'https://mycarcompanion.org/app/callback/' }
     });
   }
 
@@ -679,7 +686,8 @@
     setLoading('reset-btn', true);
     try {
       const { error } = await sb.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/app/'
+        // Hardcoded canonical URL — must be in Supabase → Auth → URL Configuration → Redirect URLs.
+        redirectTo: 'https://mycarcompanion.org/app/'
       });
       if (error) {
         showAlert('reset-alert', 'error', error.message);

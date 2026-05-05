@@ -210,6 +210,15 @@
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
         clearTimeout(_timeout);
         window.location.replace('/app/');
+      } else if (event === 'INITIAL_SESSION' && !session) {
+        // Code exchange failed — the link is expired, already used, or opened in a
+        // different browser than where sign-in was initiated (PKCE verifier missing).
+        clearTimeout(_timeout);
+        showError(
+          'This sign-in link has expired or was already used. ' +
+          'If you opened the link in a different browser than you started from, ' +
+          'please go back and sign in directly.'
+        );
       }
     });
   }
