@@ -40,6 +40,29 @@
         <p>Loading My Car Companion…</p>
     </div>
     <canvas id="ComposeTarget"></canvas>
+    <script>
+        // Bridge: /app/ writes the session to sessionStorage._mcc_handoff.
+        // The compiled wasm binary (main.kt at eaaadad) reads from the URL hash
+        // (#access_token=...). This script runs synchronously BEFORE webApp.js so
+        // parseHashSession() in the wasm finds the tokens in the expected place.
+        // Uses history.replaceState so tokens never appear in browser history.
+        (function() {
+            try {
+                var raw = sessionStorage.getItem('_mcc_handoff');
+                if (raw) {
+                    sessionStorage.removeItem('_mcc_handoff');
+                    var s = JSON.parse(raw);
+                    if (s && s.access_token) {
+                        var hash = 'access_token=' + encodeURIComponent(s.access_token)
+                            + '&refresh_token=' + encodeURIComponent(s.refresh_token || '')
+                            + '&token_type=bearer&expires_in=' + (s.expires_in || 3600);
+                        history.replaceState(null, '', window.location.pathname
+                            + window.location.search + '#' + hash);
+                    }
+                }
+            } catch (e) {}
+        })();
+    </script>
     <script type="application/javascript" src="webApp.js"></script>
     <script>
         function showFatalError(msg) {
