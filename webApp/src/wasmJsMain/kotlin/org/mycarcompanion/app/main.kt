@@ -1,6 +1,9 @@
 package org.mycarcompanion.app
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.window.ComposeViewport
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -49,16 +52,38 @@ fun main() {
 @OptIn(ExperimentalComposeUiApi::class)
 private fun startCompose() {
     ComposeViewport(document.body!!) {
-        App()
+        // window.open(url, "_blank") is called from an async coroutine context, so
+        // popup blockers reject it silently. Try _blank; if it returns null (blocked),
+        // fall back to same-tab navigation so Stripe checkout always opens.
+        CompositionLocalProvider(LocalUriHandler provides WebUriHandler) {
+            App()
+        }
     }
 }
+
+private object WebUriHandler : UriHandler {
+    override fun openUri(uri: String) {
+        val opened = window.open(uri, "_blank")
+        if (opened == null) {
+            window.location.href = uri
+        }
+    }
+}
+
+// Kotlin/Wasm requires js() to be the single expression of a top-level function —
+// it cannot appear inside a try/catch or other nested block. Each call is therefore
+// isolated in its own function and called from parseStorageSession() below.
+private fun jsReadHandoff(): JsAny? =
+    js("(function(){ try { return sessionStorage.getItem('_mcc_handoff'); } catch(e){ return null; } })()")
+
+private fun jsClearHandoff(): JsAny? =
+    js("(function(){ try { sessionStorage.removeItem('_mcc_handoff'); } catch(e){} })()")
 
 /** Reads session tokens written by /app/ via sessionStorage and clears them immediately. */
 private fun parseStorageSession(): Pair<String, String>? {
     return try {
-        val raw = js("(function(){ try { return sessionStorage.getItem('_mcc_handoff'); } catch(e){ return null; } })()") as? String
-            ?: return null
-        js("(function(){ try { sessionStorage.removeItem('_mcc_handoff'); } catch(e){} })()")
+        val raw = jsReadHandoff() as? String ?: return null
+        jsClearHandoff()
         val json = raw.trimStart('{').trimEnd('}')
         fun extractField(key: String): String? {
             val marker = "\"$key\":"

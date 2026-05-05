@@ -31,8 +31,11 @@ class SubscriptionRepository(private val client: SupabaseClient) {
             body = buildJsonObject {
                 put("return_url", SupabaseConfig.portalReturnUrl)
             },
+            // The SDK already appends its own Authorization header; adding another
+            // causes Ktor to join both with ", " producing an invalid JWT. Use a
+            // separate header so the edge function can extract the token cleanly.
             headers = Headers.build {
-                append("Authorization", "Bearer ${session.accessToken}")
+                append("x-user-jwt", session.accessToken)
             },
         )
         parseUrlFromResponse(response.bodyAsText())
@@ -50,7 +53,7 @@ class SubscriptionRepository(private val client: SupabaseClient) {
                 put("cancel_url", SupabaseConfig.checkoutCancelUrl)
             },
             headers = Headers.build {
-                append("Authorization", "Bearer ${session.accessToken}")
+                append("x-user-jwt", session.accessToken)
             },
         )
         parseUrlFromResponse(response.bodyAsText())
