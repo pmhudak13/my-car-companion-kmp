@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://www.mycarcompanion.org",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-jwt",
 };
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
@@ -33,17 +33,22 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // supabase-kt adds its own Authorization header; the app also appends one.
+    // Ktor joins duplicate header values with ", " so Authorization becomes
+    // "Bearer <sdk-token>, Bearer <user-jwt>" — slice(7) gives a malformed token.
+    // We pass the user JWT in x-user-jwt to avoid the collision entirely.
+    const userJwt = req.headers.get("x-user-jwt");
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    const token = userJwt
+      ?? (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader ?? null);
+
+    if (!token) {
       return new Response(JSON.stringify({ error: "Missing authorization" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Pass the JWT directly — edge functions are stateless so getUser() without
-    // an explicit token would look for a stored session (which doesn't exist) and fail.
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const {
