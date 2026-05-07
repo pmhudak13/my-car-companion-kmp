@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.vehicles
+﻿package org.mycarcompanion.app.ui.vehicles
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,6 +51,7 @@ import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreen
 import org.mycarcompanion.app.ui.reminders.AddReminderScreen
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable {
 
@@ -69,6 +70,7 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
         }
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             floatingActionButton = {
                 if (state.vehicle != null) {
                     FloatingActionButton(

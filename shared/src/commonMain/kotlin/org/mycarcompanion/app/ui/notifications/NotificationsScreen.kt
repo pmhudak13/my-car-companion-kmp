@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.notifications
+﻿package org.mycarcompanion.app.ui.notifications
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +35,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.platform.topBarWindowInsets
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 class NotificationsScreen : Screen {
 
@@ -46,6 +47,7 @@ class NotificationsScreen : Screen {
         val state by screenModel.state.collectAsState()
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             topBar = {
                 TopAppBar(
                     title = { Text("Notifications") },

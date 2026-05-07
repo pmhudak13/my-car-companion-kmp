@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.messaging
+﻿package org.mycarcompanion.app.ui.messaging
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +39,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.platform.topBarWindowInsets
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 class MessagesListScreen : Screen {
 
@@ -50,6 +51,7 @@ class MessagesListScreen : Screen {
         val state by model.state.collectAsState()
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             topBar = {
                 TopAppBar(
                     title = { Text("Messages") },

@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.mechanics
+﻿package org.mycarcompanion.app.ui.mechanics
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -45,6 +45,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.shopTypeLabels
 import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.data.models.shopTypes
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MechanicSetupScreen : Screen {
@@ -62,6 +63,7 @@ class MechanicSetupScreen : Screen {
         }
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             topBar = {
                 TopAppBar(
                     title = { Text("Mechanic Profile") },

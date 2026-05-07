@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.reminders
+﻿package org.mycarcompanion.app.ui.reminders
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,6 +47,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.Reminder
 import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.data.models.reminderTypeLabels
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 class RemindersListScreen : Screen {
 
@@ -101,6 +102,7 @@ class RemindersListScreen : Screen {
         }
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             topBar = {
                 TopAppBar(
                     title = { Text("Reminders") },

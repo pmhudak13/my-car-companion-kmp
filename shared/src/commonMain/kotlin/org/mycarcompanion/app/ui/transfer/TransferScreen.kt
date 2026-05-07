@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.transfer
+﻿package org.mycarcompanion.app.ui.transfer
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +39,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.VehicleTransfer
 import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.platform.topBarWindowInsets
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 data class TransferScreen(
     val vehicleId: String,
@@ -55,6 +56,7 @@ data class TransferScreen(
         LaunchedEffect(vehicleId) { model.load(vehicleId) }
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             topBar = {
                 TopAppBar(
                     title = { Text("Transfer Vehicle") },

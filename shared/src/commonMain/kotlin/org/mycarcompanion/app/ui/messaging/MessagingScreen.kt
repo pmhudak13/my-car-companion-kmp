@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.messaging
+﻿package org.mycarcompanion.app.ui.messaging
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +42,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.Message
 import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.platform.topBarWindowInsets
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 // Inbox screen (recipientId == null) shows all received messages.
 // Conversation screen (recipientId != null) shows thread with that user + compose box.
@@ -70,6 +71,7 @@ data class MessagingScreen(val recipientId: String? = null) : Screen, CommonParc
         }
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             topBar = {
                 TopAppBar(
                     title = {

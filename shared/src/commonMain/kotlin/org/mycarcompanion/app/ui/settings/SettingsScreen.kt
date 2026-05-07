@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.settings
+﻿package org.mycarcompanion.app.ui.settings
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -61,6 +61,7 @@ import org.mycarcompanion.app.ui.notifications.NotificationsScreen
 import org.mycarcompanion.app.ui.profile.ProfileScreen
 import org.mycarcompanion.app.ui.reminders.RemindersListScreen
 import org.mycarcompanion.app.ui.transfer.ReceiveTransferScreen
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 class SettingsScreen : Screen {
 
@@ -130,6 +131,7 @@ class SettingsScreen : Screen {
         }
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             snackbarHost = { SnackbarHost(snackbarState) },
             topBar = {
                 TopAppBar(

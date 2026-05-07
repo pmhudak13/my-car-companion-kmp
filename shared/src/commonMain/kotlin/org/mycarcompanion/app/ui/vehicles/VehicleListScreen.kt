@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.vehicles
+﻿package org.mycarcompanion.app.ui.vehicles
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +35,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.Vehicle
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 class VehicleListScreen : Screen {
 
@@ -45,6 +46,7 @@ class VehicleListScreen : Screen {
         val state by model.state.collectAsState()
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             floatingActionButton = {
                 if (!state.isLoading && state.error == null) {
                     FloatingActionButton(

@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.help
+﻿package org.mycarcompanion.app.ui.help
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,6 +29,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.platform.topBarWindowInsets
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 private data class FaqItem(val question: String, val answer: String)
 
@@ -83,6 +84,7 @@ class HelpScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             topBar = {
                 TopAppBar(
                     title = { Text("Help & FAQ") },

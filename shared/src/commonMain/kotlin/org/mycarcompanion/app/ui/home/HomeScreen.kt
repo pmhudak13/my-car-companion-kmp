@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.home
+﻿package org.mycarcompanion.app.ui.home
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -54,6 +54,7 @@ import org.mycarcompanion.app.ui.mileage.MileageTrackerScreen
 import org.mycarcompanion.app.ui.vehicles.AddVehicleScreen
 import org.mycarcompanion.app.ui.vehicles.VehicleCard
 import org.mycarcompanion.app.ui.vehicles.VehicleDetailScreen
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 class HomeScreen : Screen {
 
@@ -99,6 +100,7 @@ class HomeScreen : Screen {
         val user = (authState as? AuthState.Authenticated)?.user ?: return
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
                 FloatingActionButton(

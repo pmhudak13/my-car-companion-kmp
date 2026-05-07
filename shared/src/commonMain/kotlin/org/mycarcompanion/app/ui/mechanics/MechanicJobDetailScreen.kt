@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.mechanics
+﻿package org.mycarcompanion.app.ui.mechanics
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -62,6 +62,7 @@ import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.data.models.MechanicJobLog
 import org.mycarcompanion.app.data.models.maintenanceCategories
 import org.mycarcompanion.app.platform.CommonParcelable
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable {
 
@@ -84,6 +85,7 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
         }
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(

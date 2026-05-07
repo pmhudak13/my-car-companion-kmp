@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.subscription
+﻿package org.mycarcompanion.app.ui.subscription
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +48,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.repository.SubscriptionRepository
 import org.mycarcompanion.app.platform.topBarWindowInsets
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 class SubscribeScreen : Screen {
 
@@ -79,6 +80,7 @@ class SubscribeScreen : Screen {
         }
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             topBar = {
                 TopAppBar(
                     title = { Text("Go Premium") },

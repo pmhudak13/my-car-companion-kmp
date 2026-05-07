@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.vehicles
+﻿package org.mycarcompanion.app.ui.vehicles
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,6 +51,7 @@ import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.data.models.carModelsByMake
 import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.ui.transfer.TransferScreen
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 data class VehicleSettingsScreen(val vehicleId: String) : Screen, CommonParcelable {
 
@@ -101,6 +102,7 @@ data class VehicleSettingsScreen(val vehicleId: String) : Screen, CommonParcelab
         }
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             topBar = {
                 TopAppBar(
                     title = { Text("Vehicle Settings") },

@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.mechanics
+﻿package org.mycarcompanion.app.ui.mechanics
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,6 +46,7 @@ import org.mycarcompanion.app.data.models.shopTypeLabels
 import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.ui.messaging.MessagingScreen
 import org.mycarcompanion.app.ui.reviews.MechanicReviewsScreen
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 data class MechanicDirectoryScreen(val vehicleId: String? = null) : Screen, CommonParcelable {
 
@@ -74,6 +75,7 @@ data class MechanicDirectoryScreen(val vehicleId: String? = null) : Screen, Comm
         }
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             snackbarHost = { SnackbarHost(snackbarHostState) },
         ) { paddingValues ->
             Column(

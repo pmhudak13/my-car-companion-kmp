@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.transfer
+﻿package org.mycarcompanion.app.ui.transfer
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +41,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.platform.topBarWindowInsets
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 class ReceiveTransferScreen : Screen {
 
@@ -56,6 +57,7 @@ class ReceiveTransferScreen : Screen {
         }
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             topBar = {
                 TopAppBar(
                     title = { Text("Receive Vehicle") },

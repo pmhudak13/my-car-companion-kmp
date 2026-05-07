@@ -1,4 +1,4 @@
-package org.mycarcompanion.app.ui.mechanics
+﻿package org.mycarcompanion.app.ui.mechanics
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -53,6 +53,7 @@ import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.home.HomeScreen
 import org.mycarcompanion.app.ui.home.HomeScreenModel
 import org.mycarcompanion.app.ui.messaging.MessagesListScreen
+import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MechanicDashboardScreen : Screen {
@@ -73,6 +74,7 @@ class MechanicDashboardScreen : Screen {
         }
 
         Scaffold(
+            contentWindowInsets = scaffoldContentWindowInsets(),
             topBar = {
                 TopAppBar(
                     title = { Text(state.profile?.shopName ?: "My Dashboard") },
