@@ -4,7 +4,6 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.functions.functions
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.Headers
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -24,18 +23,17 @@ class SubscriptionRepository(private val client: SupabaseClient) {
 
     /** Returns the Stripe Billing Portal URL for the current user's subscription management. */
     suspend fun createPortalSession(): Result<String> = runCatching {
-        val session = client.auth.currentSessionOrNull()
+        // Guard: ensure the user is authenticated before calling the edge function.
+        // The SDK automatically includes Authorization: Bearer <session-token> on the request,
+        // so the edge function receives the correct JWT without us needing to add it manually.
+        // (Adding a second Authorization header via custom headers caused Ktor to join them
+        // with ", " producing an invalid JWT — see project memory for history.)
+        client.auth.currentSessionOrNull()
             ?: error("Session expired — please sign out and sign back in")
         val response = client.functions.invoke(
             function = "create-portal",
             body = buildJsonObject {
                 put("return_url", SupabaseConfig.portalReturnUrl)
-            },
-            // The SDK already appends its own Authorization header; adding another
-            // causes Ktor to join both with ", " producing an invalid JWT. Use a
-            // separate header so the edge function can extract the token cleanly.
-            headers = Headers.build {
-                append("x-user-jwt", session.accessToken)
             },
         )
         parseUrlFromResponse(response.bodyAsText())
@@ -43,7 +41,7 @@ class SubscriptionRepository(private val client: SupabaseClient) {
 
     /** Returns the Stripe Checkout URL for the given price ID, or throws on error. */
     suspend fun createCheckoutSession(priceId: String): Result<String> = runCatching {
-        val session = client.auth.currentSessionOrNull()
+        client.auth.currentSessionOrNull()
             ?: error("Session expired — please sign out and sign back in")
         val response = client.functions.invoke(
             function = "create-checkout",
@@ -51,9 +49,6 @@ class SubscriptionRepository(private val client: SupabaseClient) {
                 put("price_id", priceId)
                 put("success_url", SupabaseConfig.checkoutSuccessUrl)
                 put("cancel_url", SupabaseConfig.checkoutCancelUrl)
-            },
-            headers = Headers.build {
-                append("x-user-jwt", session.accessToken)
             },
         )
         parseUrlFromResponse(response.bodyAsText())

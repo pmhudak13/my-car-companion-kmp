@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://www.mycarcompanion.org",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-jwt",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
@@ -33,14 +34,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // supabase-kt adds its own Authorization header; the app also appends one.
-    // Ktor joins duplicate header values with ", " so Authorization becomes
-    // "Bearer <sdk-token>, Bearer <user-jwt>" — slice(7) gives a malformed token.
-    // We pass the user JWT in x-user-jwt to avoid the collision entirely.
-    const userJwt = req.headers.get("x-user-jwt");
+    // The supabase-kt SDK automatically sends Authorization: Bearer <session-token>.
+    // We also accept x-user-jwt as a fallback for older clients that sent both headers.
     const authHeader = req.headers.get("Authorization");
-    const token = userJwt
-      ?? (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : authHeader ?? null);
+    const userJwt = req.headers.get("x-user-jwt");
+    const token = (authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null)
+      ?? userJwt
+      ?? null;
 
     if (!token) {
       return new Response(JSON.stringify({ error: "Missing authorization" }), {
