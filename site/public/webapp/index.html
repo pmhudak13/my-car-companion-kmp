@@ -61,6 +61,19 @@
                     }
                 }
             } catch (e) {}
+
+            // Show a success message during the wasm loading phase when redirected
+            // from Stripe checkout. The Kotlin app picks up premium status automatically
+            // once it loads (SubscribeScreenModel.init re-fetches the profile).
+            try {
+                var params = new URLSearchParams(window.location.search);
+                if (params.get('checkout') === 'success') {
+                    var loadingText = document.querySelector('#loading p');
+                    if (loadingText) loadingText.textContent = 'Payment successful! Loading your account…';
+                    // Remove the param so it doesn't persist in the URL
+                    history.replaceState(null, '', window.location.pathname);
+                }
+            } catch (e) {}
         })();
     </script>
     <script type="application/javascript" src="webApp.js"></script>

@@ -13,7 +13,9 @@ actual object SupabaseConfig {
     actual val authScheme: String = ""
     actual val authHost: String = ""
     actual val authAutoSaveToStorage: Boolean = localStorageAvailable
-    actual val checkoutSuccessUrl: String = "https://www.mycarcompanion.org/app/?checkout=success"
-    actual val checkoutCancelUrl: String = "https://www.mycarcompanion.org/app/"
-    actual val portalReturnUrl: String = "https://www.mycarcompanion.org/app/"
+    // After Stripe checkout on web, redirect back to the Compose app (not the JS auth page).
+    // The Kotlin SDK restores the session from its own localStorage on the fresh page load.
+    actual val checkoutSuccessUrl: String = "https://www.mycarcompanion.org/webapp/?checkout=success"
+    actual val checkoutCancelUrl: String = "https://www.mycarcompanion.org/webapp/"
+    actual val portalReturnUrl: String = "https://www.mycarcompanion.org/webapp/"
 }

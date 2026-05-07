@@ -75,6 +75,7 @@ class SubscribeScreen : Screen {
         LaunchedEffect(state.error) {
             val err = state.error ?: return@LaunchedEffect
             snackbarState.showSnackbar(err)
+            model.clearError()
         }
 
         Scaffold(
@@ -148,6 +149,38 @@ class SubscribeScreen : Screen {
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    // If the user just initiated checkout in a new tab, prompt them to
+                    // refresh so the app can pick up the premium status after the webhook runs.
+                    if (state.checkoutInitiated) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            ),
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    text = "Checkout opened in another tab",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "After completing your payment, tap below to refresh your subscription status.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Button(
+                                    onClick = { model.refreshProfile() },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Text("Check Subscription Status")
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
 
                     Text(
                         text = "Upgrade Your Experience",

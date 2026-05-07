@@ -16,6 +16,8 @@ data class SubscribeState(
     val error: String? = null,
     val isPremium: Boolean = false,
     val subscriptionTier: String = "free",
+    // True after checkout URL is opened — prompts user to refresh once they've paid
+    val checkoutInitiated: Boolean = false,
 )
 
 class SubscribeScreenModel(
@@ -65,11 +67,37 @@ class SubscribeScreenModel(
         }
     }
 
+    /** Re-fetches the profile — call after returning from Stripe to pick up premium status. */
+    fun refreshProfile() {
+        screenModelScope.launch {
+            _state.update { it.copy(loading = true, error = null) }
+            profileRepository.getMyProfile()
+                .onSuccess { profile ->
+                    _state.update {
+                        it.copy(
+                            loading = false,
+                            isPremium = profile?.isPremium == true,
+                            subscriptionTier = profile?.subscriptionTier ?: "free",
+                            checkoutInitiated = false,
+                        )
+                    }
+                }
+                .onFailure {
+                    _state.update { it.copy(loading = false) }
+                }
+        }
+    }
+
     fun clearCheckoutUrl() {
-        _state.update { it.copy(checkoutUrl = null) }
+        // Mark that checkout was initiated so the UI can show a "check status" prompt
+        _state.update { it.copy(checkoutUrl = null, checkoutInitiated = true) }
     }
 
     fun clearPortalUrl() {
         _state.update { it.copy(portalUrl = null) }
+    }
+
+    fun clearError() {
+        _state.update { it.copy(error = null) }
     }
 }
