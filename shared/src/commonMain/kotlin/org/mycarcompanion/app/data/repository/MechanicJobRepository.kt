@@ -5,7 +5,6 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
-import io.ktor.http.Headers
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.models.MechanicJob
@@ -81,7 +80,6 @@ class MechanicJobRepository(private val client: SupabaseClient) {
     private suspend fun triggerJobUpdatePush(clientEmail: String?, title: String, body: String) {
         if (clientEmail == null) return
         try {
-            val accessToken = client.auth.currentSessionOrNull()?.accessToken ?: return
             client.functions.invoke(
                 "send-push-notification",
                 body = buildJsonObject {
@@ -89,9 +87,6 @@ class MechanicJobRepository(private val client: SupabaseClient) {
                     put("title", title)
                     put("body", body)
                     put("type", "mechanic_update")
-                },
-                headers = Headers.build {
-                    append("Authorization", "Bearer $accessToken")
                 },
             )
         } catch (_: Exception) {
@@ -106,20 +101,16 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         mechanicName: String,
         vehicleInfo: String,
     ): Result<Unit> = runCatching {
-        val session = client.auth.currentSessionOrNull()
+        client.auth.currentSessionOrNull()
             ?: error("Session expired — please sign out and sign back in")
-        val body = buildJsonObject {
-            put("jobId", jobId)
-            put("clientEmail", clientEmail)
-            put("clientName", clientName)
-            put("mechanicName", mechanicName)
-            put("vehicleInfo", vehicleInfo)
-        }
         client.functions.invoke(
             function = "send-mechanic-invite",
-            body = body,
-            headers = Headers.build {
-                append("Authorization", "Bearer ${session.accessToken}")
+            body = buildJsonObject {
+                put("jobId", jobId)
+                put("clientEmail", clientEmail)
+                put("clientName", clientName)
+                put("mechanicName", mechanicName)
+                put("vehicleInfo", vehicleInfo)
             },
         )
     }

@@ -6,7 +6,6 @@ import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.functions.functions
-import io.ktor.http.Headers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
@@ -155,22 +154,18 @@ class AuthRepository(
         AuthResult.Error(e.message ?: "Failed to send password reset email")
     }
 
-    suspend fun deleteAccount(): AuthResult = try {
-        val session = client.auth.currentSessionOrNull()
-            ?: return AuthResult.Error("Not signed in")
-        client.functions.invoke(
-            function = "delete-account",
-            headers = Headers.build {
-                append("Authorization", "Bearer ${session.accessToken}")
-            },
-        )
-        // Sign out locally after server-side deletion
-        runCatching { client.auth.signOut() }
-        AuthResult.Success
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        AuthResult.Error(e.message ?: "Failed to delete account")
+    suspend fun deleteAccount(): AuthResult {
+        if (client.auth.currentSessionOrNull() == null) return AuthResult.Error("Not signed in")
+        return try {
+            client.functions.invoke(function = "delete-account")
+            // Sign out locally after server-side deletion
+            runCatching { client.auth.signOut() }
+            AuthResult.Success
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AuthResult.Error(e.message ?: "Failed to delete account")
+        }
     }
 
     fun getCurrentUserId(): String? = client.auth.currentUserOrNull()?.id

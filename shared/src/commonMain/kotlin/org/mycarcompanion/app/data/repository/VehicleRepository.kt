@@ -5,7 +5,6 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
-import io.ktor.http.Headers
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.models.Reminder
@@ -68,7 +67,8 @@ class VehicleRepository(private val client: SupabaseClient) {
                 }
             }.decodeList<Reminder>()
 
-            val accessToken = client.auth.currentSessionOrNull()?.accessToken ?: return
+            // Guard: skip push if no active session (SDK needs auth to call the function)
+            client.auth.currentSessionOrNull() ?: return
 
             reminders.forEach { reminder ->
                 val dueMileage = reminder.nextDueMileage ?: return@forEach
@@ -81,9 +81,6 @@ class VehicleRepository(private val client: SupabaseClient) {
                             put("title", "$label Reminder")
                             put("body", "Your $label is due at $dueMileage miles.")
                             put("type", reminder.type)
-                        },
-                        headers = Headers.build {
-                            append("Authorization", "Bearer $accessToken")
                         },
                     )
                 }

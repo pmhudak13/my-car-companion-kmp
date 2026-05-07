@@ -21,7 +21,6 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
-import io.ktor.http.Headers
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.models.Message
@@ -78,7 +77,6 @@ class MessageRepository(private val client: SupabaseClient) {
         type: String,
     ) {
         try {
-            val accessToken = client.auth.currentSessionOrNull()?.accessToken ?: return
             client.functions.invoke(
                 "send-push-notification",
                 body = buildJsonObject {
@@ -86,9 +84,6 @@ class MessageRepository(private val client: SupabaseClient) {
                     put("title", title)
                     put("body", body)
                     put("type", type)
-                },
-                headers = Headers.build {
-                    append("Authorization", "Bearer $accessToken")
                 },
             )
         } catch (_: Exception) {
