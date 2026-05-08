@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -102,7 +103,7 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                 )
             },
             floatingActionButton = {
-                if (state.job?.status == "open") {
+                if (state.job != null) {
                     FloatingActionButton(onClick = model::showAddLog) {
                         Icon(Icons.Default.Add, contentDescription = "Add Service Log")
                     }
@@ -177,10 +178,8 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                 )
-                                if (job.status == "open") {
-                                    TextButton(onClick = model::showAddLog) {
-                                        Text("+ Add Log")
-                                    }
+                                TextButton(onClick = model::showAddLog) {
+                                    Text("+ Add Log")
                                 }
                             }
                         }
@@ -195,7 +194,11 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                             }
                         } else {
                             items(state.logs, key = { it.id }) { log ->
-                                JobLogCard(log, onDelete = { model.deleteLog(log.id) })
+                                JobLogCard(
+                                    log = log,
+                                    onEdit = { model.showEditLog(log) },
+                                    onDelete = { model.deleteLog(log.id) },
+                                )
                             }
                         }
                     }
@@ -208,11 +211,32 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                     onDismissRequest = model::hideAddLog,
                     sheetState = bottomSheetState,
                 ) {
-                    AddJobLogSheet(
-                        state = state,
+                    JobLogSheet(
+                        title = "Add Service Log",
+                        form = state.logForm,
+                        isSaving = state.isSavingLog,
+                        error = state.logError,
                         onFormUpdate = model::updateLogForm,
                         onSave = { model.saveLog(jobId) },
                         onCancel = model::hideAddLog,
+                    )
+                }
+            }
+
+            // Bottom sheet for editing an existing service log
+            if (state.editingLog != null) {
+                ModalBottomSheet(
+                    onDismissRequest = model::hideEditLog,
+                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                ) {
+                    JobLogSheet(
+                        title = "Edit Service Log",
+                        form = state.editLogForm,
+                        isSaving = state.isUpdatingLog,
+                        error = state.editLogError,
+                        onFormUpdate = model::updateEditLogForm,
+                        onSave = { model.saveEditLog(jobId) },
+                        onCancel = model::hideEditLog,
                     )
                 }
             }
@@ -320,7 +344,8 @@ private fun InviteCard(job: MechanicJob, isSending: Boolean, onSend: () -> Unit)
 }
 
 @Composable
-private fun JobLogCard(log: MechanicJobLog, onDelete: () -> Unit) {
+private fun JobLogCard(log: MechanicJobLog, onEdit: () -> Unit, onDelete: () -> Unit) {
+    val isEdited = log.updatedAt.isNotBlank() && log.updatedAt != log.createdAt
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -329,7 +354,17 @@ private fun JobLogCard(log: MechanicJobLog, onDelete: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(log.category, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                Text(log.date.take(10), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(log.date.take(10), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    IconButton(onClick = onEdit) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Edit",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
             }
             if (log.description.isNotBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
@@ -357,14 +392,25 @@ private fun JobLogCard(log: MechanicJobLog, onDelete: () -> Unit) {
             log.notes?.let {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
             }
+            if (isEdited) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Edited ${log.updatedAt.take(10)}${if (!log.editNotes.isNullOrBlank()) " · ${log.editNotes}" else ""}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+            }
         }
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AddJobLogSheet(
-    state: MechanicJobDetailState,
+private fun JobLogSheet(
+    title: String,
+    form: org.mycarcompanion.app.data.models.MaintenanceFormData,
+    isSaving: Boolean,
+    error: String?,
     onFormUpdate: (org.mycarcompanion.app.data.models.MaintenanceFormData) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit,
@@ -382,7 +428,7 @@ private fun AddJobLogSheet(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Add Service Log", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             TextButton(onClick = onCancel) { Text("Cancel") }
         }
         Spacer(modifier = Modifier.height(12.dp))
@@ -395,8 +441,8 @@ private fun AddJobLogSheet(
         ) {
             maintenanceCategories.forEach { category ->
                 FilterChip(
-                    selected = state.logForm.category == category,
-                    onClick = { onFormUpdate(state.logForm.copy(category = category)) },
+                    selected = form.category == category,
+                    onClick = { onFormUpdate(form.copy(category = category)) },
                     label = { Text(category, style = MaterialTheme.typography.bodySmall) },
                 )
             }
@@ -404,8 +450,8 @@ private fun AddJobLogSheet(
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
-            value = state.logForm.description,
-            onValueChange = { onFormUpdate(state.logForm.copy(description = it)) },
+            value = form.description,
+            onValueChange = { onFormUpdate(form.copy(description = it)) },
             label = { Text("Description *") },
             minLines = 2,
             modifier = Modifier.fillMaxWidth(),
@@ -413,8 +459,8 @@ private fun AddJobLogSheet(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = state.logForm.date,
-            onValueChange = { onFormUpdate(state.logForm.copy(date = it)) },
+            value = form.date,
+            onValueChange = { onFormUpdate(form.copy(date = it)) },
             label = { Text("Date * (YYYY-MM-DD)") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
@@ -422,8 +468,8 @@ private fun AddJobLogSheet(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = state.logForm.mileage,
-            onValueChange = { onFormUpdate(state.logForm.copy(mileage = it)) },
+            value = form.mileage,
+            onValueChange = { onFormUpdate(form.copy(mileage = it)) },
             label = { Text("Mileage *") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
@@ -432,8 +478,8 @@ private fun AddJobLogSheet(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = state.logForm.cost,
-            onValueChange = { onFormUpdate(state.logForm.copy(cost = it)) },
+            value = form.cost,
+            onValueChange = { onFormUpdate(form.copy(cost = it)) },
             label = { Text("Cost") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
@@ -442,26 +488,26 @@ private fun AddJobLogSheet(
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = state.logForm.notes,
-            onValueChange = { onFormUpdate(state.logForm.copy(notes = it)) },
+            value = form.notes,
+            onValueChange = { onFormUpdate(form.copy(notes = it)) },
             label = { Text("Notes") },
             minLines = 2,
             modifier = Modifier.fillMaxWidth(),
         )
 
-        state.logError?.let { error ->
+        error?.let {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = onSave,
-            enabled = !state.isSavingLog,
+            enabled = !isSaving,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            if (state.isSavingLog) {
+            if (isSaving) {
                 CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
             } else {
                 Text("Save Log")

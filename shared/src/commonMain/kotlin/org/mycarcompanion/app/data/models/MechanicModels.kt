@@ -56,6 +56,7 @@ data class MechanicProfileInsert(
 data class MechanicJob(
     val id: String = "",
     @SerialName("mechanic_user_id") val mechanicUserId: String = "",
+    @SerialName("vehicle_id") val vehicleId: String? = null,
     @SerialName("client_name") val clientName: String = "",
     @SerialName("client_email") val clientEmail: String? = null,
     @SerialName("vehicle_make") val vehicleMake: String = "",
@@ -84,6 +85,8 @@ data class MechanicJobLog(
     val cost: Double? = null,
     val notes: String? = null,
     @SerialName("created_at") val createdAt: String = "",
+    @SerialName("updated_at") val updatedAt: String = "",
+    @SerialName("edit_notes") val editNotes: String? = null,
 )
 
 @Serializable

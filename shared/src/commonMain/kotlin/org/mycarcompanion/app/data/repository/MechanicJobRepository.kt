@@ -5,6 +5,7 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import kotlinx.datetime.Clock
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.models.MechanicJob
@@ -48,11 +49,50 @@ class MechanicJobRepository(private val client: SupabaseClient) {
     suspend fun completeJob(jobId: String, clientEmail: String? = null): Result<Unit> = runCatching {
         jobsTable.update({
             set("status", "completed")
-            set("completed_at", kotlinx.datetime.Clock.System.now().toString())
+            set("completed_at", Clock.System.now().toString())
         }) {
             filter { eq("id", jobId) }
         }
         triggerJobUpdatePush(clientEmail, "Job Completed", "Your mechanic has marked your job as complete.")
+    }
+
+    suspend fun linkJobByVin(jobId: String, vin: String): Result<Unit> = runCatching {
+        client.postgrest.rpc(
+            "link_mechanic_job_by_vin",
+            buildJsonObject {
+                put("p_job_id", jobId)
+                put("p_vin", vin)
+            },
+        )
+    }
+
+    suspend fun updateLog(
+        logId: String,
+        category: String,
+        description: String,
+        date: String,
+        mileage: Int,
+        cost: Double?,
+        notes: String?,
+        editNotes: String?,
+        clientEmail: String? = null,
+    ): Result<MechanicJobLog> = runCatching {
+        val now = Clock.System.now().toString()
+        val result = logsTable.update({
+            set("category", category)
+            set("description", description)
+            set("date", date)
+            set("mileage", mileage)
+            set("cost", cost)
+            set("notes", notes)
+            set("updated_at", now)
+            set("edit_notes", editNotes)
+        }) {
+            filter { eq("id", logId) }
+            select()
+        }.decodeSingle<MechanicJobLog>()
+        triggerJobUpdatePush(clientEmail, "Job Updated", "Your mechanic has updated a service record.")
+        result
     }
 
     suspend fun getLogsForJob(jobId: String): Result<List<MechanicJobLog>> = runCatching {

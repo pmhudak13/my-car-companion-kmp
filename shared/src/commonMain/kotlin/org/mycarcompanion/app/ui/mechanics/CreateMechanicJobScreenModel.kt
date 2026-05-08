@@ -74,6 +74,10 @@ class CreateMechanicJobScreenModel(
             )
             jobRepository.createJob(insert)
                 .onSuccess { job ->
+                    val vin = form.vehicleVin.trim()
+                    if (vin.isNotBlank()) {
+                        jobRepository.linkJobByVin(job.id, vin)
+                    }
                     _state.value = _state.value.copy(isSaving = false, createdJob = job)
                 }
                 .onFailure { e ->

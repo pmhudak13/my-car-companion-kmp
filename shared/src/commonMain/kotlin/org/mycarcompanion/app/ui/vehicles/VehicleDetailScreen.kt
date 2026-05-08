@@ -326,6 +326,8 @@ private fun InfoRow(label: String, value: String) {
 
 @Composable
 fun MaintenanceLogCard(log: MaintenanceLog, onDelete: () -> Unit) {
+    val fromMechanic = log.source == "mechanic"
+    val isEdited = fromMechanic && log.updatedAt.isNotBlank() && log.updatedAt != log.createdAt
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -336,11 +338,21 @@ fun MaintenanceLogCard(log: MaintenanceLog, onDelete: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = log.category,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = log.category,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    if (fromMechanic) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "By Mechanic",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
                 Text(
                     text = log.date,
                     style = MaterialTheme.typography.bodySmall,
@@ -370,13 +382,23 @@ fun MaintenanceLogCard(log: MaintenanceLog, onDelete: () -> Unit) {
                         )
                     }
                 }
-                TextButton(onClick = onDelete) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                if (!fromMechanic) {
+                    TextButton(onClick = onDelete) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                    }
                 }
             }
             log.notes?.let { notes ->
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(notes, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+            }
+            if (isEdited) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Edited ${log.updatedAt.take(10)}${if (!log.editNotes.isNullOrBlank()) " · ${log.editNotes}" else ""}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
             }
         }
     }

@@ -29,6 +29,10 @@ data class MechanicJobDetailState(
     val isSendingInvite: Boolean = false,
     val inviteMessage: String? = null,
     val mechanicShopName: String? = null,
+    val editingLog: MechanicJobLog? = null,
+    val editLogForm: MaintenanceFormData = MaintenanceFormData(),
+    val isUpdatingLog: Boolean = false,
+    val editLogError: String? = null,
 )
 
 class MechanicJobDetailScreenModel(
@@ -184,5 +188,87 @@ class MechanicJobDetailScreenModel(
 
     fun clearInviteMessage() {
         _state.value = _state.value.copy(inviteMessage = null)
+    }
+
+    fun showEditLog(log: MechanicJobLog) {
+        _state.value = _state.value.copy(
+            editingLog = log,
+            editLogForm = MaintenanceFormData(
+                category = log.category,
+                description = log.description,
+                date = log.date,
+                mileage = log.mileage.toString(),
+                cost = log.cost?.toString() ?: "",
+                notes = log.notes ?: "",
+            ),
+            editLogError = null,
+        )
+    }
+
+    fun hideEditLog() {
+        _state.value = _state.value.copy(editingLog = null, editLogError = null)
+    }
+
+    fun updateEditLogForm(form: MaintenanceFormData) {
+        _state.value = _state.value.copy(editLogForm = form, editLogError = null)
+    }
+
+    fun saveEditLog(jobId: String) {
+        val oldLog = _state.value.editingLog ?: return
+        val form = _state.value.editLogForm
+        if (form.category.isBlank() || form.description.isBlank() || form.date.isBlank()) {
+            _state.value = _state.value.copy(editLogError = "Category, description, and date are required")
+            return
+        }
+        val mileage = form.mileage.toIntOrNull()
+        if (mileage == null) {
+            _state.value = _state.value.copy(editLogError = "Mileage must be a number")
+            return
+        }
+        val editNotes = buildEditNotes(oldLog, form, mileage)
+        screenModelScope.launch {
+            _state.value = _state.value.copy(isUpdatingLog = true, editLogError = null)
+            jobRepository.updateLog(
+                logId = oldLog.id,
+                category = form.category,
+                description = form.description.trim(),
+                date = form.date.trim(),
+                mileage = mileage,
+                cost = form.cost.toDoubleOrNull(),
+                notes = form.notes.trim().ifBlank { null },
+                editNotes = editNotes,
+                clientEmail = _state.value.job?.clientEmail,
+            )
+                .onSuccess { updatedLog ->
+                    _state.value = _state.value.copy(
+                        isUpdatingLog = false,
+                        editingLog = null,
+                        logs = _state.value.logs.map { if (it.id == oldLog.id) updatedLog else it },
+                    )
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        isUpdatingLog = false,
+                        editLogError = e.message ?: "Failed to update log",
+                    )
+                }
+        }
+    }
+
+    private fun buildEditNotes(old: MechanicJobLog, form: MaintenanceFormData, newMileage: Int): String? {
+        val changes = mutableListOf<String>()
+        if (old.category != form.category) changes.add("category: \"${old.category}\" → \"${form.category}\"")
+        if (old.description != form.description.trim()) changes.add("description updated")
+        if (old.date != form.date.trim()) changes.add("date: ${old.date} → ${form.date.trim()}")
+        if (old.mileage != newMileage) changes.add("mileage: ${old.mileage} → $newMileage")
+        val newCost = form.cost.toDoubleOrNull()
+        if (old.cost != newCost) {
+            val oldStr = old.cost?.let { "\$${it}" } ?: "none"
+            val newStr = newCost?.let { "\$${it}" } ?: "none"
+            changes.add("cost: $oldStr → $newStr")
+        }
+        val newNotes = form.notes.trim().ifBlank { null }
+        if (old.notes != newNotes) changes.add("notes updated")
+        return changes.takeIf { it.isNotEmpty() }?.joinToString("; ")
     }
 }
