@@ -62,7 +62,7 @@ android {
         applicationId = "org.mycarcompanion.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 23
+        versionCode = 99
         versionName = "2.0.0"
 
         val supabaseUrl = localProperties["SUPABASE_URL"]?.toString()

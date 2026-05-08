@@ -45,9 +45,10 @@ workflows:
       - name: Bump version code
         script: |
           # Query Google Play for the latest published version code, then increment
+          FLOOR=$(grep -o 'versionCode = [0-9]*' androidApp/build.gradle.kts | grep -o '[0-9]*')
           LATEST=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" 2>/dev/null || echo "")
           if [ -z "$LATEST" ]; then
-            NEW_VERSION_CODE=$((BUILD_NUMBER + 20))
+            NEW_VERSION_CODE=$FLOOR
           else
             NEW_VERSION_CODE=$((LATEST + 1))
           fi
