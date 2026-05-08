@@ -65,7 +65,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 
 # Crash reporting
-sentry-android = { module = "io.sentry:sentry-android", version.ref = "sentry" }
+sentry-android = { module = "io.sentry:sentry-android-core", version.ref = "sentry" }
 
 # Firebase
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
