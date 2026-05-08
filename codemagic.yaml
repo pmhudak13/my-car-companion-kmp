@@ -44,17 +44,10 @@ workflows:
 
       - name: Bump version code
         script: |
-          # Query Google Play for the latest published version code, then increment.
-          # Always take the max of LATEST+1 and FLOOR to guard against stale API responses.
-          FLOOR=$(grep -o 'versionCode = [0-9]*' androidApp/build.gradle.kts | grep -o '[0-9]*')
-          LATEST=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" 2>/dev/null || echo "0")
-          CANDIDATE=$((LATEST + 1))
-          if [ "$CANDIDATE" -gt "$FLOOR" ]; then
-            NEW_VERSION_CODE=$CANDIDATE
-          else
-            NEW_VERSION_CODE=$FLOOR
-          fi
-          echo "Latest Play Store versionCode=$LATEST, floor=$FLOOR → new versionCode=$NEW_VERSION_CODE"
+          # Use BUILD_NUMBER+100 for guaranteed uniqueness per build.
+          # The Play Store API consistently returns stale values so we don't query it.
+          NEW_VERSION_CODE=$((BUILD_NUMBER + 100))
+          echo "BUILD_NUMBER=$BUILD_NUMBER → versionCode=$NEW_VERSION_CODE"
 
           # Directly rewrite the file on disk (same approach as old Capacitor CI)
           sed -i.bak "s/versionCode = [0-9]*/versionCode = $NEW_VERSION_CODE/" androidApp/build.gradle.kts
