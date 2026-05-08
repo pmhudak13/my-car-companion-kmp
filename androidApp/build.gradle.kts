@@ -128,5 +128,6 @@ dependencies {
     implementation(libs.sentry.android)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
+    implementation(libs.firebase.analytics)
     debugImplementation(libs.leakcanary.android)
 }
