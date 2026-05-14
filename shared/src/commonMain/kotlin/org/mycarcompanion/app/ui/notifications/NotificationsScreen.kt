@@ -111,9 +111,33 @@ class NotificationsScreen : Screen {
                     }
                 }
 
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Text(
+                    "Email Notifications",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        NotifToggle("Oil Change", state.emailOilChange, screenModel::setEmailOilChange)
+                        Divider()
+                        NotifToggle("Tire Rotation", state.emailTireRotation, screenModel::setEmailTireRotation)
+                        Divider()
+                        NotifToggle("Registration", state.emailRegistration, screenModel::setEmailRegistration)
+                        Divider()
+                        NotifToggle("Custom Reminders", state.emailCustomReminders, screenModel::setEmailCustomReminders)
+                        Divider()
+                        NotifToggle("New Messages", state.emailNewMessages, screenModel::setEmailNewMessages)
+                        Divider()
+                        NotifToggle("Mechanic Updates", state.emailMechanicUpdates, screenModel::setEmailMechanicUpdates)
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    "Push notification delivery requires the app to be installed and notification permissions granted on your device.",
+                    "Email notifications are sent to the address on your account. Push notifications require the app installed with notification permissions granted.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

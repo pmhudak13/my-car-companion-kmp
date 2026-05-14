@@ -67,6 +67,7 @@ class MessageRepository(private val client: SupabaseClient) {
         )
         table.insert(payload)
         triggerPushNotification(recipientId, "New Message", content, "new_message")
+        triggerEmailNotification(recipientId, "New Message", content, "new_message")
         Unit
     }
 
@@ -87,7 +88,28 @@ class MessageRepository(private val client: SupabaseClient) {
                 },
             )
         } catch (_: Exception) {
-            // Push notification is best-effort — never fail the message send
+            // Best-effort — never fail the message send
+        }
+    }
+
+    private suspend fun triggerEmailNotification(
+        recipientId: String,
+        title: String,
+        body: String,
+        type: String,
+    ) {
+        try {
+            client.functions.invoke(
+                "send-email-notification",
+                body = buildJsonObject {
+                    put("recipient_id", recipientId)
+                    put("title", title)
+                    put("body", body)
+                    put("type", type)
+                },
+            )
+        } catch (_: Exception) {
+            // Best-effort — never fail the message send
         }
     }
 

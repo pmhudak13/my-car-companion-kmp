@@ -10,12 +10,20 @@ import org.mycarcompanion.app.data.models.NotificationPreferences
 import org.mycarcompanion.app.data.repository.NotificationPreferencesRepository
 
 data class NotificationsUiState(
+    // Push preferences
     val oilChange: Boolean = true,
     val tireRotation: Boolean = true,
     val registration: Boolean = true,
     val customReminders: Boolean = true,
     val newMessages: Boolean = true,
     val mechanicUpdates: Boolean = true,
+    // Email preferences
+    val emailOilChange: Boolean = true,
+    val emailTireRotation: Boolean = true,
+    val emailRegistration: Boolean = true,
+    val emailCustomReminders: Boolean = true,
+    val emailNewMessages: Boolean = true,
+    val emailMechanicUpdates: Boolean = true,
     val loading: Boolean = true,
 )
 
@@ -40,6 +48,12 @@ class NotificationsScreenModel(
                     customReminders = prefs.customReminders,
                     newMessages = prefs.newMessages,
                     mechanicUpdates = prefs.mechanicUpdates,
+                    emailOilChange = prefs.emailOilChange,
+                    emailTireRotation = prefs.emailTireRotation,
+                    emailRegistration = prefs.emailRegistration,
+                    emailCustomReminders = prefs.emailCustomReminders,
+                    emailNewMessages = prefs.emailNewMessages,
+                    emailMechanicUpdates = prefs.emailMechanicUpdates,
                     loading = false,
                 )
             }.onFailure {
@@ -54,6 +68,12 @@ class NotificationsScreenModel(
     fun setCustomReminders(value: Boolean) = update { it.copy(customReminders = value) }
     fun setNewMessages(value: Boolean) = update { it.copy(newMessages = value) }
     fun setMechanicUpdates(value: Boolean) = update { it.copy(mechanicUpdates = value) }
+    fun setEmailOilChange(value: Boolean) = update { it.copy(emailOilChange = value) }
+    fun setEmailTireRotation(value: Boolean) = update { it.copy(emailTireRotation = value) }
+    fun setEmailRegistration(value: Boolean) = update { it.copy(emailRegistration = value) }
+    fun setEmailCustomReminders(value: Boolean) = update { it.copy(emailCustomReminders = value) }
+    fun setEmailNewMessages(value: Boolean) = update { it.copy(emailNewMessages = value) }
+    fun setEmailMechanicUpdates(value: Boolean) = update { it.copy(emailMechanicUpdates = value) }
 
     private fun update(transform: (NotificationsUiState) -> NotificationsUiState) {
         _state.value = transform(_state.value)
@@ -71,6 +91,12 @@ class NotificationsScreenModel(
                     customReminders = s.customReminders,
                     newMessages = s.newMessages,
                     mechanicUpdates = s.mechanicUpdates,
+                    emailOilChange = s.emailOilChange,
+                    emailTireRotation = s.emailTireRotation,
+                    emailRegistration = s.emailRegistration,
+                    emailCustomReminders = s.emailCustomReminders,
+                    emailNewMessages = s.emailNewMessages,
+                    emailMechanicUpdates = s.emailMechanicUpdates,
                 )
             )
         }

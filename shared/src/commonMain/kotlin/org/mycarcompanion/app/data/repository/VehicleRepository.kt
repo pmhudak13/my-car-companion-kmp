@@ -74,12 +74,23 @@ class VehicleRepository(private val client: SupabaseClient) {
                 val dueMileage = reminder.nextDueMileage ?: return@forEach
                 if (odometer >= dueMileage) {
                     val label = reminderTypeLabels[reminder.type] ?: reminder.customName ?: "Maintenance"
+                    val notifTitle = "$label Reminder"
+                    val notifBody = "Your $label is due at $dueMileage miles."
                     client.functions.invoke(
                         "send-push-notification",
                         body = buildJsonObject {
                             put("recipient_id", userId)
-                            put("title", "$label Reminder")
-                            put("body", "Your $label is due at $dueMileage miles.")
+                            put("title", notifTitle)
+                            put("body", notifBody)
+                            put("type", reminder.type)
+                        },
+                    )
+                    client.functions.invoke(
+                        "send-email-notification",
+                        body = buildJsonObject {
+                            put("recipient_id", userId)
+                            put("title", notifTitle)
+                            put("body", notifBody)
                             put("type", reminder.type)
                         },
                     )

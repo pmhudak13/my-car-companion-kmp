@@ -108,6 +108,7 @@ class MechanicJobRepository(private val client: SupabaseClient) {
             select()
         }.decodeSingle<MechanicJobLog>()
         triggerJobUpdatePush(clientEmail, "Job Updated", "Your mechanic has added a new update to your job.")
+        triggerJobUpdateEmail(clientEmail, "Job Updated", "Your mechanic has added a new update to your job.")
         result
     }
 
@@ -122,6 +123,23 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         try {
             client.functions.invoke(
                 "send-push-notification",
+                body = buildJsonObject {
+                    put("client_email", clientEmail)
+                    put("title", title)
+                    put("body", body)
+                    put("type", "mechanic_update")
+                },
+            )
+        } catch (_: Exception) {
+            // Best-effort
+        }
+    }
+
+    private suspend fun triggerJobUpdateEmail(clientEmail: String?, title: String, body: String) {
+        if (clientEmail == null) return
+        try {
+            client.functions.invoke(
+                "send-email-notification",
                 body = buildJsonObject {
                     put("client_email", clientEmail)
                     put("title", title)
