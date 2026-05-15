@@ -3,25 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-GF4JRQKMSQ"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-GF4JRQKMSQ');
-    </script>
     <title>My Car Companion — App</title>
     <meta name="description" content="Track your vehicles, find trusted mechanics, and stay on top of maintenance — all in one place.">
     <script>
         // Injected by Netlify build via netlify-plugin-inline-env or set directly.
         // For local dev, set window.__SUPABASE_ANON_KEY__ manually or via a local script.
         window.__SUPABASE_URL__ = "https://eoqycogokelfmgwqydkj.supabase.co";
-        window.__SUPABASE_ANON_KEY__ = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvcXljb2dva2VsZm1nd3F5ZGtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMzMzMjcsImV4cCI6MjA4OTYwOTMyN30.F1wDENidEb7impi5ZP-lBQW6OueZiv9-yv1TcqZor4g";
+        window.__SUPABASE_ANON_KEY__ = "SUPABASE_ANON_KEY_PLACEHOLDER";
     </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #1B2B50; position: relative; }
-        canvas { display: block; position: absolute; top: 0; left: 0; }
+        body { background: #1B2B50; }
         #loading {
             position: fixed; inset: 0;
             display: flex; flex-direction: column;
@@ -46,42 +38,7 @@
         <div class="spinner"></div>
         <p>Loading My Car Companion…</p>
     </div>
-    <script>
-        // Bridge: /app/ writes the session to sessionStorage._mcc_handoff.
-        // The compiled wasm binary (main.kt at eaaadad) reads from the URL hash
-        // (#access_token=...). This script runs synchronously BEFORE webApp.js so
-        // parseHashSession() in the wasm finds the tokens in the expected place.
-        // Uses history.replaceState so tokens never appear in browser history.
-        (function() {
-            try {
-                var raw = sessionStorage.getItem('_mcc_handoff');
-                if (raw) {
-                    sessionStorage.removeItem('_mcc_handoff');
-                    var s = JSON.parse(raw);
-                    if (s && s.access_token) {
-                        var hash = 'access_token=' + encodeURIComponent(s.access_token)
-                            + '&refresh_token=' + encodeURIComponent(s.refresh_token || '')
-                            + '&token_type=bearer&expires_in=' + (s.expires_in || 3600);
-                        history.replaceState(null, '', window.location.pathname
-                            + window.location.search + '#' + hash);
-                    }
-                }
-            } catch (e) {}
-
-            // Show a success message during the wasm loading phase when redirected
-            // from Stripe checkout. The Kotlin app picks up premium status automatically
-            // once it loads (SubscribeScreenModel.init re-fetches the profile).
-            try {
-                var params = new URLSearchParams(window.location.search);
-                if (params.get('checkout') === 'success') {
-                    var loadingText = document.querySelector('#loading p');
-                    if (loadingText) loadingText.textContent = 'Payment successful! Loading your account…';
-                    // Remove the param so it doesn't persist in the URL
-                    history.replaceState(null, '', window.location.pathname);
-                }
-            } catch (e) {}
-        })();
-    </script>
+    <canvas id="ComposeTarget"></canvas>
     <script type="application/javascript" src="webApp.js"></script>
     <script>
         function showFatalError(msg) {
@@ -103,34 +60,17 @@
             showFatalError(e.reason ? e.reason.toString() : 'Unhandled promise rejection');
         });
 
-        // Hide loading screen once Compose adds its canvas to document.body.
-        // ComposeViewport(document.body!!) creates a new <canvas> child — we watch for that.
-        // Also watch attribute changes on any existing canvas (belt-and-suspenders).
-        (function() {
-            var hidden = false;
-            function hide() {
-                if (hidden) return;
-                hidden = true;
-                var loading = document.getElementById('loading');
-                if (loading) loading.style.display = 'none';
+        // Remove loading screen once Compose is ready.
+        document.addEventListener('DOMContentLoaded', function() {
+            var canvas = document.getElementById('ComposeTarget');
+            if (canvas) {
+                var observer = new MutationObserver(function() {
+                    var loading = document.getElementById('loading');
+                    if (loading) loading.style.display = 'none';
+                });
+                observer.observe(canvas, { attributes: true, childList: true });
             }
-            var observer = new MutationObserver(function(mutations) {
-                for (var i = 0; i < mutations.length; i++) {
-                    var m = mutations[i];
-                    if (m.type === 'childList') {
-                        for (var j = 0; j < m.addedNodes.length; j++) {
-                            if (m.addedNodes[j].nodeName === 'CANVAS') { hide(); observer.disconnect(); return; }
-                        }
-                    }
-                    if (m.type === 'attributes' && m.target.nodeName === 'CANVAS') { hide(); observer.disconnect(); return; }
-                }
-            });
-            observer.observe(document.body || document.documentElement, {
-                childList: true, subtree: true, attributes: true, attributeFilter: ['width', 'height']
-            });
-            // Safety net: if Compose never fires, stop the spinner after 30 s.
-            setTimeout(hide, 30000);
-        })();
+        });
     </script>
 </body>
 </html>

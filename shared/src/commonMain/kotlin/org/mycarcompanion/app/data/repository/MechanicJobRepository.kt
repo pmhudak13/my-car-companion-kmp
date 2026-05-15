@@ -5,9 +5,16 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import io.ktor.client.statement.bodyAsText
 import kotlinx.datetime.Clock
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
+import org.mycarcompanion.app.data.models.ImportedRecord
 import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.data.models.MechanicJobInsert
 import org.mycarcompanion.app.data.models.MechanicJobLog
@@ -149,6 +156,70 @@ class MechanicJobRepository(private val client: SupabaseClient) {
             )
         } catch (_: Exception) {
             // Best-effort
+        }
+    }
+
+    /** Inserts multiple job logs in one batch and returns the count saved. */
+    suspend fun addLogsInBulk(
+        logs: List<MechanicJobLogInsert>,
+        clientEmail: String? = null,
+    ): Result<Int> = runCatching {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
+        val withUser = logs.map { it.copy(mechanicUserId = userId) }
+        logsTable.insert(withUser)
+        if (!clientEmail.isNullOrBlank() && logs.isNotEmpty()) {
+            triggerJobUpdatePush(
+                clientEmail,
+                "Service Records Added",
+                "${logs.size} service record${if (logs.size != 1) "s" else ""} have been added to your vehicle history.",
+            )
+        }
+        logs.size
+    }
+
+    @Serializable
+    private data class ParsedRecordDto(
+        val date: String = "",
+        val category: String = "",
+        val description: String = "",
+        val mileage: Int = 0,
+        val cost: Double? = null,
+        val notes: String? = null,
+        @SerialName("isValid") val isValid: Boolean = true,
+    )
+
+    @Serializable
+    private data class ParseInvoiceResponse(val records: List<ParsedRecordDto> = emptyList())
+
+    /** Sends an invoice image to the AI edge function and returns extracted records. */
+    suspend fun parseInvoiceRecords(
+        imageBase64: String,
+        mimeType: String,
+        jobId: String,
+    ): Result<List<ImportedRecord>> = runCatching {
+        val response = client.functions.invoke(
+            function = "parse-invoice-records",
+            body = buildJsonObject {
+                put("image_base64", imageBase64)
+                put("mime_type", mimeType)
+                put("job_id", jobId)
+            },
+        )
+        val body = response.bodyAsText()
+        val json = runCatching { Json.parseToJsonElement(body).jsonObject }.getOrNull()
+        val serverError = (json?.get("error") as? JsonPrimitive)?.content
+        if (serverError != null) error(serverError)
+        val parsed = Json { ignoreUnknownKeys = true }.decodeFromString<ParseInvoiceResponse>(body)
+        parsed.records.map { dto ->
+            ImportedRecord(
+                date = dto.date,
+                category = dto.category,
+                description = dto.description,
+                mileage = dto.mileage,
+                cost = dto.cost,
+                notes = dto.notes,
+                isValid = dto.isValid && dto.description.isNotBlank(),
+            )
         }
     }
 

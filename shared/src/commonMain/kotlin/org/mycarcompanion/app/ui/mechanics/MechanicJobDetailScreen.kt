@@ -64,6 +64,8 @@ import org.mycarcompanion.app.data.models.MechanicJobLog
 import org.mycarcompanion.app.data.models.maintenanceCategories
 import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material3.FilledTonalIconButton
 
 data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable {
 
@@ -178,8 +180,13 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                 )
-                                TextButton(onClick = model::showAddLog) {
-                                    Text("+ Add Log")
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    FilledTonalIconButton(onClick = { navigator.push(RecordImportScreen(job)) }) {
+                                        Icon(Icons.Default.Upload, contentDescription = "Import Records")
+                                    }
+                                    TextButton(onClick = model::showAddLog) {
+                                        Text("+ Add Log")
+                                    }
                                 }
                             }
                         }
