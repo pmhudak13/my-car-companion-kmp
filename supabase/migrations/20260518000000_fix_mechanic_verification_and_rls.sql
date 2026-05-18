@@ -18,14 +18,14 @@ BEGIN
 
   -- Disable audit triggers: auth.uid() is null in migration context and the
   -- audit_logs trigger has a NOT NULL constraint on user_id.
-  ALTER TABLE public.mechanic_profiles DISABLE TRIGGER ALL;
+  ALTER TABLE public.mechanic_profiles DISABLE TRIGGER USER;
 
   UPDATE public.mechanic_profiles
   SET verification_status = 'verified',
       verified_at = NOW()
   WHERE user_id = v_user_id;
 
-  ALTER TABLE public.mechanic_profiles ENABLE TRIGGER ALL;
+  ALTER TABLE public.mechanic_profiles ENABLE TRIGGER USER;
 
   -- Ensure the mechanic role is present (idempotent — safe if already exists)
   INSERT INTO public.user_roles (user_id, role)
