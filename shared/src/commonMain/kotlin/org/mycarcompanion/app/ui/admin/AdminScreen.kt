@@ -536,12 +536,25 @@ private fun MechanicAdminCard(
                     }
                 }
                 "rejected" -> {
-                    Text(
-                        text = "✗ Rejected",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "✗ Rejected",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        if (processingId == mechanic.userId) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                        } else {
+                            FilledTonalButton(onClick = onApprove) {
+                                Text("Re-approve", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
                 }
             }
         }
