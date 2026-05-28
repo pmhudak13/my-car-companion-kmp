@@ -69,8 +69,54 @@ data class MechanicJob(
     val status: String = "open",
     @SerialName("invite_sent") val inviteSent: Boolean = false,
     val notes: String? = null,
+    @SerialName("progress_percent") val progressPercent: Int = 0,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("completed_at") val completedAt: String? = null,
+)
+
+@Serializable
+data class MechanicJobIssue(
+    val id: String = "",
+    @SerialName("mechanic_job_id") val mechanicJobId: String = "",
+    @SerialName("mechanic_user_id") val mechanicUserId: String = "",
+    val title: String = "",
+    val description: String? = null,
+    @SerialName("estimated_cost") val estimatedCost: Double? = null,
+    val status: String = "pending",
+    @SerialName("owner_response") val ownerResponse: String? = null,
+    @SerialName("created_at") val createdAt: String = "",
+    @SerialName("responded_at") val respondedAt: String? = null,
+)
+
+@Serializable
+data class MechanicJobIssueInsert(
+    @SerialName("mechanic_job_id") val mechanicJobId: String,
+    @SerialName("mechanic_user_id") val mechanicUserId: String,
+    val title: String,
+    val description: String? = null,
+    @SerialName("estimated_cost") val estimatedCost: Double? = null,
+)
+
+@Serializable
+data class MechanicJobMedia(
+    val id: String = "",
+    @SerialName("mechanic_job_id") val mechanicJobId: String = "",
+    @SerialName("mechanic_user_id") val mechanicUserId: String = "",
+    @SerialName("storage_path") val storagePath: String = "",
+    @SerialName("media_type") val mediaType: String = "image",
+    @SerialName("file_name") val fileName: String = "",
+    val caption: String? = null,
+    @SerialName("created_at") val createdAt: String = "",
+)
+
+@Serializable
+data class MechanicJobMediaInsert(
+    @SerialName("mechanic_job_id") val mechanicJobId: String,
+    @SerialName("mechanic_user_id") val mechanicUserId: String,
+    @SerialName("storage_path") val storagePath: String,
+    @SerialName("media_type") val mediaType: String = "image",
+    @SerialName("file_name") val fileName: String,
+    val caption: String? = null,
 )
 
 @Serializable

@@ -125,6 +125,9 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         }
     }
 
+    suspend fun triggerJobUpdatePushPublic(clientEmail: String, title: String, body: String) =
+        triggerJobUpdatePush(clientEmail, title, body)
+
     private suspend fun triggerJobUpdatePush(clientEmail: String?, title: String, body: String) {
         if (clientEmail == null) return
         try {
@@ -221,6 +224,19 @@ class MechanicJobRepository(private val client: SupabaseClient) {
                 isValid = dto.isValid && dto.description.isNotBlank(),
             )
         }
+    }
+
+    suspend fun updateProgress(jobId: String, percent: Int): Result<Unit> = runCatching {
+        jobsTable.update({ set("progress_percent", percent) }) {
+            filter { eq("id", jobId) }
+        }
+    }
+
+    suspend fun getJobsForVehicle(vehicleId: String): Result<List<MechanicJob>> = runCatching {
+        jobsTable.select {
+            filter { eq("vehicle_id", vehicleId) }
+            order("created_at", Order.DESCENDING)
+        }.decodeList<MechanicJob>()
     }
 
     suspend fun sendInvite(

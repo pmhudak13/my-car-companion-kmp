@@ -42,11 +42,22 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.saveable.rememberSaveable
+import coil3.compose.AsyncImage
 import org.mycarcompanion.app.data.models.MaintenanceLog
 import org.mycarcompanion.app.data.models.MechanicAssignment
+import org.mycarcompanion.app.data.models.MechanicJob
+import org.mycarcompanion.app.data.models.MechanicJobIssue
+import org.mycarcompanion.app.data.models.MechanicJobMedia
 import org.mycarcompanion.app.data.models.Reminder
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.data.models.reminderTypeLabels
+import org.mycarcompanion.app.data.supabase.SupabaseConfig
 import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreen
@@ -177,6 +188,28 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
                         } else {
                             items(state.assignments, key = { it.id }) { assignment ->
                                 AssignmentCard(assignment, onRevoke = { model.revokeAssignment(assignment.id) })
+                            }
+                        }
+
+                        // --- Mechanic Job History ---
+                        if (state.mechanicJobs.isNotEmpty()) {
+                            item {
+                                Text(
+                                    "Mechanic Service Jobs (${state.mechanicJobs.size})",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                            items(state.mechanicJobs, key = { it.id }) { job ->
+                                MechanicJobCard(
+                                    job = job,
+                                    issues = state.issuesByJobId[job.id] ?: emptyList(),
+                                    media = state.mediaByJobId[job.id] ?: emptyList(),
+                                    respondingIssueId = state.respondingIssueId,
+                                    onRespondToIssue = { issueId, approved ->
+                                        model.respondToIssue(issueId, approved, null)
+                                    },
+                                )
                             }
                         }
 
@@ -485,6 +518,219 @@ fun AssignmentCard(assignment: MechanicAssignment, onRevoke: () -> Unit) {
             }
             TextButton(onClick = onRevoke) {
                 Text("Revoke", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MechanicJobCard(
+    job: MechanicJob,
+    issues: List<MechanicJobIssue>,
+    media: List<MechanicJobMedia>,
+    respondingIssueId: String?,
+    onRespondToIssue: (issueId: String, approved: Boolean) -> Unit,
+) {
+    val pendingIssues = issues.filter { it.status == "pending" }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (pendingIssues.isNotEmpty())
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            else MaterialTheme.colorScheme.surface,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "${job.vehicleYear} ${job.vehicleMake} ${job.vehicleModel}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        "Created ${job.createdAt.take(10)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text(
+                    text = if (job.status == "open") "In Progress" else "Completed",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (job.status == "open") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                )
+            }
+
+            // Progress bar
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Progress", style = MaterialTheme.typography.labelMedium)
+                Text("${job.progressPercent}%", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            LinearProgressIndicator(
+                progress = { job.progressPercent / 100f },
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            // Pending issues requiring approval
+            if (pendingIssues.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    "⚠ ${pendingIssues.size} issue${if (pendingIssues.size != 1) "s" else ""} need your approval",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                pendingIssues.forEach { issue ->
+                    PendingIssueRow(
+                        issue = issue,
+                        isResponding = respondingIssueId == issue.id,
+                        onApprove = { onRespondToIssue(issue.id, true) },
+                        onDecline = { onRespondToIssue(issue.id, false) },
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+
+            // Resolved issues (collapsed summary)
+            val resolvedIssues = issues.filter { it.status != "pending" }
+            if (resolvedIssues.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "${resolvedIssues.count { it.status == "approved" }} approved · ${resolvedIssues.count { it.status == "declined" }} declined",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            // Media
+            if (media.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                OwnerMediaSection(media = media)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PendingIssueRow(
+    issue: MechanicJobIssue,
+    isResponding: Boolean,
+    onApprove: () -> Unit,
+    onDecline: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer),
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(issue.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+            issue.description?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onTertiaryContainer)
+            }
+            issue.estimatedCost?.let {
+                Text("Estimated cost: $${formatCost(it)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            if (isResponding) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilledTonalButton(onClick = onApprove, modifier = Modifier.weight(1f)) { Text("Approve") }
+                    OutlinedButton(onClick = onDecline, modifier = Modifier.weight(1f)) { Text("Decline") }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OwnerMediaSection(media: List<MechanicJobMedia>) {
+    var showThumbnails by rememberSaveable { mutableStateOf(true) }
+
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Photos & Videos (${media.size})", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            Row {
+                TextButton(onClick = { showThumbnails = true }) {
+                    Text(
+                        "Thumbnails",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (showThumbnails) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(onClick = { showThumbnails = false }) {
+                    Text(
+                        "Files",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (!showThumbnails) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        if (showThumbnails) {
+            val rows = (media.size + 2) / 3
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                repeat(rows) { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        for (col in 0..2) {
+                            val idx = row * 3 + col
+                            if (idx < media.size) {
+                                val item = media[idx]
+                                val url = "${SupabaseConfig.url}/storage/v1/object/public/mechanic-job-media/${item.storagePath}"
+                                Card(modifier = Modifier.weight(1f)) {
+                                    AsyncImage(
+                                        model = url,
+                                        contentDescription = item.caption ?: item.fileName,
+                                        modifier = Modifier.fillMaxWidth().aspectRatio(1f),
+                                    )
+                                }
+                            } else {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                media.forEach { item ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(item.fileName, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium, maxLines = 1)
+                            item.caption?.let {
+                                Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                            }
+                            Text(
+                                "${item.mediaType} · ${item.createdAt.take(10)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
