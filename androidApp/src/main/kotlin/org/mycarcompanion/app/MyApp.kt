@@ -11,10 +11,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
+import org.koin.dsl.module
 import org.mycarcompanion.androidapp.BuildConfig
 import org.mycarcompanion.app.data.supabase.SupabaseConfig
 import org.mycarcompanion.app.data.supabase.prewarmSupabaseClient
 import org.mycarcompanion.app.di.appModule
+import org.mycarcompanion.app.platform.PlatformBillingHandler
 
 class MyApp : Application() {
 
@@ -53,9 +55,12 @@ class MyApp : Application() {
             anonKey = BuildConfig.SUPABASE_ANON_KEY,
         )
 
+        val androidModule = module {
+            single<PlatformBillingHandler> { PlayBillingManager(androidContext()) }
+        }
         startKoin {
             androidContext(this@MyApp)
-            modules(appModule)
+            modules(appModule, androidModule)
         }
 
         // Pre-warm supabaseClient on a background thread. Ktor's HttpClient static

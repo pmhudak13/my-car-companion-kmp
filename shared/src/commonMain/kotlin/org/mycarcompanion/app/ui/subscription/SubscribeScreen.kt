@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -198,49 +199,95 @@ class SubscribeScreen : Screen {
 
                     Spacer(modifier = Modifier.height(28.dp))
 
-                    PlanSection(
-                        title = "Premium",
-                        subtitle = "For car owners",
-                        features = listOf(
-                            "Unlimited vehicles",
-                            "Full maintenance history",
-                            "Mileage tracking & reports",
-                            "Message mechanics directly",
-                            "Priority support",
-                        ),
-                        monthlyPriceId = SubscriptionRepository.PRICE_PREMIUM_MONTHLY,
-                        yearlyPriceId = SubscriptionRepository.PRICE_PREMIUM_YEARLY,
-                        monthlyLabel = "$4.99 / month",
-                        yearlyLabel = "$49.99 / year  (save 17%)",
-                        onCheckout = { model.startCheckout(it) },
-                    )
+                    if (state.playBillingAvailable) {
+                        // Android: use Google Play native purchase flow
+                        PlayPlanSection(
+                            title = "Premium",
+                            subtitle = "For car owners",
+                            features = listOf(
+                                "Unlimited vehicles",
+                                "Full maintenance history",
+                                "Mileage tracking & reports",
+                                "Message mechanics directly",
+                                "Priority support",
+                            ),
+                            productId = "premium",
+                            products = state.playProducts.filter { it.productId == "premium" },
+                            loading = state.playBillingLoading,
+                            onPurchase = { productId, basePlanId -> model.startPlayPurchase(productId, basePlanId) },
+                        )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
 
-                    PlanSection(
-                        title = "Mechanic Pro",
-                        subtitle = "For mechanics & shops",
-                        features = listOf(
-                            "Everything in Premium",
-                            "Mechanic profile & directory listing",
-                            "Manage customer jobs",
-                            "Customer messaging inbox",
-                            "Pro badge on your profile",
-                        ),
-                        monthlyPriceId = SubscriptionRepository.PRICE_MECHANIC_MONTHLY,
-                        yearlyPriceId = SubscriptionRepository.PRICE_MECHANIC_YEARLY,
-                        monthlyLabel = "$14.99 / month",
-                        yearlyLabel = "$149.99 / year  (save 17%)",
-                        onCheckout = { model.startCheckout(it) },
-                    )
+                        PlayPlanSection(
+                            title = "Mechanic Pro",
+                            subtitle = "For mechanics & shops",
+                            features = listOf(
+                                "Everything in Premium",
+                                "Mechanic profile & directory listing",
+                                "Manage customer jobs",
+                                "Customer messaging inbox",
+                                "Pro badge on your profile",
+                            ),
+                            productId = "mechanic_pro",
+                            products = state.playProducts.filter { it.productId == "mechanic_pro" },
+                            loading = state.playBillingLoading,
+                            onPurchase = { productId, basePlanId -> model.startPlayPurchase(productId, basePlanId) },
+                        )
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                        Spacer(modifier = Modifier.height(32.dp))
 
-                    Text(
-                        text = "Cancel anytime. Billed securely via Stripe.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                        Text(
+                            text = "Cancel anytime. Billed securely via Google Play.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        // Web / iOS: use Stripe checkout
+                        PlanSection(
+                            title = "Premium",
+                            subtitle = "For car owners",
+                            features = listOf(
+                                "Unlimited vehicles",
+                                "Full maintenance history",
+                                "Mileage tracking & reports",
+                                "Message mechanics directly",
+                                "Priority support",
+                            ),
+                            monthlyPriceId = SubscriptionRepository.PRICE_PREMIUM_MONTHLY,
+                            yearlyPriceId = SubscriptionRepository.PRICE_PREMIUM_YEARLY,
+                            monthlyLabel = "$4.99 / month",
+                            yearlyLabel = "$49.99 / year  (save 17%)",
+                            onCheckout = { model.startCheckout(it) },
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        PlanSection(
+                            title = "Mechanic Pro",
+                            subtitle = "For mechanics & shops",
+                            features = listOf(
+                                "Everything in Premium",
+                                "Mechanic profile & directory listing",
+                                "Manage customer jobs",
+                                "Customer messaging inbox",
+                                "Pro badge on your profile",
+                            ),
+                            monthlyPriceId = SubscriptionRepository.PRICE_MECHANIC_MONTHLY,
+                            yearlyPriceId = SubscriptionRepository.PRICE_MECHANIC_YEARLY,
+                            monthlyLabel = "$14.99 / month",
+                            yearlyLabel = "$149.99 / year  (save 17%)",
+                            onCheckout = { model.startCheckout(it) },
+                        )
+
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        Text(
+                            text = "Cancel anytime. Billed securely via Stripe.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     Spacer(modifier = Modifier.height(24.dp))
                 }
             }
@@ -324,6 +371,99 @@ private fun PlanSection(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Subscribe — ${if (selectedYearly) yearlyLabel else monthlyLabel}")
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlayPlanSection(
+    title: String,
+    subtitle: String,
+    features: List<String>,
+    productId: String,
+    products: List<org.mycarcompanion.app.platform.PlayProduct>,
+    loading: Boolean,
+    onPurchase: (productId: String, basePlanId: String) -> Unit,
+) {
+    var selectedBasePlan by remember(products) {
+        mutableStateOf(products.firstOrNull { it.basePlanId == "yearly" }?.basePlanId ?: products.firstOrNull()?.basePlanId ?: "monthly")
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            features.forEach { feature ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(vertical = 3.dp),
+                ) {
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.padding(horizontal = 6.dp))
+                    Text(feature, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            if (products.isEmpty()) {
+                Text(
+                    text = "Loading plans…",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    products.forEach { product ->
+                        val label = when (product.basePlanId) {
+                            "monthly" -> "Monthly"
+                            "yearly" -> "Yearly"
+                            else -> product.basePlanId.replaceFirstChar { it.uppercase() }
+                        }
+                        BillingToggleButton(
+                            label = label,
+                            sublabel = product.displayPrice,
+                            selected = selectedBasePlan == product.basePlanId,
+                            onClick = { selectedBasePlan = product.basePlanId },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                val selectedProduct = products.firstOrNull { it.basePlanId == selectedBasePlan } ?: products.first()
+                Button(
+                    onClick = { onPurchase(productId, selectedProduct.basePlanId) },
+                    enabled = !loading,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    if (loading) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
+                    } else {
+                        Text("Subscribe via Google Play — ${selectedProduct.displayPrice}")
+                    }
+                }
             }
         }
     }

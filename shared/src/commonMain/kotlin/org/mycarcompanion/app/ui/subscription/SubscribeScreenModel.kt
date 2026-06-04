@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.mycarcompanion.app.data.repository.ProfileRepository
 import org.mycarcompanion.app.data.repository.SubscriptionRepository
+import org.mycarcompanion.app.platform.PlayProduct
+import org.mycarcompanion.app.platform.PlatformBillingHandler
 
 data class SubscribeState(
     val loading: Boolean = false,
@@ -18,11 +20,16 @@ data class SubscribeState(
     val subscriptionTier: String = "free",
     // True after checkout URL is opened — prompts user to refresh once they've paid
     val checkoutInitiated: Boolean = false,
+    // Play Billing
+    val playBillingAvailable: Boolean = false,
+    val playProducts: List<PlayProduct> = emptyList(),
+    val playBillingLoading: Boolean = false,
 )
 
 class SubscribeScreenModel(
     private val subscriptionRepository: SubscriptionRepository,
     private val profileRepository: ProfileRepository,
+    private val billingHandler: PlatformBillingHandler,
 ) : ScreenModel {
 
     private val _state = MutableStateFlow(SubscribeState())
@@ -38,6 +45,59 @@ class SubscribeScreenModel(
                     )
                 }
             }
+        }
+        if (billingHandler.isAvailable) {
+            _state.update { it.copy(playBillingAvailable = true) }
+            loadPlayProducts()
+        }
+    }
+
+    private fun loadPlayProducts() {
+        screenModelScope.launch {
+            val products = billingHandler.queryProducts(
+                listOf("premium", "mechanic_pro")
+            )
+            _state.update { it.copy(playProducts = products, playBillingAvailable = products.isNotEmpty()) }
+        }
+    }
+
+    /** Initiates a Play Billing purchase for the given product + base plan. */
+    fun startPlayPurchase(productId: String, basePlanId: String) {
+        screenModelScope.launch {
+            _state.update { it.copy(playBillingLoading = true, error = null) }
+            billingHandler.purchase(productId, basePlanId)
+                .onSuccess { purchaseToken ->
+                    // Acknowledge + verify server-side
+                    subscriptionRepository.verifyPlayPurchase(purchaseToken, productId)
+                        .onSuccess {
+                            // Reload profile to pick up new subscription tier
+                            profileRepository.getMyProfile().onSuccess { profile ->
+                                _state.update {
+                                    it.copy(
+                                        playBillingLoading = false,
+                                        isPremium = profile?.isPremium == true,
+                                        subscriptionTier = profile?.subscriptionTier ?: "free",
+                                    )
+                                }
+                            }
+                        }
+                        .onFailure { err ->
+                            _state.update {
+                                it.copy(
+                                    playBillingLoading = false,
+                                    error = "Purchase received but verification failed: ${err.message}",
+                                )
+                            }
+                        }
+                }
+                .onFailure { err ->
+                    _state.update {
+                        it.copy(
+                            playBillingLoading = false,
+                            error = if (err.message == "Purchase cancelled") null else err.message ?: "Purchase failed",
+                        )
+                    }
+                }
         }
     }
 
@@ -67,7 +127,6 @@ class SubscribeScreenModel(
         }
     }
 
-    /** Re-fetches the profile — call after returning from Stripe to pick up premium status. */
     fun refreshProfile() {
         screenModelScope.launch {
             _state.update { it.copy(loading = true, error = null) }
@@ -89,7 +148,6 @@ class SubscribeScreenModel(
     }
 
     fun clearCheckoutUrl() {
-        // Mark that checkout was initiated so the UI can show a "check status" prompt
         _state.update { it.copy(checkoutUrl = null, checkoutInitiated = true) }
     }
 

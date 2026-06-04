@@ -24,6 +24,7 @@ import org.mycarcompanion.app.data.repository.NotificationPreferencesRepository
 import org.mycarcompanion.app.data.repository.TransferRepository
 import org.mycarcompanion.app.data.repository.VehicleRepository
 import org.mycarcompanion.app.data.supabase.supabaseClient
+import org.mycarcompanion.app.platform.NoOpBillingHandler
 import org.mycarcompanion.app.ui.admin.AdminScreenModel
 import org.mycarcompanion.app.ui.auth.AuthScreenModel
 import org.mycarcompanion.app.ui.home.HomeScreenModel
@@ -98,5 +99,5 @@ val appModule = module {
     factoryOf(::TransferScreenModel)
     factoryOf(::ReceiveTransferScreenModel)
     factoryOf(::NotificationsScreenModel)
-    factoryOf(::SubscribeScreenModel)
+    factory { SubscribeScreenModel(get(), get(), getOrNull() ?: NoOpBillingHandler) }
 }

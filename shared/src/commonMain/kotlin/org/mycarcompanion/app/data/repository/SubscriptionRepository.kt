@@ -54,6 +54,28 @@ class SubscriptionRepository(private val client: SupabaseClient) {
         parseUrlFromResponse(response.bodyAsText())
     }
 
+    /**
+     * Sends the Play Billing purchase token to the edge function for server-side verification.
+     * The function calls the Google Play Developer API, verifies the purchase, and updates
+     * the user's subscription_tier + is_premium in the database.
+     */
+    suspend fun verifyPlayPurchase(purchaseToken: String, productId: String): Result<Unit> = runCatching {
+        client.auth.currentSessionOrNull()
+            ?: error("Session expired — please sign out and sign back in")
+        val response = client.functions.invoke(
+            function = "verify-play-purchase",
+            body = buildJsonObject {
+                put("purchase_token", purchaseToken)
+                put("product_id", productId)
+                put("package_name", "org.mycarcompanion.app")
+            },
+        )
+        val body = response.bodyAsText()
+        val json = runCatching { Json.parseToJsonElement(body).jsonObject }.getOrNull()
+        val serverError = (json?.get("error") as? JsonPrimitive)?.content
+        if (serverError != null) error(serverError)
+    }
+
     private fun parseUrlFromResponse(body: String): String {
         val json = runCatching { Json.parseToJsonElement(body).jsonObject }.getOrNull()
         val serverError = (json?.get("error") as? JsonPrimitive)?.content

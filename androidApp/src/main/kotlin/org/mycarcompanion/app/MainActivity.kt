@@ -18,6 +18,7 @@ import org.koin.android.ext.android.inject
 import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.data.repository.AuthRepository
 import org.mycarcompanion.app.data.repository.DeviceTokenRepository
+import org.mycarcompanion.app.platform.PlatformBillingHandler
 import org.mycarcompanion.app.platform.handleAuthDeepLinkIntent
 import org.mycarcompanion.app.platform.initGeolocation
 
@@ -25,6 +26,7 @@ class MainActivity : ComponentActivity() {
 
     private val deviceTokenRepository: DeviceTokenRepository by inject()
     private val authRepository: AuthRepository by inject()
+    private val billingHandler: PlatformBillingHandler by inject()
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -40,6 +42,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             App()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        (billingHandler as? PlayBillingManager)?.setActivity(this)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        (billingHandler as? PlayBillingManager)?.setActivity(null)
     }
 
     override fun onNewIntent(intent: Intent) {
