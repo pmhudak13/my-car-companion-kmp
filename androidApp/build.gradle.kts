@@ -129,5 +129,6 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.analytics)
+    implementation(libs.billing)
     debugImplementation(libs.leakcanary.android)
 }

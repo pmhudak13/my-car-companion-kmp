@@ -75,8 +75,16 @@ class MainActivity : ComponentActivity() {
             if (storedToken != null) {
                 deviceTokenRepository.upsertToken(storedToken, "android")
             } else {
-                FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
-                    lifecycleScope.launch { deviceTokenRepository.upsertToken(token, "android") }
+                // Guard against the rare OEM case where Firebase was not fully
+                // initialised even after MyApp.onCreate() ran (ANDROID-6/5/7).
+                // The token will be picked up on the next launch via SharedPreferences.
+                try {
+                    FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                        lifecycleScope.launch { deviceTokenRepository.upsertToken(token, "android") }
+                    }
+                } catch (e: IllegalStateException) {
+                    // Firebase unavailable — skip silently. MyApp re-initialises on
+                    // every cold start so this is self-healing within one session.
                 }
             }
         }

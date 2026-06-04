@@ -22,7 +22,14 @@ class MyApp : Application() {
         super.onCreate()
 
         // FirebaseInitProvider is disabled in the manifest (OEM devices like OnePlus
-        // OxygenOS can leave it in a broken partial state). We are the sole init point.
+        // OxygenOS can leave it in a broken partial state where getApps() is non-empty
+        // but getInstance() still throws). Force-delete any corrupt default app before
+        // re-initializing so we always start from a clean state.
+        try {
+            FirebaseApp.getApps(this)
+                .firstOrNull { it.name == FirebaseApp.DEFAULT_APP_NAME }
+                ?.delete()
+        } catch (_: Exception) {}
         FirebaseApp.initializeApp(this)
 
         if (BuildConfig.SENTRY_DSN.isNotEmpty()) {
