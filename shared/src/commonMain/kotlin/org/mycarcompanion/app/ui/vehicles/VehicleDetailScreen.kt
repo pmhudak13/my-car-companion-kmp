@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -88,7 +90,7 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
                         onClick = { navigator.push(AddMaintenanceScreen(vehicleId)) },
                         containerColor = MaterialTheme.colorScheme.primary,
                     ) {
-                        Text("+", style = MaterialTheme.typography.headlineSmall)
+                        Icon(Icons.Default.Add, contentDescription = "Add Maintenance Record")
                     }
                 }
             }
@@ -121,7 +123,7 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         item { VehicleHeader(vehicle, onBack = { navigator.pop() }, onSettings = { navigator.push(VehicleSettingsScreen(vehicleId)) }) }
-                        item { VehicleInfo(vehicle) }
+                        item { VehicleInfo(vehicle, onDeleteVehicle = { deleteVehicleConfirm = true }) }
 
                         // --- Reminders Section ---
                         item {
@@ -215,22 +217,11 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
 
                         // --- Maintenance Section ---
                         item {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    "Maintenance History",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                TextButton(
-                                    onClick = { deleteVehicleConfirm = true },
-                                ) {
-                                    Text("Delete Vehicle", color = MaterialTheme.colorScheme.error)
-                                }
-                            }
+                            Text(
+                                "Maintenance History",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                            )
                         }
                         if (state.logs.isEmpty()) {
                             item {
@@ -317,11 +308,13 @@ private fun VehicleHeader(vehicle: Vehicle, onBack: () -> Unit, onSettings: () -
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TextButton(onClick = onBack) { Text("< Back") }
+        IconButton(onClick = onBack) {
+            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+        }
         Text(
             text = "${vehicle.year} ${vehicle.make} ${vehicle.model}",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
         )
         IconButton(onClick = onSettings) {
             Icon(Icons.Default.Settings, contentDescription = "Vehicle Settings")
@@ -330,18 +323,30 @@ private fun VehicleHeader(vehicle: Vehicle, onBack: () -> Unit, onSettings: () -
 }
 
 @Composable
-private fun VehicleInfo(vehicle: Vehicle) {
+private fun VehicleInfo(vehicle: Vehicle, onDeleteVehicle: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             InfoRow("Odometer", "${vehicle.odometer} ${vehicle.unit}")
             vehicle.color?.let { InfoRow("Color", it) }
             vehicle.licensePlate?.let { InfoRow("License Plate", it) }
             vehicle.vin?.let { InfoRow("VIN", it) }
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(
+                onClick = onDeleteVehicle,
+                modifier = Modifier.align(Alignment.End),
+            ) {
+                Text(
+                    "Delete Vehicle",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
         }
     }
 }
@@ -363,7 +368,8 @@ fun MaintenanceLogCard(log: MaintenanceLog, onDelete: () -> Unit) {
     val isEdited = fromMechanic && log.updatedAt.isNotBlank() && log.updatedAt != log.createdAt
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -441,7 +447,8 @@ fun MaintenanceLogCard(log: MaintenanceLog, onDelete: () -> Unit) {
 fun ReminderCard(reminder: Reminder, onDelete: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -494,7 +501,8 @@ fun ReminderCard(reminder: Reminder, onDelete: () -> Unit) {
 fun AssignmentCard(assignment: MechanicAssignment, onRevoke: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -667,22 +675,17 @@ private fun OwnerMediaSection(media: List<MechanicJobMedia>) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("Photos & Videos (${media.size})", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-            Row {
-                TextButton(onClick = { showThumbnails = true }) {
-                    Text(
-                        "Thumbnails",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (showThumbnails) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(onClick = { showThumbnails = false }) {
-                    Text(
-                        "Files",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (!showThumbnails) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                androidx.compose.material3.FilterChip(
+                    selected = showThumbnails,
+                    onClick = { showThumbnails = true },
+                    label = { Text("Grid", style = MaterialTheme.typography.labelSmall) },
+                )
+                androidx.compose.material3.FilterChip(
+                    selected = !showThumbnails,
+                    onClick = { showThumbnails = false },
+                    label = { Text("List", style = MaterialTheme.typography.labelSmall) },
+                )
             }
         }
 

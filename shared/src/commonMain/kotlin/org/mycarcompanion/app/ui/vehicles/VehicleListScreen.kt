@@ -11,9 +11,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -53,7 +58,7 @@ class VehicleListScreen : Screen {
                         onClick = { navigator.push(AddVehicleScreen()) },
                         containerColor = MaterialTheme.colorScheme.primary,
                     ) {
-                        Text("+", style = MaterialTheme.typography.headlineSmall)
+                        Icon(Icons.Default.Add, contentDescription = "Add Vehicle")
                     }
                 }
             }
@@ -125,43 +130,79 @@ class VehicleListScreen : Screen {
 @Composable
 fun VehicleCard(vehicle: Vehicle, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant,
+        ),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .then(
+                        Modifier.let {
+                            it
+                        }
+                    ),
+                contentAlignment = Alignment.Center,
             ) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ),
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Default.DirectionsCar,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(26.dp),
+                        )
+                    }
+                }
+            }
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "${vehicle.year} ${vehicle.make} ${vehicle.model}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
                 )
-                vehicle.color?.let { color ->
+                Spacer(modifier = Modifier.height(2.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = color,
+                        text = "${vehicle.odometer} ${vehicle.unit}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    vehicle.licensePlate?.let { plate ->
+                        Text(
+                            text = "·",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline,
+                        )
+                        Text(
+                            text = plate,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(4.dp))
-            Row {
+            vehicle.color?.let { color ->
                 Text(
-                    text = "${vehicle.odometer} ${vehicle.unit}",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = color,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                vehicle.licensePlate?.let { plate ->
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        text = plate,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
         }
     }

@@ -11,15 +11,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -27,6 +39,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -55,7 +68,9 @@ import org.mycarcompanion.app.ui.vehicles.AddVehicleScreen
 import org.mycarcompanion.app.ui.vehicles.VehicleCard
 import org.mycarcompanion.app.ui.vehicles.VehicleDetailScreen
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
+import org.mycarcompanion.app.platform.topBarWindowInsets
 
+@OptIn(ExperimentalMaterial3Api::class)
 class HomeScreen : Screen {
 
     @Composable
@@ -102,205 +117,236 @@ class HomeScreen : Screen {
         Scaffold(
             contentWindowInsets = scaffoldContentWindowInsets(),
             snackbarHost = { SnackbarHost(snackbarHostState) },
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = "My Car Companion",
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                            Text(
+                                text = user.email,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { navigator.push(SettingsScreen()) }) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        }
+                    },
+                    windowInsets = topBarWindowInsets(),
+                )
+            },
             floatingActionButton = {
                 FloatingActionButton(
                     onClick = { navigator.push(AddVehicleScreen()) },
                     containerColor = MaterialTheme.colorScheme.primary,
                 ) {
-                    Text("+", style = MaterialTheme.typography.headlineSmall)
+                    Icon(Icons.Default.Add, contentDescription = "Add Vehicle")
                 }
             }
         ) { paddingValues ->
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 16.dp),
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column {
-                        Text(
-                            text = "My Car Companion",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.primary,
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        QuickActionCard(
+                            icon = Icons.Default.Build,
+                            label = "Find Mechanic",
+                            onClick = { navigator.push(MechanicDirectoryScreen()) },
+                            modifier = Modifier.weight(1f),
                         )
-                        Text(
-                            text = user.email,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        QuickActionCard(
+                            icon = Icons.Default.Speed,
+                            label = "Mileage",
+                            onClick = { navigator.push(MileageTrackerScreen()) },
+                            modifier = Modifier.weight(1f),
                         )
-                    }
-                    TextButton(
-                        onClick = { navigator.push(SettingsScreen()) },
-                    ) {
-                        Text("Settings")
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Button(
-                        onClick = { navigator.push(MechanicDirectoryScreen()) },
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        ),
-                    ) {
-                        Text("Find Mechanic", style = MaterialTheme.typography.labelMedium)
-                    }
-                    Button(
-                        onClick = { navigator.push(MileageTrackerScreen()) },
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        ),
-                    ) {
-                        Text("Mileage Tracker", style = MaterialTheme.typography.labelMedium)
-                    }
-                    Button(
-                        onClick = { navigator.push(MessagesListScreen()) },
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        ),
-                    ) {
-                        Text("Messages", style = MaterialTheme.typography.labelMedium)
+                        QuickActionCard(
+                            icon = Icons.Default.Email,
+                            label = "Messages",
+                            onClick = { navigator.push(MessagesListScreen()) },
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                 }
 
                 if (!user.hasGoogleLinked) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedButton(
-                        onClick = model::linkGoogleAccount,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("Link Google Account", style = MaterialTheme.typography.labelMedium)
+                    item {
+                        OutlinedButton(
+                            onClick = model::linkGoogleAccount,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Link Google Account")
+                        }
                     }
                 }
 
                 if (user.isAdmin) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Button(
-                            onClick = { navigator.push(AdminScreen()) },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                            ),
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Text("Admin Panel", style = MaterialTheme.typography.labelMedium)
-                        }
-                        Button(
-                            onClick = { navigator.push(MechanicDashboardScreen()) },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            ),
-                        ) {
-                            Text("Mechanic View", style = MaterialTheme.typography.labelMedium)
+                            Button(
+                                onClick = { navigator.push(AdminScreen()) },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                ),
+                            ) {
+                                Icon(Icons.Default.AdminPanelSettings, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Admin Panel")
+                            }
+                            Button(
+                                onClick = { navigator.push(MechanicDashboardScreen()) },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                ),
+                            ) {
+                                Icon(Icons.Default.Build, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Mechanic View")
+                            }
                         }
                     }
                 }
 
-                // Pending mechanic: signed up as mechanic but not yet approved
                 if (!user.isMechanic && user.intendedRole == "mechanic") {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedButton(
-                        onClick = { navigator.push(MechanicSetupScreen()) },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("Complete Mechanic Profile Setup", style = MaterialTheme.typography.labelMedium)
+                    item {
+                        OutlinedButton(
+                            onClick = { navigator.push(MechanicSetupScreen()) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Complete Mechanic Profile Setup")
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "My Vehicles",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
+                item {
+                    Text(
+                        text = "My Vehicles",
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                }
 
                 when {
                     vehicleState.isLoading -> {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(48.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            CircularProgressIndicator()
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(48.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator()
+                            }
                         }
                     }
                     vehicleState.error != null -> {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text(
-                                text = vehicleState.error ?: "Unknown error",
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            TextButton(onClick = model::loadVehicles) {
-                                Text("Retry")
+                        item {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Text(
+                                    text = vehicleState.error ?: "Unknown error",
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                TextButton(onClick = model::loadVehicles) {
+                                    Text("Retry")
+                                }
                             }
                         }
                     }
                     vehicleState.vehicles.isEmpty() -> {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(48.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text(
-                                text = "No vehicles yet",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Tap + to add your first vehicle",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.outline,
-                            )
-                        }
-                    }
-                    else -> {
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 80.dp),
-                        ) {
-                            items(vehicleState.vehicles, key = { it.id }) { vehicle ->
-                                VehicleCard(
-                                    vehicle = vehicle,
-                                    onClick = { navigator.push(VehicleDetailScreen(vehicle.id)) },
+                        item {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Icon(
+                                    Icons.Default.DirectionsCar,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp),
+                                    tint = MaterialTheme.colorScheme.outline,
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = "No vehicles yet",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Tap + to add your first vehicle",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.outline,
                                 )
                             }
                         }
                     }
+                    else -> {
+                        items(vehicleState.vehicles, key = { it.id }) { vehicle ->
+                            VehicleCard(
+                                vehicle = vehicle,
+                                onClick = { navigator.push(VehicleDetailScreen(vehicle.id)) },
+                            )
+                        }
+                        item { Spacer(modifier = Modifier.height(68.dp)) }
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun QuickActionCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(22.dp),
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
         }
     }
 }
