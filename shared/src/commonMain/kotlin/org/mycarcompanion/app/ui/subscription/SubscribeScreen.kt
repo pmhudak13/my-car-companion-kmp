@@ -128,18 +128,40 @@ class SubscribeScreen : Screen {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(32.dp))
-                    Button(
-                        onClick = { model.openPortal() },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("Manage Subscription")
+                    if (state.playBillingAvailable) {
+                        // Android: subscriptions are managed via Google Play, not Stripe
+                        Button(
+                            onClick = {
+                                uriHandler.openUri(
+                                    "https://play.google.com/store/account/subscriptions" +
+                                    "?sku=${state.subscriptionTier}&package=org.mycarcompanion.app"
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Manage Subscription")
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "To cancel or change your plan, manage your subscription in Google Play.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        // Web / iOS: subscriptions are managed via Stripe billing portal
+                        Button(
+                            onClick = { model.openPortal() },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Manage Subscription")
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Cancel or change your plan in the billing portal.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Cancel or change your plan in the Stripe billing portal.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                     Spacer(modifier = Modifier.height(24.dp))
                 }
             } else {
