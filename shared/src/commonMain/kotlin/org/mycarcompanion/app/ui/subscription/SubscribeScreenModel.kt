@@ -2,6 +2,8 @@ package org.mycarcompanion.app.ui.subscription
 
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -12,7 +14,8 @@ import org.mycarcompanion.app.platform.PlayProduct
 import org.mycarcompanion.app.platform.PlatformBillingHandler
 
 data class SubscribeState(
-    val loading: Boolean = false,
+    // Start loading=true so we never briefly render Stripe UI before the billing check completes.
+    val loading: Boolean = true,
     val checkoutUrl: String? = null,
     val portalUrl: String? = null,
     val error: String? = null,
@@ -36,28 +39,33 @@ class SubscribeScreenModel(
     val state = _state.asStateFlow()
 
     init {
+        // Load profile and query billing in parallel. Only clear the loading spinner once both
+        // complete so the UI never briefly shows Stripe on Android while BillingClient connects.
         screenModelScope.launch {
-            profileRepository.getMyProfile().onSuccess { profile ->
-                _state.update {
-                    it.copy(
-                        isPremium = profile?.isPremium == true,
-                        subscriptionTier = profile?.subscriptionTier ?: "free",
-                    )
+            coroutineScope {
+                val profileJob = async {
+                    profileRepository.getMyProfile().onSuccess { profile ->
+                        _state.update {
+                            it.copy(
+                                isPremium = profile?.isPremium == true,
+                                subscriptionTier = profile?.subscriptionTier ?: "free",
+                            )
+                        }
+                    }
                 }
+                val billingJob = async {
+                    val products = billingHandler.queryProducts(listOf("premium", "mechanic_pro"))
+                    _state.update {
+                        it.copy(
+                            playProducts = products,
+                            playBillingAvailable = products.isNotEmpty(),
+                        )
+                    }
+                }
+                profileJob.await()
+                billingJob.await()
             }
-        }
-        if (billingHandler.isAvailable) {
-            _state.update { it.copy(playBillingAvailable = true) }
-            loadPlayProducts()
-        }
-    }
-
-    private fun loadPlayProducts() {
-        screenModelScope.launch {
-            val products = billingHandler.queryProducts(
-                listOf("premium", "mechanic_pro")
-            )
-            _state.update { it.copy(playProducts = products, playBillingAvailable = products.isNotEmpty()) }
+            _state.update { it.copy(loading = false) }
         }
     }
 
