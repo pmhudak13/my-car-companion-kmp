@@ -122,6 +122,16 @@ Deno.serve(async (req) => {
     return jsonResponse({ skipped: "no recipient resolved" }, 200);
   }
 
+  // Authorize: the caller may only notify users they share a relationship with
+  // (assignment, chat thread, or mechanic job). Blocks arbitrary email spam.
+  const { data: allowed, error: relErr } = await supabase.rpc("can_send_notification", {
+    p_sender: user.id,
+    p_recipient: recipient_id,
+  });
+  if (relErr || allowed !== true) {
+    return jsonResponse({ error: "Not authorized to notify this recipient" }, 403);
+  }
+
   // Check email preference for this notification type
   if (type) {
     const prefColumn = EMAIL_PREF_COLUMN[type] ?? null;

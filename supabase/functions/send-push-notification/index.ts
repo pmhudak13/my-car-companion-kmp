@@ -153,6 +153,19 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Authorize: the caller may only notify users they share a relationship with
+    // (assignment, chat thread, or mechanic job). Blocks arbitrary push spam.
+    const { data: allowed, error: relErr } = await supabase.rpc("can_send_notification", {
+      p_sender: user.id,
+      p_recipient: recipient_id,
+    });
+    if (relErr || allowed !== true) {
+      return new Response(JSON.stringify({ error: "Not authorized to notify this recipient" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     // Check notification preference for this type
     if (type) {
       const prefColumn = PREF_COLUMN[type] ?? null;
