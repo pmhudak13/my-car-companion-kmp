@@ -39,8 +39,14 @@ class SubscribeScreenModel(
     val state = _state.asStateFlow()
 
     init {
+        // playBillingAvailable is platform-fixed (true on Android, false on web/iOS), NOT derived
+        // from whether the Play product query succeeded. Deriving it from products.isNotEmpty()
+        // meant a failed/empty Play query on Android fell back to the Stripe UI — a Google Play
+        // policy violation. Stripe must only ever appear on web/iOS.
+        _state.update { it.copy(playBillingAvailable = billingHandler.isAvailable) }
+
         // Load profile and query billing in parallel. Only clear the loading spinner once both
-        // complete so the UI never briefly shows Stripe on Android while BillingClient connects.
+        // complete so the UI never briefly shows the wrong billing path while data loads.
         screenModelScope.launch {
             coroutineScope {
                 val profileJob = async {
@@ -54,12 +60,9 @@ class SubscribeScreenModel(
                     }
                 }
                 val billingJob = async {
-                    val products = billingHandler.queryProducts(listOf("premium", "mechanic_pro"))
-                    _state.update {
-                        it.copy(
-                            playProducts = products,
-                            playBillingAvailable = products.isNotEmpty(),
-                        )
+                    if (billingHandler.isAvailable) {
+                        val products = billingHandler.queryProducts(listOf("premium", "mechanic_pro"))
+                        _state.update { it.copy(playProducts = products) }
                     }
                 }
                 profileJob.await()

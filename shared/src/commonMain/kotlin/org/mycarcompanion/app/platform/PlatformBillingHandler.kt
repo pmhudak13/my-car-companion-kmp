@@ -9,7 +9,11 @@ data class PlayProduct(
 )
 
 interface PlatformBillingHandler {
-    /** True on Android with Play Billing available; false on web/iOS (use Stripe instead). */
+    /**
+     * Platform-fixed: true on Android (Play Billing is the only permitted billing path),
+     * false on web/iOS (use Stripe instead). Not tied to live BillingClient connection state —
+     * gating the Stripe UI on connection state would violate Google Play policy.
+     */
     val isAvailable: Boolean
 
     /** Queries the Play Store for subscription product details. Returns empty list on non-Android. */

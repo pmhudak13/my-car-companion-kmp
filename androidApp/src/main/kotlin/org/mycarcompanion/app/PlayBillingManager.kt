@@ -65,8 +65,11 @@ class PlayBillingManager(context: Context) : PlatformBillingHandler {
         .enablePendingPurchases()
         .build()
 
-    override val isAvailable: Boolean
-        get() = billingClient.isReady
+    // Platform-fixed: on Android, Play Billing is the only permitted billing method, so this is
+    // always true regardless of live BillingClient connection state. Gating it on isReady would
+    // let the Stripe UI show before/while BillingClient connects — a Google Play policy violation.
+    // Connection readiness is handled where it matters (queryProducts/purchase call connect()).
+    override val isAvailable: Boolean = true
 
     /** Called by MainActivity.onResume / onPause to keep the Activity reference current. */
     fun setActivity(activity: Activity?) {
