@@ -30,9 +30,10 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -131,7 +132,7 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                 )
             },
             floatingActionButton = {
-                if (state.job != null) {
+                if (state.job?.status == "open") {
                     FloatingActionButton(onClick = model::showAddLog) {
                         Icon(Icons.Default.Add, contentDescription = "Add Service Log")
                     }
@@ -249,11 +250,13 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                 )
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    FilledTonalIconButton(onClick = { navigator.push(RecordImportScreen(job)) }) {
-                                        Icon(Icons.Default.Upload, contentDescription = "Import Records")
+                                if (job.status == "open") {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        FilledTonalIconButton(onClick = { navigator.push(RecordImportScreen(job)) }) {
+                                            Icon(Icons.Default.Upload, contentDescription = "Import Records")
+                                        }
+                                        TextButton(onClick = model::showAddLog) { Text("+ Add Log") }
                                     }
-                                    TextButton(onClick = model::showAddLog) { Text("+ Add Log") }
                                 }
                             }
                         }
@@ -269,6 +272,7 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                             items(state.logs, key = { it.id }) { log ->
                                 JobLogCard(
                                     log = log,
+                                    editable = job.status == "open",
                                     onEdit = { model.showEditLog(log) },
                                     onDelete = { model.deleteLog(log.id) },
                                 )
@@ -426,6 +430,8 @@ private fun CompleteJobCard(
     isCompleting: Boolean,
     onComplete: () -> Unit,
 ) {
+    var showConfirm by remember { mutableStateOf(false) }
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             if (pendingIssueCount > 0) {
@@ -448,19 +454,57 @@ private fun CompleteJobCard(
             if (isCompleting) {
                 CircularProgressIndicator()
             } else {
-                Button(
-                    onClick = onComplete,
-                    enabled = canComplete,
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(if (canComplete) "Mark Job Complete" else "Cannot Complete — Pending Issues")
+                    Checkbox(
+                        checked = false,
+                        onCheckedChange = { if (it) showConfirm = true },
+                        enabled = canComplete,
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Column {
+                        Text(
+                            if (canComplete) "All work is complete" else "Cannot complete — pending issues",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = if (canComplete) MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            "Locks this job. No more edits after you confirm.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }
+    }
+
+    if (showConfirm) {
+        AlertDialog(
+            onDismissRequest = { showConfirm = false },
+            icon = { Icon(Icons.Default.Warning, contentDescription = null) },
+            title = { Text("Mark this job complete?") },
+            text = {
+                Text(
+                    "Once you confirm, this job and its service logs are locked — " +
+                        "you won't be able to add, edit, or delete them. " +
+                        "The client will be notified the work is done.",
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showConfirm = false
+                    onComplete()
+                }) { Text("Yes, lock it") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirm = false }) { Text("Keep editing") }
+            },
+        )
     }
 }
 
@@ -712,7 +756,7 @@ private fun InviteCard(job: MechanicJob, isSending: Boolean, onSend: () -> Unit)
 // ── Service Log Cards / Sheet ─────────────────────────────────────────────────
 
 @Composable
-private fun JobLogCard(log: MechanicJobLog, onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun JobLogCard(log: MechanicJobLog, editable: Boolean, onEdit: () -> Unit, onDelete: () -> Unit) {
     val isEdited = log.updatedAt.isNotBlank() && log.updatedAt != log.createdAt
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -724,9 +768,11 @@ private fun JobLogCard(log: MechanicJobLog, onEdit: () -> Unit, onDelete: () -> 
                 Text(log.category, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(log.date.take(10), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
+                    if (editable) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        IconButton(onClick = onEdit) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 }
             }
@@ -743,8 +789,10 @@ private fun JobLogCard(log: MechanicJobLog, onEdit: () -> Unit, onDelete: () -> 
                         Text("$${formatCost(cost)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                TextButton(onClick = onDelete) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                if (editable) {
+                    TextButton(onClick = onDelete) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                    }
                 }
             }
             log.notes?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline) }
