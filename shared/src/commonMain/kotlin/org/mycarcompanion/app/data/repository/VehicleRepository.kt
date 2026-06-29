@@ -57,6 +57,13 @@ class VehicleRepository(private val client: SupabaseClient) {
         updated
     }
 
+    suspend fun updateOdometer(vehicleId: String, odometer: Int): Result<Unit> = runCatching {
+        table.update({ set("odometer", odometer) }) {
+            filter { eq("id", vehicleId) }
+        }
+        checkMileageReminders(vehicleId, odometer)
+    }
+
     private suspend fun checkMileageReminders(vehicleId: String, odometer: Int) {
         try {
             val userId = client.auth.currentUserOrNull()?.id ?: return

@@ -31,3 +31,10 @@ node_modules/
 # Environment files
 .env
 .env.*
+.gitnexus
+
+# Local tooling / agent state - NEVER commit
+.claude/
+.netlify/
+.playwright-mcp/
+supabase/.temp/

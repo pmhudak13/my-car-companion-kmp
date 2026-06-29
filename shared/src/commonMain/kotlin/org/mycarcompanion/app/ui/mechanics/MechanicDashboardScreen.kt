@@ -1,6 +1,5 @@
 ﻿package org.mycarcompanion.app.ui.mechanics
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,9 +15,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButton
@@ -29,14 +31,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -85,22 +88,27 @@ class MechanicDashboardScreen : Screen {
                         IconButton(onClick = { navigator.push(MechanicSetupScreen()) }) {
                             Icon(Icons.Default.Edit, contentDescription = "Edit Profile")
                         }
-                        if (currentUser?.isAdmin == true) {
-                            OutlinedButton(
-                                onClick = { navigator.replace(HomeScreen()) },
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.secondary),
-                                modifier = Modifier.padding(end = 4.dp),
-                            ) {
-                                Text("Individual View")
-                            }
+                        var menuExpanded by remember { mutableStateOf(false) }
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
                         }
-                        OutlinedButton(
-                            onClick = homeModel::signOut,
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error),
-                            modifier = Modifier.padding(end = 4.dp),
-                        ) {
-                            Text("Sign Out")
+                        DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                            if (currentUser?.isAdmin == true) {
+                                DropdownMenuItem(
+                                    text = { Text("Individual View") },
+                                    onClick = {
+                                        menuExpanded = false
+                                        navigator.replace(HomeScreen())
+                                    },
+                                )
+                            }
+                            DropdownMenuItem(
+                                text = { Text("Sign Out", color = MaterialTheme.colorScheme.error) },
+                                onClick = {
+                                    menuExpanded = false
+                                    homeModel.signOut()
+                                },
+                            )
                         }
                     },
                     windowInsets = topBarWindowInsets(),

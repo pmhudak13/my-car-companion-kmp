@@ -51,6 +51,10 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.saveable.rememberSaveable
 import coil3.compose.AsyncImage
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.mycarcompanion.app.data.models.MaintenanceLog
 import org.mycarcompanion.app.data.models.MechanicAssignment
 import org.mycarcompanion.app.data.models.MechanicJob
@@ -65,6 +69,7 @@ import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreen
 import org.mycarcompanion.app.ui.reminders.AddReminderScreen
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
+import org.mycarcompanion.app.ui.formatMoney
 
 data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable {
 
@@ -366,6 +371,17 @@ private fun InfoRow(label: String, value: String) {
 fun MaintenanceLogCard(log: MaintenanceLog, onDelete: () -> Unit) {
     val fromMechanic = log.source == "mechanic"
     val isEdited = fromMechanic && log.updatedAt.isNotBlank() && log.updatedAt != log.createdAt
+    // Flag self-entered records whose claimed service date is well before when they
+    // were actually entered — the honest signal a buyer needs. Mechanic/imported
+    // records are expected to be old, so they're never flagged.
+    val addedLate = remember(log.date, log.createdAt, fromMechanic) {
+        if (fromMechanic) false
+        else runCatching {
+            val claimed = LocalDate.parse(log.date)
+            val entered = Instant.parse(log.createdAt).toLocalDateTime(TimeZone.UTC).date
+            entered.toEpochDays() - claimed.toEpochDays() > 14
+        }.getOrDefault(false)
+    }
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -389,6 +405,14 @@ fun MaintenanceLogCard(log: MaintenanceLog, onDelete: () -> Unit) {
                             "By Mechanic",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    if (addedLate) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Added later",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.tertiary,
                         )
                     }
                 }
@@ -415,7 +439,7 @@ fun MaintenanceLogCard(log: MaintenanceLog, onDelete: () -> Unit) {
                     log.cost?.let { cost ->
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
-                            "$${formatCost(cost)}",
+                            "$${formatMoney(cost)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -649,7 +673,7 @@ private fun PendingIssueRow(
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onTertiaryContainer)
             }
             issue.estimatedCost?.let {
-                Text("Estimated cost: $${formatCost(it)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                Text("Estimated cost: $${formatMoney(it)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
             }
             Spacer(modifier = Modifier.height(8.dp))
             if (isResponding) {
@@ -737,10 +761,4 @@ private fun OwnerMediaSection(media: List<MechanicJobMedia>) {
             }
         }
     }
-}
-
-private fun formatCost(value: Double): String {
-    val intPart = value.toLong()
-    val fracPart = ((value - intPart) * 100 + 0.5).toLong()
-    return "$intPart.${fracPart.toString().padStart(2, '0')}"
 }

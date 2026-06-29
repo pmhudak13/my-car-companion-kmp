@@ -74,6 +74,9 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.data.models.MechanicJobIssue
 import org.mycarcompanion.app.data.models.MechanicJobLog
@@ -81,8 +84,10 @@ import org.mycarcompanion.app.data.models.MechanicJobMedia
 import org.mycarcompanion.app.data.models.maintenanceCategories
 import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
+import org.mycarcompanion.app.ui.formatMoney
 import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.platform.rememberBinaryFilePickerLauncher
+import org.mycarcompanion.app.ui.components.DatePickerField
 
 data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable {
 
@@ -573,7 +578,7 @@ private fun IssueCard(issue: MechanicJobIssue, onDelete: () -> Unit) {
             }
             issue.estimatedCost?.let {
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Est. cost: $${formatCost(it)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                Text("Est. cost: $${formatMoney(it)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
             }
             issue.ownerResponse?.let {
                 Spacer(modifier = Modifier.height(4.dp))
@@ -786,7 +791,7 @@ private fun JobLogCard(log: MechanicJobLog, editable: Boolean, onEdit: () -> Uni
                     if (log.mileage > 0) Text("${log.mileage} mi", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     log.cost?.let { cost ->
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("$${formatCost(cost)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("$${formatMoney(cost)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 if (editable) {
@@ -842,7 +847,8 @@ private fun JobLogSheet(
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedTextField(value = form.description, onValueChange = { onFormUpdate(form.copy(description = it)) }, label = { Text("Description *") }, minLines = 2, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = form.date, onValueChange = { onFormUpdate(form.copy(date = it)) }, label = { Text("Date * (YYYY-MM-DD)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        val todayDate = remember { Clock.System.now().toLocalDateTime(TimeZone.UTC).date }
+        DatePickerField(value = form.date, onValueChange = { onFormUpdate(form.copy(date = it)) }, label = "Date *", maxDate = todayDate, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(value = form.mileage, onValueChange = { onFormUpdate(form.copy(mileage = it)) }, label = { Text("Mileage *") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
@@ -855,7 +861,7 @@ private fun JobLogSheet(
         }
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = onSave, enabled = !isSaving, modifier = Modifier.fillMaxWidth()) {
-            if (isSaving) CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
+            if (isSaving) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
             else Text("Save Log")
         }
     }
@@ -904,10 +910,3 @@ private fun IssueFormSheet(
     }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-private fun formatCost(value: Double): String {
-    val intPart = value.toLong()
-    val fracPart = ((value - intPart) * 100 + 0.5).toLong()
-    return "$intPart.${fracPart.toString().padStart(2, '0')}"
-}
