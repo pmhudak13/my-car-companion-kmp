@@ -113,15 +113,20 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Verify the caller's JWT. Service-role callers pass the service key as Bearer token;
-  // authenticated users pass their access token.
+  // Internal callers (cron functions) authenticate with the service-role key
+  // and skip the per-user relationship check; app clients pass a user JWT.
   const token = authHeader.slice(7);
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
+  const isServiceCall = token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  let senderId: string | null = null;
+  if (!isServiceCall) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+    senderId = user.id;
   }
 
   try {
@@ -153,17 +158,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Authorize: the caller may only notify users they share a relationship with
+    // Authorize: user callers may only notify users they share a relationship with
     // (assignment, chat thread, or mechanic job). Blocks arbitrary push spam.
-    const { data: allowed, error: relErr } = await supabase.rpc("can_send_notification", {
-      p_sender: user.id,
-      p_recipient: recipient_id,
-    });
-    if (relErr || allowed !== true) {
-      return new Response(JSON.stringify({ error: "Not authorized to notify this recipient" }), {
-        status: 403,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+    // Service-role callers (cron) are trusted and skip this.
+    if (!isServiceCall) {
+      const { data: allowed, error: relErr } = await supabase.rpc("can_send_notification", {
+        p_sender: senderId,
+        p_recipient: recipient_id,
       });
+      if (relErr || allowed !== true) {
+        return new Response(JSON.stringify({ error: "Not authorized to notify this recipient" }), {
+          status: 403,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
     }
 
     // Check notification preference for this type
