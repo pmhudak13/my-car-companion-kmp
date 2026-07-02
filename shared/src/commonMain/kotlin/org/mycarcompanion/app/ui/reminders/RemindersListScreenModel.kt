@@ -18,6 +18,7 @@ data class RemindersListUiState(
     val reminders: List<Reminder> = emptyList(),
     val vehicles: List<Vehicle> = emptyList(),
     val loading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val error: String? = null,
     val filter: String = "all",
     val deleteConfirmId: String? = null,
@@ -33,17 +34,22 @@ class RemindersListScreenModel(
 
     // Re-triggered from Content() on every return; silent once data is loaded
     // (also keeps deletes from flashing a full-screen spinner).
-    fun refresh() {
+    fun refresh(fromPull: Boolean = false) {
         screenModelScope.launch {
             val silent = _state.value.vehicles.isNotEmpty()
-            if (!silent) {
+            if (fromPull) {
+                _state.value = _state.value.copy(isRefreshing = true)
+            } else if (!silent) {
                 _state.value = _state.value.copy(loading = true, error = null)
             }
             val vehiclesResult = vehicleRepository.getVehicles()
             if (vehiclesResult.isFailure) {
-                if (!silent) {
-                    _state.value = _state.value.copy(
+                _state.value = if (silent) {
+                    _state.value.copy(isRefreshing = false)
+                } else {
+                    _state.value.copy(
                         loading = false,
+                        isRefreshing = false,
                         error = vehiclesResult.exceptionOrNull()?.message ?: "Failed to load vehicles",
                     )
                 }
@@ -54,6 +60,7 @@ class RemindersListScreenModel(
             val remindersResult = reminderRepository.getRemindersForVehicles(vehicleIds)
             _state.value = _state.value.copy(
                 loading = false,
+                isRefreshing = false,
                 vehicles = vehicles,
                 // Keep the stale list if a silent refresh fails
                 reminders = remindersResult.getOrElse { _state.value.reminders },

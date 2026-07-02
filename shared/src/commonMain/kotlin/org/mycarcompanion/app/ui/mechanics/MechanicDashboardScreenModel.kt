@@ -22,6 +22,7 @@ data class MechanicDashboardState(
     val myJobs: List<MechanicJob> = emptyList(),
     val profile: MechanicProfile? = null,
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val error: String? = null,
     val completingId: String? = null,
 )
@@ -40,12 +41,14 @@ class MechanicDashboardScreenModel(
     }
 
     // Re-triggered from Content() on every return; silent once data is loaded
-    private fun loadData() {
+    private fun loadData(fromPull: Boolean = false) {
         screenModelScope.launch {
             val silent = _state.value.profile != null ||
                 _state.value.assignments.isNotEmpty() ||
                 _state.value.myJobs.isNotEmpty()
-            if (!silent) {
+            if (fromPull) {
+                _state.value = _state.value.copy(isRefreshing = true)
+            } else if (!silent) {
                 _state.value = _state.value.copy(isLoading = true, error = null)
             }
             val assignmentsDeferred = async { assignmentRepo.getAssignmentsForMechanic() }
@@ -62,6 +65,7 @@ class MechanicDashboardScreenModel(
                 myJobs = myJobsResult.getOrNull() ?: _state.value.myJobs,
                 profile = profileResult.getOrNull() ?: _state.value.profile,
                 isLoading = false,
+                isRefreshing = false,
                 error = if (silent) null else assignmentsResult.exceptionOrNull()?.message
                     ?: myJobsResult.exceptionOrNull()?.message
                     ?: profileResult.exceptionOrNull()?.message,
@@ -88,7 +92,7 @@ class MechanicDashboardScreenModel(
         }
     }
 
-    fun refresh() {
-        loadData()
+    fun refresh(fromPull: Boolean = false) {
+        loadData(fromPull)
     }
 }

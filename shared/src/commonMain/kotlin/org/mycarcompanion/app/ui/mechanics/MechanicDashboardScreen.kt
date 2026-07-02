@@ -1,6 +1,8 @@
 ﻿package org.mycarcompanion.app.ui.mechanics
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -33,6 +35,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -143,39 +146,45 @@ class MechanicDashboardScreen : Screen {
                     )
                 }
 
-                when {
-                    state.isLoading -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
+                PullToRefreshBox(
+                    isRefreshing = state.isRefreshing,
+                    onRefresh = { model.refresh(fromPull = true) },
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    when {
+                        state.isLoading -> {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
                         }
-                    }
-                    state.error != null -> {
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Text(state.error ?: "Unknown error", color = MaterialTheme.colorScheme.error)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            TextButton(onClick = model::refresh) { Text("Retry") }
+                        state.error != null -> {
+                            Column(
+                                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                            ) {
+                                Text(state.error ?: "Unknown error", color = MaterialTheme.colorScheme.error)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                TextButton(onClick = model::refresh) { Text("Retry") }
+                            }
                         }
-                    }
-                    state.selectedTab == MechanicDashboardTab.CLIENT_JOBS -> {
-                        ClientJobsTab(
-                            assignments = state.assignments,
-                            completingId = state.completingId,
-                            onComplete = model::completeJob,
-                            onViewVehicle = { assignment ->
-                                navigator.push(MechanicVehicleViewScreen(assignment.vehicleId, assignment.id))
-                            },
-                        )
-                    }
-                    state.selectedTab == MechanicDashboardTab.MY_JOBS -> {
-                        MyJobsTab(
-                            jobs = state.myJobs,
-                            onJobClick = { job -> navigator.push(MechanicJobDetailScreen(job.id)) },
-                            onCreateJob = { navigator.push(CreateMechanicJobScreen()) },
-                        )
+                        state.selectedTab == MechanicDashboardTab.CLIENT_JOBS -> {
+                            ClientJobsTab(
+                                assignments = state.assignments,
+                                completingId = state.completingId,
+                                onComplete = model::completeJob,
+                                onViewVehicle = { assignment ->
+                                    navigator.push(MechanicVehicleViewScreen(assignment.vehicleId, assignment.id))
+                                },
+                            )
+                        }
+                        state.selectedTab == MechanicDashboardTab.MY_JOBS -> {
+                            MyJobsTab(
+                                jobs = state.myJobs,
+                                onJobClick = { job -> navigator.push(MechanicJobDetailScreen(job.id)) },
+                                onCreateJob = { navigator.push(CreateMechanicJobScreen()) },
+                            )
+                        }
                     }
                 }
             }
@@ -191,7 +200,11 @@ private fun ClientJobsTab(
     onViewVehicle: (MechanicAssignment) -> Unit,
 ) {
     if (assignments.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        // verticalScroll keeps the empty state pullable for refresh
+        Box(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            contentAlignment = Alignment.Center,
+        ) {
             Text(
                 text = "No active client jobs right now.",
                 style = MaterialTheme.typography.bodyLarge,
@@ -223,7 +236,10 @@ private fun MyJobsTab(
     onCreateJob: () -> Unit,
 ) {
     if (jobs.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            contentAlignment = Alignment.Center,
+        ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(48.dp)) {
                 Text(
                     text = "No jobs yet.",

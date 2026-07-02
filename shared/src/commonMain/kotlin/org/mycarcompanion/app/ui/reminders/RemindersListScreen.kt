@@ -1,6 +1,8 @@
 ﻿package org.mycarcompanion.app.ui.reminders
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -133,82 +136,89 @@ class RemindersListScreen : Screen {
                 }
             },
         ) { paddingValues ->
-            when {
-                state.loading -> Box(
-                    modifier = Modifier.fillMaxSize().padding(paddingValues),
-                    contentAlignment = Alignment.Center,
-                ) { CircularProgressIndicator() }
+            PullToRefreshBox(
+                isRefreshing = state.isRefreshing,
+                onRefresh = { model.refresh(fromPull = true) },
+                modifier = Modifier.fillMaxSize().padding(paddingValues),
+            ) {
+                when {
+                    state.loading -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) { CircularProgressIndicator() }
 
-                state.error != null -> Box(
-                    modifier = Modifier.fillMaxSize().padding(paddingValues),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    val errorMsg = state.error
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(24.dp),
+                    // verticalScroll makes the empty/error states pullable
+                    state.error != null -> Box(
+                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        val errorMsg = state.error
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(24.dp),
+                        ) {
+                            Text(
+                                text = errorMsg ?: "An error occurred",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            TextButton(onClick = model::refresh) { Text("Retry") }
+                        }
+                    }
+
+                    state.vehicles.isEmpty() -> Box(
+                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = errorMsg ?: "An error occurred",
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium,
+                            "Add a vehicle first to create reminders",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        TextButton(onClick = model::refresh) { Text("Retry") }
                     }
-                }
 
-                state.vehicles.isEmpty() -> Box(
-                    modifier = Modifier.fillMaxSize().padding(paddingValues),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        "Add a vehicle first to create reminders",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                else -> {
-                    val filtered = model.filteredReminders()
-                    Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                        // Filter chips
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            val filters = listOf("all" to "All", "active" to "Active", "overdue" to "Overdue")
-                            items(filters) { (value, label) ->
-                                FilterChip(
-                                    selected = state.filter == value,
-                                    onClick = { model.setFilter(value) },
-                                    label = { Text(label) },
-                                )
-                            }
-                        }
-
-                        if (filtered.isEmpty()) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    "No reminders",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        } else {
-                            LazyColumn(
+                    else -> {
+                        val filtered = model.filteredReminders()
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            // Filter chips
+                            LazyRow(
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                items(filtered, key = { it.id }) { reminder ->
-                                    ReminderCard(
-                                        reminder = reminder,
-                                        vehicleName = model.vehicleName(reminder.vehicleId),
-                                        onDelete = { model.confirmDelete(reminder.id) },
+                                val filters = listOf("all" to "All", "active" to "Active", "overdue" to "Overdue")
+                                items(filters) { (value, label) ->
+                                    FilterChip(
+                                        selected = state.filter == value,
+                                        onClick = { model.setFilter(value) },
+                                        label = { Text(label) },
                                     )
+                                }
+                            }
+
+                            if (filtered.isEmpty()) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        "No reminders",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            } else {
+                                LazyColumn(
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    items(filtered, key = { it.id }) { reminder ->
+                                        ReminderCard(
+                                            reminder = reminder,
+                                            vehicleName = model.vehicleName(reminder.vehicleId),
+                                            onDelete = { model.confirmDelete(reminder.id) },
+                                        )
+                                    }
                                 }
                             }
                         }

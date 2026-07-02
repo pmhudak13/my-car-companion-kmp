@@ -17,6 +17,7 @@ import org.mycarcompanion.app.data.repository.VehicleRepository
 data class VehicleUiState(
     val vehicles: List<Vehicle> = emptyList(),
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val error: String? = null,
 )
 
@@ -40,10 +41,12 @@ class HomeScreenModel(
     // Called from Content() via LaunchedEffect(Unit), so it re-runs every time the
     // screen returns to the front of the stack. When data is already loaded the
     // refresh is silent: stale data stays visible while the new list loads.
-    fun refresh() {
+    fun refresh(fromPull: Boolean = false) {
         screenModelScope.launch {
             val silent = _vehicleState.value.vehicles.isNotEmpty()
-            if (!silent) {
+            if (fromPull) {
+                _vehicleState.value = _vehicleState.value.copy(isRefreshing = true)
+            } else if (!silent) {
                 _vehicleState.value = _vehicleState.value.copy(isLoading = true, error = null)
             }
             vehicleRepository.getVehicles()
@@ -51,15 +54,19 @@ class HomeScreenModel(
                     _vehicleState.value = _vehicleState.value.copy(
                         vehicles = vehicles,
                         isLoading = false,
+                        isRefreshing = false,
                         error = null,
                     )
                 }
                 .onFailure { e ->
                     // On a silent refresh keep showing the stale list instead of an error
-                    if (!silent) {
-                        _vehicleState.value = _vehicleState.value.copy(
+                    _vehicleState.value = if (silent) {
+                        _vehicleState.value.copy(isRefreshing = false)
+                    } else {
+                        _vehicleState.value.copy(
                             error = e.message ?: "Failed to load vehicles",
                             isLoading = false,
+                            isRefreshing = false,
                         )
                     }
                 }

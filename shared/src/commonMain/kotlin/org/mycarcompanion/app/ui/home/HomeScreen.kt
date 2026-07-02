@@ -36,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -153,165 +154,171 @@ class HomeScreen : Screen {
                 }
             }
         ) { paddingValues ->
-            LazyColumn(
+            PullToRefreshBox(
+                isRefreshing = vehicleState.isRefreshing,
+                onRefresh = { model.refresh(fromPull = true) },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        QuickActionCard(
-                            icon = Icons.Default.Build,
-                            label = "Find Mechanic",
-                            onClick = { navigator.push(MechanicDirectoryScreen()) },
-                            modifier = Modifier.weight(1f),
-                        )
-                        QuickActionCard(
-                            icon = Icons.Default.Speed,
-                            label = "Mileage",
-                            onClick = { navigator.push(MileageTrackerScreen()) },
-                            modifier = Modifier.weight(1f),
-                        )
-                        QuickActionCard(
-                            icon = Icons.Default.Email,
-                            label = "Messages",
-                            onClick = { navigator.push(MessagesListScreen()) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-
-                if (!user.hasGoogleLinked) {
-                    item {
-                        OutlinedButton(
-                            onClick = model::linkGoogleAccount,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text("Link Google Account")
-                        }
-                    }
-                }
-
-                if (user.isAdmin) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                     item {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Button(
-                                onClick = { navigator.push(AdminScreen()) },
+                            QuickActionCard(
+                                icon = Icons.Default.Build,
+                                label = "Find Mechanic",
+                                onClick = { navigator.push(MechanicDirectoryScreen()) },
                                 modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                                ),
-                            ) {
-                                Icon(Icons.Default.AdminPanelSettings, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Admin Panel")
-                            }
-                            Button(
-                                onClick = { navigator.push(MechanicDashboardScreen()) },
+                            )
+                            QuickActionCard(
+                                icon = Icons.Default.Speed,
+                                label = "Mileage",
+                                onClick = { navigator.push(MileageTrackerScreen()) },
                                 modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                ),
+                            )
+                            QuickActionCard(
+                                icon = Icons.Default.Email,
+                                label = "Messages",
+                                onClick = { navigator.push(MessagesListScreen()) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+
+                    if (!user.hasGoogleLinked) {
+                        item {
+                            OutlinedButton(
+                                onClick = model::linkGoogleAccount,
+                                modifier = Modifier.fillMaxWidth(),
                             ) {
-                                Icon(Icons.Default.Build, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Mechanic View")
+                                Text("Link Google Account")
                             }
                         }
                     }
-                }
 
-                if (!user.isMechanic && user.intendedRole == "mechanic") {
-                    item {
-                        OutlinedButton(
-                            onClick = { navigator.push(MechanicSetupScreen()) },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text("Complete Mechanic Profile Setup")
-                        }
-                    }
-                }
-
-                item {
-                    Text(
-                        text = "My Vehicles",
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                }
-
-                when {
-                    vehicleState.isLoading -> {
+                    if (user.isAdmin) {
                         item {
-                            Box(
-                                modifier = Modifier.fillMaxWidth().padding(48.dp),
-                                contentAlignment = Alignment.Center,
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                CircularProgressIndicator()
-                            }
-                        }
-                    }
-                    vehicleState.error != null -> {
-                        item {
-                            Column(
-                                modifier = Modifier.fillMaxWidth().padding(24.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Text(
-                                    text = vehicleState.error ?: "Unknown error",
-                                    color = MaterialTheme.colorScheme.error,
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                TextButton(onClick = model::refresh) {
-                                    Text("Retry")
+                                Button(
+                                    onClick = { navigator.push(AdminScreen()) },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    ),
+                                ) {
+                                    Icon(Icons.Default.AdminPanelSettings, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Admin Panel")
+                                }
+                                Button(
+                                    onClick = { navigator.push(MechanicDashboardScreen()) },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    ),
+                                ) {
+                                    Icon(Icons.Default.Build, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Mechanic View")
                                 }
                             }
                         }
                     }
-                    vehicleState.vehicles.isEmpty() -> {
+
+                    if (!user.isMechanic && user.intendedRole == "mechanic") {
                         item {
-                            Column(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
+                            OutlinedButton(
+                                onClick = { navigator.push(MechanicSetupScreen()) },
+                                modifier = Modifier.fillMaxWidth(),
                             ) {
-                                Icon(
-                                    Icons.Default.DirectionsCar,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(48.dp),
-                                    tint = MaterialTheme.colorScheme.outline,
-                                )
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Text(
-                                    text = "No vehicles yet",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Tap + to add your first vehicle",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.outline,
-                                )
+                                Text("Complete Mechanic Profile Setup")
                             }
                         }
                     }
-                    else -> {
-                        items(vehicleState.vehicles, key = { it.id }) { vehicle ->
-                            VehicleCard(
-                                vehicle = vehicle,
-                                onClick = { navigator.push(VehicleDetailScreen(vehicle.id)) },
-                            )
+
+                    item {
+                        Text(
+                            text = "My Vehicles",
+                            style = MaterialTheme.typography.titleLarge,
+                        )
+                    }
+
+                    when {
+                        vehicleState.isLoading -> {
+                            item {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().padding(48.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    CircularProgressIndicator()
+                                }
+                            }
                         }
-                        item { Spacer(modifier = Modifier.height(68.dp)) }
+                        vehicleState.error != null -> {
+                            item {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
+                                    Text(
+                                        text = vehicleState.error ?: "Unknown error",
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    TextButton(onClick = model::refresh) {
+                                        Text("Retry")
+                                    }
+                                }
+                            }
+                        }
+                        vehicleState.vehicles.isEmpty() -> {
+                            item {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
+                                    Icon(
+                                        Icons.Default.DirectionsCar,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(48.dp),
+                                        tint = MaterialTheme.colorScheme.outline,
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Text(
+                                        text = "No vehicles yet",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Tap + to add your first vehicle",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.outline,
+                                    )
+                                }
+                            }
+                        }
+                        else -> {
+                            items(vehicleState.vehicles, key = { it.id }) { vehicle ->
+                                VehicleCard(
+                                    vehicle = vehicle,
+                                    onClick = { navigator.push(VehicleDetailScreen(vehicle.id)) },
+                                )
+                            }
+                            item { Spacer(modifier = Modifier.height(68.dp)) }
+                        }
                     }
                 }
             }

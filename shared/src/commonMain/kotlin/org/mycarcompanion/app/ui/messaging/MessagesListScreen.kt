@@ -1,6 +1,8 @@
 ﻿package org.mycarcompanion.app.ui.messaging
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -68,37 +71,44 @@ class MessagesListScreen : Screen {
                 )
             },
         ) { paddingValues ->
-            when {
-                state.loading -> Box(
-                    modifier = Modifier.fillMaxSize().padding(paddingValues),
-                    contentAlignment = Alignment.Center,
-                ) { CircularProgressIndicator() }
+            PullToRefreshBox(
+                isRefreshing = state.isRefreshing,
+                onRefresh = { model.refresh(fromPull = true) },
+                modifier = Modifier.fillMaxSize().padding(paddingValues),
+            ) {
+                when {
+                    state.loading -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) { CircularProgressIndicator() }
 
-                state.error != null -> Box(
-                    modifier = Modifier.fillMaxSize().padding(paddingValues),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(state.error ?: "Error", color = MaterialTheme.colorScheme.error)
-                }
+                    // verticalScroll makes the empty/error states pullable
+                    state.error != null -> Box(
+                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(state.error ?: "Error", color = MaterialTheme.colorScheme.error)
+                    }
 
-                state.threads.isEmpty() -> Box(
-                    modifier = Modifier.fillMaxSize().padding(paddingValues),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        "No messages yet",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
-                else -> LazyColumn(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                    items(state.threads, key = { it.otherUserId }) { thread ->
-                        ThreadRow(
-                            thread = thread,
-                            currentUserId = state.currentUserId,
-                            onClick = { navigator.push(MessagingScreen(recipientId = thread.otherUserId)) },
+                    state.threads.isEmpty() -> Box(
+                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "No messages yet",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+
+                    else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(state.threads, key = { it.otherUserId }) { thread ->
+                            ThreadRow(
+                                thread = thread,
+                                currentUserId = state.currentUserId,
+                                onClick = { navigator.push(MessagingScreen(recipientId = thread.otherUserId)) },
+                            )
+                        }
                     }
                 }
             }

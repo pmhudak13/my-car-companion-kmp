@@ -22,6 +22,7 @@ data class MessagesListState(
     val threads: List<ConversationThread> = emptyList(),
     val currentUserId: String = "",
     val loading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val error: String? = null,
 )
 
@@ -36,15 +37,17 @@ class MessagesListScreenModel(
 
     // Re-triggered from Content() on every return to this screen; silent when
     // threads are already loaded so read-state updates don't flash a spinner.
-    fun refresh() {
+    fun refresh(fromPull: Boolean = false) {
         screenModelScope.launch {
             val silent = _state.value.threads.isNotEmpty()
-            if (!silent) {
+            if (fromPull) {
+                _state.value = _state.value.copy(isRefreshing = true)
+            } else if (!silent) {
                 _state.value = _state.value.copy(loading = true, error = null)
             }
             val currentUserId = authRepository.getCurrentUserId()
             if (currentUserId == null) {
-                _state.value = _state.value.copy(loading = false, error = "Not signed in")
+                _state.value = _state.value.copy(loading = false, isRefreshing = false, error = "Not signed in")
                 return@launch
             }
             messageRepository.getAllMessages()
@@ -75,14 +78,18 @@ class MessagesListScreenModel(
                     }.sortedByDescending { it.latestMessage.createdAt }
                     _state.value = _state.value.copy(
                         loading = false,
+                        isRefreshing = false,
                         threads = threads,
                         currentUserId = currentUserId,
                     )
                 }
                 .onFailure { e ->
-                    if (!silent) {
-                        _state.value = _state.value.copy(
+                    _state.value = if (silent) {
+                        _state.value.copy(isRefreshing = false)
+                    } else {
+                        _state.value.copy(
                             loading = false,
+                            isRefreshing = false,
                             error = e.message ?: "Failed to load messages",
                         )
                     }
