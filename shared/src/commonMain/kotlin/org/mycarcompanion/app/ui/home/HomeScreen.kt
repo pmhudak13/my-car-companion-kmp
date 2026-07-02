@@ -23,6 +23,8 @@ import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -81,6 +83,7 @@ class HomeScreen : Screen {
         val authState by model.authState.collectAsState()
         val vehicleState by model.vehicleState.collectAsState()
         val linkState by model.linkState.collectAsState()
+        val unreadCount by model.unreadCount.collectAsState()
         val snackbarHostState = remember { SnackbarHostState() }
 
         // Voyager only composes the top screen, so this re-runs whenever the user
@@ -188,6 +191,7 @@ class HomeScreen : Screen {
                                 label = "Messages",
                                 onClick = { navigator.push(MessagesListScreen()) },
                                 modifier = Modifier.weight(1f),
+                                badgeCount = unreadCount,
                             )
                         }
                     }
@@ -332,6 +336,7 @@ private fun QuickActionCard(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    badgeCount: Int = 0,
 ) {
     Card(
         onClick = onClick,
@@ -347,12 +352,20 @@ private fun QuickActionCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.size(22.dp),
-            )
+            BadgedBox(
+                badge = {
+                    if (badgeCount > 0) {
+                        Badge { Text(badgeCount.toString()) }
+                    }
+                },
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,

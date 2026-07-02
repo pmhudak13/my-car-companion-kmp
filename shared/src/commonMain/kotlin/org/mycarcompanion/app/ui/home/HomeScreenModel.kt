@@ -12,6 +12,7 @@ import org.mycarcompanion.app.data.models.AuthResult
 import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.data.repository.AuthRepository
+import org.mycarcompanion.app.data.repository.MessageRepository
 import org.mycarcompanion.app.data.repository.VehicleRepository
 
 data class VehicleUiState(
@@ -24,6 +25,7 @@ data class VehicleUiState(
 class HomeScreenModel(
     private val authRepository: AuthRepository,
     private val vehicleRepository: VehicleRepository,
+    private val messageRepository: MessageRepository,
 ) : ScreenModel {
 
     val authState = authRepository.authState.stateIn(
@@ -38,10 +40,19 @@ class HomeScreenModel(
     private val _linkState = MutableStateFlow<AuthResult?>(null)
     val linkState: StateFlow<AuthResult?> = _linkState.asStateFlow()
 
+    private val _unreadCount = MutableStateFlow(0)
+    val unreadCount: StateFlow<Int> = _unreadCount.asStateFlow()
+
     // Called from Content() via LaunchedEffect(Unit), so it re-runs every time the
     // screen returns to the front of the stack. When data is already loaded the
     // refresh is silent: stale data stays visible while the new list loads.
     fun refresh(fromPull: Boolean = false) {
+        screenModelScope.launch {
+            // Best-effort unread badge; failures just leave the previous count
+            messageRepository.getInbox().onSuccess { inbox ->
+                _unreadCount.value = inbox.count { !it.isRead }
+            }
+        }
         screenModelScope.launch {
             val silent = _vehicleState.value.vehicles.isNotEmpty()
             if (fromPull) {
