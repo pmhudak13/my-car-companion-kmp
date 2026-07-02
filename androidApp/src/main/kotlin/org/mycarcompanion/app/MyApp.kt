@@ -44,7 +44,7 @@ class MyApp : Application() {
                 // not our code. Background ANRs have no viewNames so we check both signals.
                 options.beforeSend = io.sentry.SentryOptions.BeforeSendCallback { event, _ ->
                     val isSideloaded = event.tags?.get("isSideLoaded") == "true"
-                    val isAnr = event.exceptions?.values?.any {
+                    val isAnr = event.exceptions?.any {
                         it.type == "ApplicationNotResponding"
                     } == true
                     if (isSideloaded && isAnr) return@BeforeSendCallback null
