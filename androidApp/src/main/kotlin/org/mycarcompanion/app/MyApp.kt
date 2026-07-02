@@ -40,9 +40,14 @@ class MyApp : Application() {
                 options.isEnableAutoSessionTracking = !BuildConfig.DEBUG
                 options.isAttachScreenshot = true
                 options.tracesSampleRate = if (BuildConfig.DEBUG) 1.0 else 0.2
-                // Drop ANRs triggered by PairIP's license-check activity on sideloaded installs.
-                // These are not our bugs — PairIP's LicenseActivity ANRs on non-Play installs.
+                // Drop ANRs from sideloaded installs — these come from PairIP's license check,
+                // not our code. Background ANRs have no viewNames so we check both signals.
                 options.beforeSend = io.sentry.SentryOptions.BeforeSendCallback { event, _ ->
+                    val isSideloaded = event.tags?.get("isSideLoaded") == "true"
+                    val isAnr = event.exceptions?.values?.any {
+                        it.type == "ApplicationNotResponding"
+                    } == true
+                    if (isSideloaded && isAnr) return@BeforeSendCallback null
                     val viewNames = event.contexts?.app?.viewNames ?: return@BeforeSendCallback event
                     if (viewNames.any { it.contains("com.pairip.licensecheck") }) null else event
                 }
