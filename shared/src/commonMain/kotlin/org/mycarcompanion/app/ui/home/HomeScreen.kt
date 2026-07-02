@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Badge
@@ -57,8 +58,13 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import org.mycarcompanion.app.data.models.AuthState
+import org.mycarcompanion.app.data.models.Reminder
 import org.mycarcompanion.app.data.models.Vehicle
+import org.mycarcompanion.app.data.models.reminderTypeLabels
 import org.mycarcompanion.app.ui.admin.AdminScreen
 import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.messaging.MessagesListScreen
@@ -196,6 +202,23 @@ class HomeScreen : Screen {
                         }
                     }
 
+                    if (vehicleState.upcomingReminders.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "Upcoming",
+                                style = MaterialTheme.typography.titleLarge,
+                            )
+                        }
+                        items(vehicleState.upcomingReminders, key = { it.id }) { reminder ->
+                            val vehicle = vehicleState.vehicles.find { it.id == reminder.vehicleId }
+                            UpcomingReminderCard(
+                                reminder = reminder,
+                                vehicleName = vehicle?.let { "${it.year} ${it.make} ${it.model}" } ?: "",
+                                onClick = { navigator.push(VehicleDetailScreen(reminder.vehicleId)) },
+                            )
+                        }
+                    }
+
                     if (!user.hasGoogleLinked) {
                         item {
                             OutlinedButton(
@@ -324,6 +347,68 @@ class HomeScreen : Screen {
                             item { Spacer(modifier = Modifier.height(68.dp)) }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UpcomingReminderCard(
+    reminder: Reminder,
+    vehicleName: String,
+    onClick: () -> Unit,
+) {
+    val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()).toString() }
+    val overdue = reminder.nextDueDate != null && reminder.nextDueDate < today
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (overdue) {
+                MaterialTheme.colorScheme.errorContainer
+            } else {
+                MaterialTheme.colorScheme.tertiaryContainer
+            },
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Notifications,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = reminder.customName
+                        ?: reminderTypeLabels[reminder.type]
+                        ?: reminder.type,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                if (vehicleName.isNotBlank()) {
+                    Text(
+                        text = vehicleName,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                val dueText = when {
+                    overdue -> "Overdue — was due ${reminder.nextDueDate}"
+                    reminder.nextDueDate != null -> "Due ${reminder.nextDueDate}"
+                    reminder.nextDueMileage != null -> "Due at ${reminder.nextDueMileage} mi"
+                    else -> ""
+                }
+                if (dueText.isNotEmpty()) {
+                    Text(
+                        text = dueText,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
                 }
             }
         }

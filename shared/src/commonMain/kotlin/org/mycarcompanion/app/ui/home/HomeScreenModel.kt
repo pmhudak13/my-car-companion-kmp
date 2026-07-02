@@ -10,13 +10,16 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.mycarcompanion.app.data.models.AuthResult
 import org.mycarcompanion.app.data.models.AuthState
+import org.mycarcompanion.app.data.models.Reminder
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.data.repository.AuthRepository
 import org.mycarcompanion.app.data.repository.MessageRepository
+import org.mycarcompanion.app.data.repository.ReminderRepository
 import org.mycarcompanion.app.data.repository.VehicleRepository
 
 data class VehicleUiState(
     val vehicles: List<Vehicle> = emptyList(),
+    val upcomingReminders: List<Reminder> = emptyList(),
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val error: String? = null,
@@ -26,6 +29,7 @@ class HomeScreenModel(
     private val authRepository: AuthRepository,
     private val vehicleRepository: VehicleRepository,
     private val messageRepository: MessageRepository,
+    private val reminderRepository: ReminderRepository,
 ) : ScreenModel {
 
     val authState = authRepository.authState.stateIn(
@@ -68,6 +72,7 @@ class HomeScreenModel(
                         isRefreshing = false,
                         error = null,
                     )
+                    loadUpcomingReminders(vehicles)
                 }
                 .onFailure { e ->
                     // On a silent refresh keep showing the stale list instead of an error
@@ -80,6 +85,24 @@ class HomeScreenModel(
                             isRefreshing = false,
                         )
                     }
+                }
+        }
+    }
+
+    // Soonest-due active reminders across all vehicles, dated ones first
+    private fun loadUpcomingReminders(vehicles: List<Vehicle>) {
+        screenModelScope.launch {
+            if (vehicles.isEmpty()) {
+                _vehicleState.value = _vehicleState.value.copy(upcomingReminders = emptyList())
+                return@launch
+            }
+            reminderRepository.getRemindersForVehicles(vehicles.map { it.id })
+                .onSuccess { reminders ->
+                    val upcoming = reminders
+                        .filter { it.isActive && (it.nextDueDate != null || it.nextDueMileage != null) }
+                        .sortedWith(compareBy(nullsLast(naturalOrder()), Reminder::nextDueDate))
+                        .take(3)
+                    _vehicleState.value = _vehicleState.value.copy(upcomingReminders = upcoming)
                 }
         }
     }
