@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +59,9 @@ class RemindersListScreen : Screen {
         val model: RemindersListScreenModel = koinScreenModel()
         val state by model.state.collectAsState()
         var showVehiclePicker by remember { mutableStateOf(false) }
+
+        // Re-runs on return from AddReminderScreen so new reminders appear
+        LaunchedEffect(Unit) { model.refresh() }
 
         // Vehicle picker dialog for FAB when multiple vehicles
         if (showVehiclePicker) {
@@ -150,7 +154,7 @@ class RemindersListScreen : Screen {
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        TextButton(onClick = model::load) { Text("Retry") }
+                        TextButton(onClick = model::refresh) { Text("Retry") }
                     }
                 }
 

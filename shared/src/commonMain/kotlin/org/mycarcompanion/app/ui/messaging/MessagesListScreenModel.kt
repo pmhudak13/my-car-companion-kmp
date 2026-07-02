@@ -34,13 +34,14 @@ class MessagesListScreenModel(
     private val _state = MutableStateFlow(MessagesListState())
     val state: StateFlow<MessagesListState> = _state.asStateFlow()
 
-    init {
-        load()
-    }
-
-    fun load() {
+    // Re-triggered from Content() on every return to this screen; silent when
+    // threads are already loaded so read-state updates don't flash a spinner.
+    fun refresh() {
         screenModelScope.launch {
-            _state.value = _state.value.copy(loading = true, error = null)
+            val silent = _state.value.threads.isNotEmpty()
+            if (!silent) {
+                _state.value = _state.value.copy(loading = true, error = null)
+            }
             val currentUserId = authRepository.getCurrentUserId()
             if (currentUserId == null) {
                 _state.value = _state.value.copy(loading = false, error = "Not signed in")
@@ -79,10 +80,12 @@ class MessagesListScreenModel(
                     )
                 }
                 .onFailure { e ->
-                    _state.value = _state.value.copy(
-                        loading = false,
-                        error = e.message ?: "Failed to load messages",
-                    )
+                    if (!silent) {
+                        _state.value = _state.value.copy(
+                            loading = false,
+                            error = e.message ?: "Failed to load messages",
+                        )
+                    }
                 }
         }
     }

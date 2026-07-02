@@ -70,6 +70,9 @@ class MechanicDashboardScreen : Screen {
         val authState by homeModel.authState.collectAsState()
         val currentUser = (authState as? AuthState.Authenticated)?.user
 
+        // Re-runs on return (e.g. after creating a job) so lists stay current
+        LaunchedEffect(Unit) { model.refresh() }
+
         LaunchedEffect(authState) {
             if (authState is AuthState.Unauthenticated) {
                 navigator.replaceAll(LoginScreen())

@@ -35,17 +35,19 @@ class MechanicDashboardScreenModel(
     private val _state = MutableStateFlow(MechanicDashboardState())
     val state: StateFlow<MechanicDashboardState> = _state.asStateFlow()
 
-    init {
-        loadData()
-    }
-
     fun selectTab(tab: MechanicDashboardTab) {
         _state.value = _state.value.copy(selectedTab = tab, error = null)
     }
 
-    fun loadData() {
+    // Re-triggered from Content() on every return; silent once data is loaded
+    private fun loadData() {
         screenModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, error = null)
+            val silent = _state.value.profile != null ||
+                _state.value.assignments.isNotEmpty() ||
+                _state.value.myJobs.isNotEmpty()
+            if (!silent) {
+                _state.value = _state.value.copy(isLoading = true, error = null)
+            }
             val assignmentsDeferred = async { assignmentRepo.getAssignmentsForMechanic() }
             val myJobsDeferred = async { jobRepo.getMyJobs() }
             val profileDeferred = async { profileRepo.getMyMechanicProfile() }
@@ -55,11 +57,12 @@ class MechanicDashboardScreenModel(
             val profileResult = profileDeferred.await()
 
             _state.value = _state.value.copy(
-                assignments = assignmentsResult.getOrNull() ?: emptyList(),
-                myJobs = myJobsResult.getOrNull() ?: emptyList(),
-                profile = profileResult.getOrNull(),
+                // Keep stale data if a silent refresh fails
+                assignments = assignmentsResult.getOrNull() ?: _state.value.assignments,
+                myJobs = myJobsResult.getOrNull() ?: _state.value.myJobs,
+                profile = profileResult.getOrNull() ?: _state.value.profile,
                 isLoading = false,
-                error = assignmentsResult.exceptionOrNull()?.message
+                error = if (silent) null else assignmentsResult.exceptionOrNull()?.message
                     ?: myJobsResult.exceptionOrNull()?.message
                     ?: profileResult.exceptionOrNull()?.message,
             )

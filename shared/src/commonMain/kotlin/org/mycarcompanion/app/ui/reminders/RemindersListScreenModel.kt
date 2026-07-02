@@ -31,19 +31,22 @@ class RemindersListScreenModel(
     private val _state = MutableStateFlow(RemindersListUiState())
     val state: StateFlow<RemindersListUiState> = _state.asStateFlow()
 
-    init {
-        load()
-    }
-
-    fun load() {
+    // Re-triggered from Content() on every return; silent once data is loaded
+    // (also keeps deletes from flashing a full-screen spinner).
+    fun refresh() {
         screenModelScope.launch {
-            _state.value = _state.value.copy(loading = true, error = null)
+            val silent = _state.value.vehicles.isNotEmpty()
+            if (!silent) {
+                _state.value = _state.value.copy(loading = true, error = null)
+            }
             val vehiclesResult = vehicleRepository.getVehicles()
             if (vehiclesResult.isFailure) {
-                _state.value = _state.value.copy(
-                    loading = false,
-                    error = vehiclesResult.exceptionOrNull()?.message ?: "Failed to load vehicles",
-                )
+                if (!silent) {
+                    _state.value = _state.value.copy(
+                        loading = false,
+                        error = vehiclesResult.exceptionOrNull()?.message ?: "Failed to load vehicles",
+                    )
+                }
                 return@launch
             }
             val vehicles = vehiclesResult.getOrDefault(emptyList())
@@ -52,8 +55,9 @@ class RemindersListScreenModel(
             _state.value = _state.value.copy(
                 loading = false,
                 vehicles = vehicles,
-                reminders = remindersResult.getOrDefault(emptyList()),
-                error = if (remindersResult.isFailure) remindersResult.exceptionOrNull()?.message else null,
+                // Keep the stale list if a silent refresh fails
+                reminders = remindersResult.getOrElse { _state.value.reminders },
+                error = if (remindersResult.isFailure && !silent) remindersResult.exceptionOrNull()?.message else null,
             )
         }
     }
@@ -74,7 +78,7 @@ class RemindersListScreenModel(
         screenModelScope.launch {
             _state.value = _state.value.copy(deleteConfirmId = null)
             reminderRepository.deleteReminder(id)
-            load()
+            refresh()
         }
     }
 

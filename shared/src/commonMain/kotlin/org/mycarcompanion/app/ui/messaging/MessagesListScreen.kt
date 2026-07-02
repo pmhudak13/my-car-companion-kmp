@@ -27,6 +27,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -49,6 +50,9 @@ class MessagesListScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val model: MessagesListScreenModel = koinScreenModel()
         val state by model.state.collectAsState()
+
+        // Re-runs on return from a conversation so unread counts stay current
+        LaunchedEffect(Unit) { model.refresh() }
 
         Scaffold(
             contentWindowInsets = scaffoldContentWindowInsets(),

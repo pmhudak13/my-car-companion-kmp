@@ -51,7 +51,12 @@ class VehicleDetailScreenModel(
 
     fun load(vehicleId: String) {
         screenModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, error = null)
+            // Silent reload when the vehicle is already loaded (returning from a
+            // child screen) — stale content stays visible while sections refresh.
+            val silent = _state.value.vehicle != null
+            if (!silent) {
+                _state.value = _state.value.copy(isLoading = true, error = null)
+            }
             vehicleRepository.getVehicle(vehicleId)
                 .onSuccess { vehicle ->
                     _state.value = _state.value.copy(vehicle = vehicle, isLoading = false)
@@ -61,7 +66,9 @@ class VehicleDetailScreenModel(
                     loadMechanicJobs(vehicleId)
                 }
                 .onFailure { e ->
-                    _state.value = _state.value.copy(error = e.message ?: "Failed to load vehicle", isLoading = false)
+                    if (!silent) {
+                        _state.value = _state.value.copy(error = e.message ?: "Failed to load vehicle", isLoading = false)
+                    }
                 }
         }
     }

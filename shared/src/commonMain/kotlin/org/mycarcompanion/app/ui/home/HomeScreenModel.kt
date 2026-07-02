@@ -37,22 +37,31 @@ class HomeScreenModel(
     private val _linkState = MutableStateFlow<AuthResult?>(null)
     val linkState: StateFlow<AuthResult?> = _linkState.asStateFlow()
 
-    init {
-        loadVehicles()
-    }
-
-    fun loadVehicles() {
+    // Called from Content() via LaunchedEffect(Unit), so it re-runs every time the
+    // screen returns to the front of the stack. When data is already loaded the
+    // refresh is silent: stale data stays visible while the new list loads.
+    fun refresh() {
         screenModelScope.launch {
-            _vehicleState.value = _vehicleState.value.copy(isLoading = true, error = null)
+            val silent = _vehicleState.value.vehicles.isNotEmpty()
+            if (!silent) {
+                _vehicleState.value = _vehicleState.value.copy(isLoading = true, error = null)
+            }
             vehicleRepository.getVehicles()
                 .onSuccess { vehicles ->
-                    _vehicleState.value = _vehicleState.value.copy(vehicles = vehicles, isLoading = false)
+                    _vehicleState.value = _vehicleState.value.copy(
+                        vehicles = vehicles,
+                        isLoading = false,
+                        error = null,
+                    )
                 }
                 .onFailure { e ->
-                    _vehicleState.value = _vehicleState.value.copy(
-                        error = e.message ?: "Failed to load vehicles",
-                        isLoading = false,
-                    )
+                    // On a silent refresh keep showing the stale list instead of an error
+                    if (!silent) {
+                        _vehicleState.value = _vehicleState.value.copy(
+                            error = e.message ?: "Failed to load vehicles",
+                            isLoading = false,
+                        )
+                    }
                 }
         }
     }

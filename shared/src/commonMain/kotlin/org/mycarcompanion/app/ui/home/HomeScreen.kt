@@ -82,6 +82,10 @@ class HomeScreen : Screen {
         val linkState by model.linkState.collectAsState()
         val snackbarHostState = remember { SnackbarHostState() }
 
+        // Voyager only composes the top screen, so this re-runs whenever the user
+        // navigates back here — picking up vehicles added on child screens.
+        LaunchedEffect(Unit) { model.refresh() }
+
         LaunchedEffect(authState) {
             when (val s = authState) {
                 is AuthState.Unauthenticated -> navigator.replaceAll(LoginScreen())
@@ -267,7 +271,7 @@ class HomeScreen : Screen {
                                     color = MaterialTheme.colorScheme.error,
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
-                                TextButton(onClick = model::loadVehicles) {
+                                TextButton(onClick = model::refresh) {
                                     Text("Retry")
                                 }
                             }
