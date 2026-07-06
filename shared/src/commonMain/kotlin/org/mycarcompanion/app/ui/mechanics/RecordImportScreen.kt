@@ -213,7 +213,8 @@ private fun AiScanTab(
             InfoCard(
                 title = "AI Invoice Scan",
                 body = "Take a photo or upload an image of any service invoice, receipt, or work order. " +
-                    "AI will automatically extract the service records and fill them in for you.\n\n" +
+                    "AI will automatically extract the service records and fill them in for you. " +
+                    "AI results may contain errors — review each record before saving.\n\n" +
                     "Supported: JPEG, PNG, WebP, GIF, PDF",
             )
         }
