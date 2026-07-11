@@ -56,6 +56,9 @@ data class MechanicJobDetailState(
     // media upload
     val isUploadingMedia: Boolean = false,
     val mediaError: String? = null,
+    // payment
+    val totalCostInput: String = "",
+    val isSavingPayment: Boolean = false,
     // invite
     val isSendingInvite: Boolean = false,
     val inviteMessage: String? = null,
@@ -101,6 +104,7 @@ class MechanicJobDetailScreenModel(
                 issues = issues,
                 mediaItems = media,
                 progressPercent = job.progressPercent,
+                totalCostInput = job.totalCost?.toString()?.removeSuffix(".0") ?: "",
                 isLoading = false,
                 mechanicShopName = profile?.shopName,
             )
@@ -129,6 +133,33 @@ class MechanicJobDetailScreenModel(
                     _state.value = _state.value.copy(
                         isSavingProgress = false,
                         error = e.message ?: "Failed to save progress",
+                    )
+                }
+        }
+    }
+
+    // ── Payment ──────────────────────────────────────────────────────────────────
+
+    fun setTotalCostInput(value: String) {
+        _state.value = _state.value.copy(totalCostInput = value)
+    }
+
+    fun savePayment(paymentReceived: Boolean) {
+        val job = _state.value.job ?: return
+        val cost = _state.value.totalCostInput.trim().toDoubleOrNull()
+        screenModelScope.launch {
+            _state.value = _state.value.copy(isSavingPayment = true)
+            jobRepository.updatePayment(job.id, cost, paymentReceived)
+                .onSuccess {
+                    _state.value = _state.value.copy(
+                        isSavingPayment = false,
+                        job = _state.value.job?.copy(totalCost = cost, paymentReceived = paymentReceived),
+                    )
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(
+                        isSavingPayment = false,
+                        error = e.message ?: "Failed to save payment info",
                     )
                 }
         }

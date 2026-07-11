@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
   if (!emailRes.ok) {
     const errText = await emailRes.text();
     console.error("Resend error:", errText);
-    return jsonResponse({ error: "Failed to send email" }, 500);
+    return jsonResponse({ error: `Email provider error (${emailRes.status}): ${errText.slice(0, 300)}` }, 500);
   }
 
   // Mark invite as sent on the job

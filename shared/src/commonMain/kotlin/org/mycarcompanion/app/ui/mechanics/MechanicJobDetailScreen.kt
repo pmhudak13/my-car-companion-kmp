@@ -186,6 +186,19 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                             }
                         }
 
+                        // Cost of service & payment
+                        item {
+                            PaymentCard(
+                                job = job,
+                                costInput = state.totalCostInput,
+                                logsTotal = state.logs.mapNotNull { it.cost }.sum(),
+                                isSaving = state.isSavingPayment,
+                                onCostChange = model::setTotalCostInput,
+                                onSave = { model.savePayment(job.paymentReceived) },
+                                onPaymentReceivedChange = model::savePayment,
+                            )
+                        }
+
                         // Complete job button
                         if (job.status == "open") {
                             item {
@@ -420,6 +433,73 @@ private fun ProgressSection(
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 } else {
                     FilledTonalButton(onClick = onSave) { Text("Save Progress") }
+                }
+            }
+        }
+    }
+}
+
+// ── Payment Card ──────────────────────────────────────────────────────────────
+
+@Composable
+private fun PaymentCard(
+    job: MechanicJob,
+    costInput: String,
+    logsTotal: Double,
+    isSaving: Boolean,
+    onCostChange: (String) -> Unit,
+    onSave: () -> Unit,
+    onPaymentReceivedChange: (Boolean) -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Cost of Service", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = costInput,
+                    onValueChange = onCostChange,
+                    label = { Text("Total cost") },
+                    leadingIcon = { Text("$") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                if (isSaving) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                } else {
+                    FilledTonalButton(onClick = onSave) { Text("Save") }
+                }
+            }
+            if (logsTotal > 0) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Logged work totals $${formatMoney(logsTotal)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = job.paymentReceived,
+                    onCheckedChange = onPaymentReceivedChange,
+                    enabled = job.status == "completed" && !isSaving,
+                )
+                Column {
+                    Text(
+                        "Payment received",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    if (job.status != "completed") {
+                        Text(
+                            "Available once the job is completed",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }

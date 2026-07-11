@@ -70,6 +70,8 @@ data class MechanicJob(
     @SerialName("invite_sent") val inviteSent: Boolean = false,
     val notes: String? = null,
     @SerialName("progress_percent") val progressPercent: Int = 0,
+    @SerialName("total_cost") val totalCost: Double? = null,
+    @SerialName("payment_received") val paymentReceived: Boolean = false,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("completed_at") val completedAt: String? = null,
 )

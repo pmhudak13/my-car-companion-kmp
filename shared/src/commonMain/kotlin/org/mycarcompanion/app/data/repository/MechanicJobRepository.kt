@@ -232,6 +232,15 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         }
     }
 
+    suspend fun updatePayment(jobId: String, totalCost: Double?, paymentReceived: Boolean): Result<Unit> = runCatching {
+        jobsTable.update({
+            set("total_cost", totalCost)
+            set("payment_received", paymentReceived)
+        }) {
+            filter { eq("id", jobId) }
+        }
+    }
+
     suspend fun getJobsForVehicle(vehicleId: String): Result<List<MechanicJob>> = runCatching {
         jobsTable.select {
             filter { eq("vehicle_id", vehicleId) }
