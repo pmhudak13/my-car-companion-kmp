@@ -7,6 +7,7 @@ import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
@@ -22,7 +23,7 @@ import java.lang.ref.WeakReference
 import kotlin.coroutines.resume
 
 /**
- * Play Billing Manager — wraps BillingClient 7.x.
+ * Play Billing Manager — wraps BillingClient 9.x.
  *
  * Product setup in Play Console (Subscriptions tab):
  *   Product ID: "premium"      → base plans: "monthly" ($4.99/mo), "yearly" ($49.99/yr)
@@ -62,7 +63,9 @@ class PlayBillingManager(context: Context) : PlatformBillingHandler {
 
     private val billingClient: BillingClient = BillingClient.newBuilder(context)
         .setListener(purchasesUpdatedListener)
-        .enablePendingPurchases()
+        .enablePendingPurchases(
+            PendingPurchasesParams.newBuilder().enableOneTimeProducts().build()
+        )
         .build()
 
     // Platform-fixed: on Android, Play Billing is the only permitted billing method, so this is
@@ -111,7 +114,7 @@ class PlayBillingManager(context: Context) : PlatformBillingHandler {
             suspendCancellableCoroutine { cont ->
                 billingClient.queryProductDetailsAsync(params) { billingResult, details ->
                     if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                        for (detail in details) {
+                        for (detail in details.productDetailsList) {
                             cachedProductDetails[detail.productId] = detail
                             detail.subscriptionOfferDetails?.forEach { offer ->
                                 val pricingPhase = offer.pricingPhases.pricingPhaseList
