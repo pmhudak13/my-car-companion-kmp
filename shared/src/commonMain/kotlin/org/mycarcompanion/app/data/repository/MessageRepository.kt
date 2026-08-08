@@ -21,6 +21,11 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.storage.storage
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.time.Duration.Companion.hours
+import kotlinx.datetime.Clock
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.models.Message
@@ -29,6 +34,7 @@ import org.mycarcompanion.app.data.models.MessageInsert
 class MessageRepository(private val client: SupabaseClient) {
 
     private val table get() = client.postgrest["chat_messages"]
+    private val photos get() = client.storage["chat-photos"]
 
     suspend fun getInbox(): Result<List<Message>> = runCatching {
         val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
@@ -70,6 +76,36 @@ class MessageRepository(private val client: SupabaseClient) {
         triggerEmailNotification(recipientId, "New Message", content, "new_message")
         Unit
     }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun sendPhoto(
+        recipientId: String,
+        fileName: String,
+        base64Data: String,
+        caption: String,
+        vehicleId: String? = null,
+    ): Result<Unit> = runCatching {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
+        val path = "$userId/${Clock.System.now().toEpochMilliseconds()}-$fileName"
+        photos.upload(path, Base64.decode(base64Data)) { upsert = false }
+        table.insert(
+            MessageInsert(
+                senderId = userId,
+                recipientId = recipientId,
+                content = caption.trim(),
+                vehicleId = vehicleId,
+                imagePath = path,
+            )
+        )
+        val preview = caption.trim().ifBlank { "Sent a photo" }
+        triggerPushNotification(recipientId, "New Message", preview, "new_message")
+        triggerEmailNotification(recipientId, "New Message", preview, "new_message")
+        Unit
+    }
+
+    /** Private bucket — chat photos are only reachable through a short-lived signed URL. */
+    suspend fun signedPhotoUrl(path: String): String? =
+        runCatching { photos.createSignedUrl(path, 1.hours) }.getOrNull()
 
     private suspend fun triggerPushNotification(
         recipientId: String,

@@ -15,7 +15,11 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -33,14 +37,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import coil3.compose.AsyncImage
 import org.mycarcompanion.app.data.models.Message
 import org.mycarcompanion.app.platform.CommonParcelable
+import org.mycarcompanion.app.platform.rememberBinaryFilePickerLauncher
 import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
@@ -55,6 +64,12 @@ data class MessagingScreen(val recipientId: String? = null) : Screen, CommonParc
         val model: MessagingScreenModel = koinScreenModel()
         val state by model.state.collectAsState()
         val listState = rememberLazyListState()
+
+        val photoPicker = rememberBinaryFilePickerLauncher { fileName, base64, mimeType ->
+            if (recipientId != null && mimeType.startsWith("image")) {
+                model.sendPhoto(recipientId, fileName, base64)
+            }
+        }
 
         LaunchedEffect(recipientId) {
             if (recipientId == null) model.loadInbox()
@@ -139,6 +154,7 @@ data class MessagingScreen(val recipientId: String? = null) : Screen, CommonParc
                                 MessageBubble(
                                     message = message,
                                     isOutgoing = message.senderId == state.currentUserId,
+                                    photoUrl = message.imagePath?.let { state.photoUrls[it] },
                                 )
                             }
                         }
@@ -157,6 +173,12 @@ data class MessagingScreen(val recipientId: String? = null) : Screen, CommonParc
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
+                            IconButton(
+                                onClick = { photoPicker.launch() },
+                                enabled = !state.isSending,
+                            ) {
+                                Icon(Icons.Default.AddAPhoto, contentDescription = "Send photo")
+                            }
                             OutlinedTextField(
                                 value = state.composeText,
                                 onValueChange = model::onComposeChange,
@@ -181,7 +203,7 @@ data class MessagingScreen(val recipientId: String? = null) : Screen, CommonParc
 }
 
 @Composable
-private fun MessageBubble(message: Message, isOutgoing: Boolean) {
+private fun MessageBubble(message: Message, isOutgoing: Boolean, photoUrl: String? = null) {
     Box(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = if (isOutgoing) Alignment.CenterEnd else Alignment.CenterStart,
@@ -197,11 +219,32 @@ private fun MessageBubble(message: Message, isOutgoing: Boolean) {
             ),
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                Text(
-                    text = message.content,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Spacer(modifier = Modifier.height(4.dp))
+                if (message.imagePath != null) {
+                    if (photoUrl != null) {
+                        AsyncImage(
+                            model = photoUrl,
+                            contentDescription = "Photo",
+                            contentScale = ContentScale.FillWidth,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp)),
+                        )
+                    } else {
+                        Text(
+                            text = "Loading photo…",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
+                if (message.content.isNotBlank()) {
+                    Text(
+                        text = message.content,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
                 Text(
                     text = message.createdAt.take(16).replace("T", " "),
                     style = MaterialTheme.typography.bodySmall,

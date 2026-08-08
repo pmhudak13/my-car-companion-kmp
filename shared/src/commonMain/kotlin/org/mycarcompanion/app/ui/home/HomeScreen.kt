@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Notifications
@@ -70,6 +71,7 @@ import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.messaging.MessagesListScreen
 import org.mycarcompanion.app.ui.settings.SettingsScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDashboardScreen
+import org.mycarcompanion.app.ui.mechanics.JobBoardScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicSetupScreen
 import org.mycarcompanion.app.ui.mileage.MileageTrackerScreen
@@ -198,6 +200,12 @@ class HomeScreen : Screen {
                                 onClick = { navigator.push(MessagesListScreen()) },
                                 modifier = Modifier.weight(1f),
                                 badgeCount = unreadCount,
+                            )
+                            QuickActionCard(
+                                icon = Icons.Default.Campaign,
+                                label = "Post Job",
+                                onClick = { navigator.push(JobBoardScreen()) },
+                                modifier = Modifier.weight(1f),
                             )
                         }
                     }

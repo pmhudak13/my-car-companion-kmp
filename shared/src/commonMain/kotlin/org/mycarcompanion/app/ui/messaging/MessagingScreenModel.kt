@@ -19,6 +19,8 @@ import org.mycarcompanion.app.data.repository.MessageRepository
 
 data class MessagingState(
     val messages: List<Message> = emptyList(),
+    /** storage path -> signed URL, valid ~1h. Only populated for messages with a photo. */
+    val photoUrls: Map<String, String> = emptyMap(),
     val currentUserId: String = "",
     val isLoading: Boolean = true,
     val error: String? = null,
@@ -82,6 +84,7 @@ class MessagingScreenModel(
             messageRepository.getConversation(otherUserId)
                 .onSuccess { messages ->
                     _state.value = _state.value.copy(messages = messages, isLoading = false)
+                    signPhotos(messages)
                     messages.filter { !it.isRead && it.recipientId == currentUserId }
                         .forEach { messageRepository.markAsRead(it.id) }
                 }
@@ -93,6 +96,38 @@ class MessagingScreenModel(
 
     fun onComposeChange(text: String) {
         _state.value = _state.value.copy(composeText = text, sendError = null)
+    }
+
+    // Signs only paths we haven't signed yet, so a reload doesn't re-sign the whole thread.
+    private suspend fun signPhotos(messages: List<Message>) {
+        val known = _state.value.photoUrls
+        val newUrls = messages.mapNotNull { it.imagePath }
+            .filter { it !in known }
+            .distinct()
+            .mapNotNull { path -> messageRepository.signedPhotoUrl(path)?.let { path to it } }
+        if (newUrls.isNotEmpty()) {
+            _state.value = _state.value.copy(photoUrls = known + newUrls)
+        }
+    }
+
+    fun sendPhoto(recipientId: String, fileName: String, base64: String, vehicleId: String? = null) {
+        screenModelScope.launch {
+            _state.value = _state.value.copy(isSending = true, sendError = null)
+            messageRepository.sendPhoto(
+                recipientId = recipientId,
+                fileName = fileName,
+                base64Data = base64,
+                caption = _state.value.composeText,
+                vehicleId = vehicleId,
+            )
+                .onSuccess {
+                    _state.value = _state.value.copy(isSending = false, composeText = "")
+                    loadConversation(recipientId)
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(isSending = false, sendError = e.message ?: "Failed to send photo")
+                }
+        }
     }
 
     override fun onDispose() {

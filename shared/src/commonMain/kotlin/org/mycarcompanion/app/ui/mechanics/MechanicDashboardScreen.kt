@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -88,6 +89,9 @@ class MechanicDashboardScreen : Screen {
                 TopAppBar(
                     title = { Text(state.profile?.shopName ?: "My Dashboard") },
                     actions = {
+                        IconButton(onClick = { navigator.push(JobBoardScreen(asMechanic = true)) }) {
+                            Icon(Icons.Default.Search, contentDescription = "Job Board")
+                        }
                         IconButton(onClick = { navigator.push(MessagesListScreen()) }) {
                             Icon(Icons.Default.Email, contentDescription = "Messages")
                         }

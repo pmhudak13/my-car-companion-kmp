@@ -13,6 +13,7 @@ import org.mycarcompanion.app.data.repository.MechanicJobIssueRepository
 import org.mycarcompanion.app.data.repository.MechanicJobMediaRepository
 import org.mycarcompanion.app.data.repository.MechanicJobRepository
 import org.mycarcompanion.app.data.repository.MechanicRepository
+import org.mycarcompanion.app.data.repository.JobRequestRepository
 import org.mycarcompanion.app.data.repository.MessageRepository
 import org.mycarcompanion.app.data.repository.MileageTripRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
@@ -31,6 +32,7 @@ import org.mycarcompanion.app.ui.home.HomeScreenModel
 import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreenModel
 import org.mycarcompanion.app.ui.mechanics.CreateMechanicJobScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicDashboardScreenModel
+import org.mycarcompanion.app.ui.mechanics.JobBoardScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicJobDetailScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicSetupScreenModel
@@ -66,6 +68,7 @@ val appModule = module {
     single { MechanicJobIssueRepository(get()) }
     single { MechanicJobMediaRepository(get()) }
     single { MessageRepository(get()) }
+    single { JobRequestRepository(get()) }
     single { MileageTripRepository(get()) }
     single { ProfileRepository(get()) }
     single { ReviewRepository(get()) }
@@ -83,6 +86,7 @@ val appModule = module {
     factoryOf(::AddReminderScreenModel)
     factoryOf(::MechanicDashboardScreenModel)
     factoryOf(::MechanicDirectoryScreenModel)
+    factoryOf(::JobBoardScreenModel)
     factoryOf(::CreateMechanicJobScreenModel)
     factory { MechanicJobDetailScreenModel(get(), get(), get(), get(), get()) }
     factoryOf(::MechanicSetupScreenModel)

@@ -164,6 +164,31 @@ data class MechanicJobLogInsert(
     val notes: String? = null,
 )
 
+@Serializable
+data class JobRequest(
+    val id: String = "",
+    @SerialName("owner_id") val ownerId: String = "",
+    @SerialName("vehicle_id") val vehicleId: String? = null,
+    @SerialName("vehicle_label") val vehicleLabel: String = "",
+    val title: String = "",
+    val description: String? = null,
+    val city: String? = null,
+    val state: String? = null,
+    val status: String = "open",
+    @SerialName("created_at") val createdAt: String = "",
+)
+
+@Serializable
+data class JobRequestInsert(
+    @SerialName("owner_id") val ownerId: String,
+    @SerialName("vehicle_id") val vehicleId: String? = null,
+    @SerialName("vehicle_label") val vehicleLabel: String,
+    val title: String,
+    val description: String? = null,
+    val city: String? = null,
+    val state: String? = null,
+)
+
 val shopTypes = listOf(
     "general", "smog", "body_shop", "tire", "electrical", "detailing",
 )
