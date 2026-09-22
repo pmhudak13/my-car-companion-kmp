@@ -77,6 +77,7 @@ data class MechanicJob(
     @SerialName("estimate_approved_at") val estimateApprovedAt: String? = null,
     @SerialName("estimate_approved_by") val estimateApprovedBy: String? = null,
     @SerialName("estimate_approved_total") val estimateApprovedTotal: Double? = null,
+    @SerialName("estimate_approval_method") val estimateApprovalMethod: String? = null,
 )
 
 /** Mitchell-style document stage, derived from existing fields rather than stored. */
@@ -105,6 +106,39 @@ data class JobLineItem(
     val lineTotal: Double get() = quantity * unitPrice
 }
 
+/** How the customer gave approval. The server forces "in_app" when the owner responds themselves. */
+val approvalMethodLabels = linkedMapOf(
+    "in_person" to "In person",
+    "phone" to "By phone",
+    "text" to "By text",
+    "in_app" to "In app",
+)
+
+@Serializable
+data class CannedLine(
+    val kind: String,
+    val description: String,
+    val quantity: Double,
+    @SerialName("unit_price") val unitPrice: Double,
+)
+
+/** Mitchell "Canned Job": a mechanic's saved set of line items, applied to a job in one tap. */
+@Serializable
+data class CannedJob(
+    val id: String = "",
+    @SerialName("mechanic_user_id") val mechanicUserId: String = "",
+    val name: String = "",
+    val lines: List<CannedLine> = emptyList(),
+    @SerialName("created_at") val createdAt: String = "",
+)
+
+@Serializable
+data class CannedJobInsert(
+    @SerialName("mechanic_user_id") val mechanicUserId: String,
+    val name: String,
+    val lines: List<CannedLine>,
+)
+
 @Serializable
 data class JobLineItemInsert(
     @SerialName("mechanic_job_id") val mechanicJobId: String,
@@ -127,6 +161,7 @@ data class MechanicJobIssue(
     @SerialName("owner_response") val ownerResponse: String? = null,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("responded_at") val respondedAt: String? = null,
+    @SerialName("approval_method") val approvalMethod: String? = null,
 )
 
 @Serializable

@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import org.mycarcompanion.app.data.models.JobLineItem
 import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.data.models.MechanicJobIssue
+import org.mycarcompanion.app.data.models.approvalMethodLabels
 import org.mycarcompanion.app.data.models.authorizedTotal
 import org.mycarcompanion.app.data.models.stage
 import org.mycarcompanion.app.ui.formatMoney
@@ -54,6 +55,8 @@ fun EstimateCard(
     onAdd: () -> Unit,
     onDelete: (String) -> Unit,
     onApprove: () -> Unit,
+    onUseSavedJob: () -> Unit,
+    onSaveAsJob: () -> Unit,
 ) {
     val editable = job.status == "open"
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -65,7 +68,10 @@ fun EstimateCard(
             LineItemList(lineItems, onDelete = onDelete.takeIf { editable })
 
             if (editable) {
-                Spacer(Modifier.height(8.dp))
+                Row {
+                    TextButton(onClick = onUseSavedJob) { Text("Use saved job") }
+                    if (lineItems.isNotEmpty()) TextButton(onClick = onSaveAsJob) { Text("Save as job") }
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     lineKinds.forEach { (kind, label) ->
                         FilterChip(
@@ -116,7 +122,7 @@ fun EstimateCard(
                     Text("Customer approved $${formatMoney(job.totalCost)}")
                 }
                 Text(
-                    "Tap once the customer OKs this amount in person or by phone. Linked owners can approve in their app.",
+                    "Tap once the customer OKs this amount in person, by phone, or by text. Linked owners can approve in their app.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -217,7 +223,8 @@ private fun ApprovalStatus(job: MechanicJob, issues: List<MechanicJobIssue>) {
     val authorized = job.authorizedTotal(issues)
     Spacer(Modifier.height(4.dp))
     Text(
-        "Approved $${formatMoney(authorized)} on ${approvedAt.take(10)}",
+        "Approved $${formatMoney(authorized)} on ${approvedAt.take(10)}" +
+            (job.estimateApprovalMethod?.let { " · ${approvalMethodLabels[it] ?: it}" } ?: ""),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )

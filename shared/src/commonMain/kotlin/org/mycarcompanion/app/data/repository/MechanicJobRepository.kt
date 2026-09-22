@@ -264,8 +264,14 @@ class MechanicJobRepository(private val client: SupabaseClient) {
     }
 
     /** Records estimate approval (owner in-app, or mechanic on the customer's in-person/phone OK). */
-    suspend fun approveEstimate(jobId: String): Result<Unit> = runCatching {
-        client.postgrest.rpc("approve_mechanic_job_estimate", buildJsonObject { put("p_job_id", jobId) })
+    suspend fun approveEstimate(jobId: String, method: String = "in_app"): Result<Unit> = runCatching {
+        client.postgrest.rpc(
+            "approve_mechanic_job_estimate",
+            buildJsonObject {
+                put("p_job_id", jobId)
+                put("p_method", method)
+            },
+        )
     }
 
     suspend fun sendInvite(

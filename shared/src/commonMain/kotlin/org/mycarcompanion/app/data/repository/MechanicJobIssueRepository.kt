@@ -38,11 +38,14 @@ class MechanicJobIssueRepository(private val client: SupabaseClient) {
         issueId: String,
         approved: Boolean,
         ownerResponse: String?,
+        method: String? = null,
     ): Result<MechanicJobIssue> = runCatching {
         table.update({
             set("status", if (approved) "approved" else "declined")
             set("owner_response", ownerResponse)
             set("responded_at", Clock.System.now().toString())
+            // server trigger stamps responded_by/at and forces "in_app" for owners
+            if (method != null) set("approval_method", method)
         }) {
             filter { eq("id", issueId) }
             select()

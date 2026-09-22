@@ -78,6 +78,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.mycarcompanion.app.data.models.MechanicJob
+import org.mycarcompanion.app.data.models.approvalMethodLabels
 import org.mycarcompanion.app.data.models.stage
 import org.mycarcompanion.app.data.models.MechanicJobIssue
 import org.mycarcompanion.app.data.models.MechanicJobLog
@@ -203,7 +204,9 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                 onFormChange = model::updateLineItemForm,
                                 onAdd = model::addLineItem,
                                 onDelete = model::deleteLineItem,
-                                onApprove = model::approveEstimate,
+                                onApprove = { model.promptApproval(ApprovalPrompt.Estimate) },
+                                onUseSavedJob = { model.showCannedPicker(true) },
+                                onSaveAsJob = { model.showSaveCanned(true) },
                             )
                         }
 
@@ -253,6 +256,7 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                 IssueCard(
                                     issue = issue,
                                     onDelete = { model.deleteIssue(issue.id) },
+                                    onRespond = { approved -> model.promptApproval(ApprovalPrompt.Issue(issue.id, approved)) },
                                 )
                             }
                         }
@@ -352,6 +356,28 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                         onCancel = model::hideEditLog,
                     )
                 }
+            }
+
+            state.approvalPrompt?.let { prompt ->
+                ApprovalMethodDialog(
+                    title = when (prompt) {
+                        ApprovalPrompt.Estimate -> "Record estimate approval"
+                        is ApprovalPrompt.Issue -> if (prompt.approved) "Record approval" else "Record decline"
+                    },
+                    onPick = model::recordApproval,
+                    onDismiss = { model.promptApproval(null) },
+                )
+            }
+            if (state.showCannedPicker) {
+                CannedJobPickerDialog(
+                    jobs = state.cannedJobs,
+                    onPick = model::applyCannedJob,
+                    onDelete = model::deleteCannedJob,
+                    onDismiss = { model.showCannedPicker(false) },
+                )
+            }
+            if (state.showSaveCanned) {
+                SaveCannedJobDialog(onSave = model::saveCannedJob, onDismiss = { model.showSaveCanned(false) })
             }
 
             // Flag issue sheet
@@ -642,7 +668,7 @@ private fun IssuesSectionHeader(issueCount: Int, pendingCount: Int, onFlagIssue:
 }
 
 @Composable
-private fun IssueCard(issue: MechanicJobIssue, onDelete: () -> Unit) {
+private fun IssueCard(issue: MechanicJobIssue, onDelete: () -> Unit, onRespond: (approved: Boolean) -> Unit) {
     val (containerColor, labelColor, label) = when (issue.status) {
         "approved" -> Triple(
             MaterialTheme.colorScheme.primaryContainer,
@@ -685,8 +711,18 @@ private fun IssueCard(issue: MechanicJobIssue, onDelete: () -> Unit) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text("Owner: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            if (issue.status != "pending" && issue.respondedAt != null) {
+                Text(
+                    "${label} ${issue.respondedAt.take(10)}" +
+                        (issue.approvalMethod?.let { " · ${approvalMethodLabels[it] ?: it}" } ?: ""),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (issue.status == "pending") {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = { onRespond(true) }) { Text("Customer OK'd", style = MaterialTheme.typography.labelSmall) }
+                    TextButton(onClick = { onRespond(false) }) { Text("Declined", style = MaterialTheme.typography.labelSmall) }
                     TextButton(onClick = onDelete) {
                         Text("Remove", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
                     }

@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.mycarcompanion.app.data.models.CannedJob
+import org.mycarcompanion.app.data.models.CannedLine
 import org.mycarcompanion.app.data.models.JobLineItem
 import org.mycarcompanion.app.data.models.JobLineItemInsert
 import org.mycarcompanion.app.data.models.MaintenanceFormData
@@ -35,6 +37,12 @@ data class LineItemForm(
     val quantity: String = "1",
     val unitPrice: String = "",
 )
+
+/** What the "how did the customer approve?" dialog is recording. */
+sealed interface ApprovalPrompt {
+    data object Estimate : ApprovalPrompt
+    data class Issue(val issueId: String, val approved: Boolean) : ApprovalPrompt
+}
 
 data class MechanicJobDetailState(
     val job: MechanicJob? = null,
@@ -81,6 +89,11 @@ data class MechanicJobDetailState(
     val isApproving: Boolean = false,
     // declined issues from earlier jobs on this car (Mitchell "Recommendations")
     val previouslyDeclined: List<MechanicJobIssue> = emptyList(),
+    // approval method prompt + canned jobs
+    val approvalPrompt: ApprovalPrompt? = null,
+    val cannedJobs: List<CannedJob> = emptyList(),
+    val showCannedPicker: Boolean = false,
+    val showSaveCanned: Boolean = false,
 ) {
     val pendingIssueCount: Int get() = issues.count { it.status == "pending" }
     val canComplete: Boolean get() = pendingIssueCount == 0 && job?.status == "open"
@@ -106,12 +119,14 @@ class MechanicJobDetailScreenModel(
             val issuesDeferred = async { issueRepository.getIssuesForJob(jobId) }
             val mediaDeferred = async { mediaRepository.getMediaForJob(jobId) }
             val lineItemsDeferred = async { lineItemRepository.getForJobs(listOf(jobId)) }
+            val cannedDeferred = async { lineItemRepository.getCannedJobs() }
 
             val job = jobDeferred.await().getOrNull()
             val profile = profileDeferred.await().getOrNull()
             val issues = issuesDeferred.await().getOrNull() ?: emptyList()
             val media = mediaDeferred.await().getOrNull() ?: emptyList()
             val lineItems = lineItemsDeferred.await().getOrNull() ?: emptyList()
+            val cannedJobs = cannedDeferred.await().getOrNull() ?: emptyList()
 
             if (job == null) {
                 _state.value = _state.value.copy(isLoading = false, error = "Job not found")
@@ -129,6 +144,7 @@ class MechanicJobDetailScreenModel(
                 isLoading = false,
                 mechanicShopName = profile?.shopName,
                 lineItems = lineItems,
+                cannedJobs = cannedJobs,
                 previouslyDeclined = loadPreviouslyDeclined(job, issues),
             )
         }
@@ -190,11 +206,35 @@ class MechanicJobDetailScreenModel(
         )
     }
 
-    fun approveEstimate() {
+    fun promptApproval(prompt: ApprovalPrompt?) {
+        _state.value = _state.value.copy(approvalPrompt = prompt)
+    }
+
+    /** Records the answer the approval dialog was opened for, with how the customer gave it. */
+    fun recordApproval(method: String) {
+        when (val prompt = _state.value.approvalPrompt) {
+            ApprovalPrompt.Estimate -> approveEstimate(method)
+            is ApprovalPrompt.Issue -> respondToIssue(prompt.issueId, prompt.approved, method)
+            null -> Unit
+        }
+        _state.value = _state.value.copy(approvalPrompt = null)
+    }
+
+    private fun respondToIssue(issueId: String, approved: Boolean, method: String) {
+        screenModelScope.launch {
+            issueRepository.respondToIssue(issueId, approved, ownerResponse = null, method = method)
+                .onSuccess { updated ->
+                    _state.value = _state.value.copy(issues = _state.value.issues.map { if (it.id == issueId) updated else it })
+                }
+                .onFailure { e -> _state.value = _state.value.copy(error = e.message ?: "Failed to record response") }
+        }
+    }
+
+    private fun approveEstimate(method: String) {
         val job = _state.value.job ?: return
         screenModelScope.launch {
             _state.value = _state.value.copy(isApproving = true)
-            jobRepository.approveEstimate(job.id)
+            jobRepository.approveEstimate(job.id, method)
                 .onSuccess {
                     val refreshed = jobRepository.getJobById(job.id).getOrNull()
                     _state.value = _state.value.copy(isApproving = false, job = refreshed ?: _state.value.job)
@@ -202,6 +242,49 @@ class MechanicJobDetailScreenModel(
                 .onFailure { e ->
                     _state.value = _state.value.copy(isApproving = false, error = e.message ?: "Failed to record approval")
                 }
+        }
+    }
+
+    // ── Canned jobs ──────────────────────────────────────────────────────────────
+
+    fun showCannedPicker(show: Boolean) {
+        _state.value = _state.value.copy(showCannedPicker = show)
+    }
+
+    fun showSaveCanned(show: Boolean) {
+        _state.value = _state.value.copy(showSaveCanned = show)
+    }
+
+    fun applyCannedJob(canned: CannedJob) {
+        val job = _state.value.job ?: return
+        _state.value = _state.value.copy(showCannedPicker = false)
+        screenModelScope.launch {
+            lineItemRepository.addAll(
+                canned.lines.map { JobLineItemInsert(job.id, "", it.kind, it.description, it.quantity, it.unitPrice) },
+            )
+                .onSuccess { added -> setLineItems(_state.value.lineItems + added) }
+                .onFailure { e -> _state.value = _state.value.copy(error = e.message ?: "Failed to add saved job") }
+        }
+    }
+
+    fun saveCannedJob(name: String) {
+        val lines = _state.value.lineItems.map { CannedLine(it.kind, it.description, it.quantity, it.unitPrice) }
+        if (name.isBlank() || lines.isEmpty()) return
+        _state.value = _state.value.copy(showSaveCanned = false)
+        screenModelScope.launch {
+            lineItemRepository.saveCannedJob(name.trim(), lines)
+                .onSuccess { saved ->
+                    _state.value = _state.value.copy(cannedJobs = (_state.value.cannedJobs + saved).sortedBy { it.name.lowercase() })
+                }
+                .onFailure { e -> _state.value = _state.value.copy(error = e.message ?: "Failed to save job") }
+        }
+    }
+
+    fun deleteCannedJob(id: String) {
+        screenModelScope.launch {
+            lineItemRepository.deleteCannedJob(id)
+                .onSuccess { _state.value = _state.value.copy(cannedJobs = _state.value.cannedJobs.filter { it.id != id }) }
+                .onFailure { e -> _state.value = _state.value.copy(error = e.message ?: "Failed to delete saved job") }
         }
     }
 
