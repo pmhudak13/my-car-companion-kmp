@@ -1,6 +1,7 @@
 package org.mycarcompanion.app.data.models
 
 import kotlinx.serialization.SerialName
+import kotlin.math.round
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -14,6 +15,7 @@ data class MechanicProfile(
     val certifications: List<String>? = null,
     @SerialName("years_experience") val yearsExperience: Int? = null,
     @SerialName("hourly_rate") val hourlyRate: Double? = null,
+    @SerialName("default_tax_rate") val defaultTaxRate: Double = 0.0,
     val city: String? = null,
     val state: String? = null,
     @SerialName("profile_image_url") val profileImageUrl: String? = null,
@@ -78,6 +80,7 @@ data class MechanicJob(
     @SerialName("estimate_approved_by") val estimateApprovedBy: String? = null,
     @SerialName("estimate_approved_total") val estimateApprovedTotal: Double? = null,
     @SerialName("estimate_approval_method") val estimateApprovalMethod: String? = null,
+    @SerialName("tax_rate") val taxRate: Double = 0.0,
 )
 
 /** Mitchell-style document stage, derived from existing fields rather than stored. */
@@ -105,6 +108,19 @@ data class JobLineItem(
 ) {
     val lineTotal: Double get() = quantity * unitPrice
 }
+
+// These mirror the DB function mechanic_job_total(): only parts are taxed, so a fee or
+// discount line never moves the tax. Keep the two in step if either changes.
+private fun round2(v: Double): Double = round(v * 100) / 100
+
+fun List<JobLineItem>.subtotal(): Double = sumOf { it.lineTotal }
+
+fun List<JobLineItem>.taxAmount(rate: Double): Double =
+    round2(filter { it.kind == "part" }.sumOf { it.lineTotal } * rate / 100)
+
+/** Null when there are no line items, matching the DB (a typed total is kept until lines exist). */
+fun List<JobLineItem>.jobTotal(rate: Double): Double? =
+    if (isEmpty()) null else round2(subtotal()) + taxAmount(rate)
 
 /** How the customer gave approval. The server forces "in_app" when the owner responds themselves. */
 val approvalMethodLabels = linkedMapOf(

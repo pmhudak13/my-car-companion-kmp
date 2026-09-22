@@ -263,6 +263,15 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         }.decodeList<MechanicJob>()
     }
 
+    /** Sets the job's tax rate and remembers it as this mechanic's default for new jobs. */
+    suspend fun updateTaxRate(jobId: String, rate: Double): Result<Double> = runCatching {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
+        jobsTable.update({ set("tax_rate", rate) }) { filter { eq("id", jobId) } }
+        client.postgrest["mechanic_profiles"]
+            .update({ set("default_tax_rate", rate) }) { filter { eq("user_id", userId) } }
+        rate
+    }
+
     /** Records estimate approval (owner in-app, or mechanic on the customer's in-person/phone OK). */
     suspend fun approveEstimate(jobId: String, method: String = "in_app"): Result<Unit> = runCatching {
         client.postgrest.rpc(

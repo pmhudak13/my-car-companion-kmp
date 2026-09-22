@@ -94,6 +94,8 @@ data class MechanicJobDetailState(
     val cannedJobs: List<CannedJob> = emptyList(),
     val showCannedPicker: Boolean = false,
     val showSaveCanned: Boolean = false,
+    val taxRateInput: String = "",
+    val isSavingTaxRate: Boolean = false,
 ) {
     val pendingIssueCount: Int get() = issues.count { it.status == "pending" }
     val canComplete: Boolean get() = pendingIssueCount == 0 && job?.status == "open"
@@ -141,6 +143,7 @@ class MechanicJobDetailScreenModel(
                 mediaItems = media,
                 progressPercent = job.progressPercent,
                 totalCostInput = job.totalCost?.toString()?.removeSuffix(".0") ?: "",
+                taxRateInput = job.taxRate.toString().removeSuffix(".0"),
                 isLoading = false,
                 mechanicShopName = profile?.shopName,
                 lineItems = lineItems,
@@ -196,13 +199,38 @@ class MechanicJobDetailScreenModel(
         }
     }
 
-    /** Mirrors the DB trigger that sets total_cost to the sum of line items. */
-    private fun setLineItems(items: List<JobLineItem>) {
-        val total = items.takeIf { it.isNotEmpty() }?.sumOf { it.lineTotal }
+    fun setTaxRateInput(value: String) {
+        _state.value = _state.value.copy(taxRateInput = value)
+    }
+
+    fun saveTaxRate() {
+        val job = _state.value.job ?: return
+        val rate = _state.value.taxRateInput.trim().ifBlank { "0" }.toDoubleOrNull()
+        if (rate == null || rate < 0 || rate > 20) {
+            _state.value = _state.value.copy(lineItemError = "Tax rate must be between 0 and 20")
+            return
+        }
+        screenModelScope.launch {
+            _state.value = _state.value.copy(isSavingTaxRate = true, lineItemError = null)
+            jobRepository.updateTaxRate(job.id, rate)
+                .onSuccess {
+                    _state.value = _state.value.copy(isSavingTaxRate = false)
+                    setLineItems(_state.value.lineItems)
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(isSavingTaxRate = false, lineItemError = e.message ?: "Failed to save tax rate")
+                }
+        }
+    }
+
+    /** The DB computes total_cost (lines + tax), so read it back rather than recomputing it here. */
+    private suspend fun setLineItems(items: List<JobLineItem>) {
+        _state.value = _state.value.copy(lineItems = items)
+        val jobId = _state.value.job?.id ?: return
+        val refreshed = jobRepository.getJobById(jobId).getOrNull() ?: return
         _state.value = _state.value.copy(
-            lineItems = items,
-            job = _state.value.job?.copy(totalCost = total),
-            totalCostInput = total?.toString()?.removeSuffix(".0") ?: "",
+            job = refreshed,
+            totalCostInput = refreshed.totalCost?.toString()?.removeSuffix(".0") ?: "",
         )
     }
 

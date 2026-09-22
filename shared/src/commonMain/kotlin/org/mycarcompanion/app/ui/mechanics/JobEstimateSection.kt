@@ -36,6 +36,9 @@ import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.data.models.MechanicJobIssue
 import org.mycarcompanion.app.data.models.approvalMethodLabels
 import org.mycarcompanion.app.data.models.authorizedTotal
+import org.mycarcompanion.app.data.models.jobTotal
+import org.mycarcompanion.app.data.models.subtotal
+import org.mycarcompanion.app.data.models.taxAmount
 import org.mycarcompanion.app.data.models.stage
 import org.mycarcompanion.app.ui.formatMoney
 
@@ -51,7 +54,11 @@ fun EstimateCard(
     isSaving: Boolean,
     error: String?,
     isApproving: Boolean,
+    taxRateInput: String,
+    isSavingTaxRate: Boolean,
     onFormChange: (LineItemForm) -> Unit,
+    onTaxRateChange: (String) -> Unit,
+    onSaveTaxRate: () -> Unit,
     onAdd: () -> Unit,
     onDelete: (String) -> Unit,
     onApprove: () -> Unit,
@@ -65,9 +72,27 @@ fun EstimateCard(
                 Text("Estimate", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                 Text(job.stage, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             }
-            LineItemList(lineItems, onDelete = onDelete.takeIf { editable })
+            LineItemList(lineItems, job.taxRate, onDelete = onDelete.takeIf { editable })
 
             if (editable) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = taxRateInput,
+                        onValueChange = onTaxRateChange,
+                        label = { Text("Sales tax % on parts") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    if (isSavingTaxRate) CircularProgressIndicator(Modifier.size(24.dp))
+                    else TextButton(onClick = onSaveTaxRate) { Text("Save rate") }
+                }
+                Text(
+                    "Saved as your default for new jobs. For a discount, add a Fee line with a negative price.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 Row {
                     TextButton(onClick = onUseSavedJob) { Text("Use saved job") }
                     if (lineItems.isNotEmpty()) TextButton(onClick = onSaveAsJob) { Text("Save as job") }
@@ -143,7 +168,7 @@ fun OwnerEstimateSection(
     if (lineItems.isEmpty() && job.totalCost == null) return
     Column {
         Text("Estimate · ${job.stage}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-        LineItemList(lineItems, onDelete = null)
+        LineItemList(lineItems, job.taxRate, onDelete = null)
         ApprovalStatus(job, issues)
         if (job.status == "open" && job.totalCost != null && needsApproval(job, issues)) {
             Spacer(Modifier.height(4.dp))
@@ -189,7 +214,7 @@ fun PreviouslyDeclinedCard(issues: List<MechanicJobIssue>, onReflag: (MechanicJo
 }
 
 @Composable
-private fun LineItemList(items: List<JobLineItem>, onDelete: ((String) -> Unit)?) {
+private fun LineItemList(items: List<JobLineItem>, taxRate: Double, onDelete: ((String) -> Unit)?) {
     if (items.isEmpty()) {
         Text("No line items yet.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         return
@@ -211,9 +236,23 @@ private fun LineItemList(items: List<JobLineItem>, onDelete: ((String) -> Unit)?
         }
     }
     HorizontalDivider(Modifier.padding(vertical = 4.dp))
+    val tax = items.taxAmount(taxRate)
+    if (tax != 0.0) {
+        TotalRow("Subtotal", items.subtotal(), bold = false)
+        TotalRow("Sales tax ($taxRate% on parts)", tax, bold = false)
+    }
+    TotalRow("Total", items.jobTotal(taxRate) ?: 0.0, bold = true)
+}
+
+@Composable
+private fun TotalRow(label: String, amount: Double, bold: Boolean) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text("Total", fontWeight = FontWeight.Bold)
-        Text("$${formatMoney(items.sumOf { it.lineTotal })}", fontWeight = FontWeight.Bold)
+        Text(label, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            "$${formatMoney(amount)}",
+            fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }
 

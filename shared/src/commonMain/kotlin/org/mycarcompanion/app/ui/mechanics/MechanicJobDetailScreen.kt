@@ -201,7 +201,11 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                 isSaving = state.isSavingLineItem,
                                 error = state.lineItemError,
                                 isApproving = state.isApproving,
+                                taxRateInput = state.taxRateInput,
+                                isSavingTaxRate = state.isSavingTaxRate,
                                 onFormChange = model::updateLineItemForm,
+                                onTaxRateChange = model::setTaxRateInput,
+                                onSaveTaxRate = model::saveTaxRate,
                                 onAdd = model::addLineItem,
                                 onDelete = model::deleteLineItem,
                                 onApprove = { model.promptApproval(ApprovalPrompt.Estimate) },
@@ -215,6 +219,7 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                             PaymentCard(
                                 job = job,
                                 costInput = state.totalCostInput,
+                                fromLineItems = state.lineItems.isNotEmpty(),
                                 logsTotal = state.logs.mapNotNull { it.cost }.sum(),
                                 isSaving = state.isSavingPayment,
                                 onCostChange = model::setTotalCostInput,
@@ -492,6 +497,7 @@ private fun ProgressSection(
 private fun PaymentCard(
     job: MechanicJob,
     costInput: String,
+    fromLineItems: Boolean,
     logsTotal: Double,
     isSaving: Boolean,
     onCostChange: (String) -> Unit,
@@ -502,21 +508,35 @@ private fun PaymentCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Cost of Service", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = costInput,
-                    onValueChange = onCostChange,
-                    label = { Text("Total cost") },
-                    leadingIcon = { Text("$") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
+            if (fromLineItems) {
+                // Line items own the total; editing here would be overwritten on the next line change.
+                Text(
+                    "$${formatMoney(job.totalCost ?: 0.0)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                if (isSaving) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                } else {
-                    FilledTonalButton(onClick = onSave) { Text("Save") }
+                Text(
+                    "From the estimate line items above. Edit the lines to change it.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = costInput,
+                        onValueChange = onCostChange,
+                        label = { Text("Total cost") },
+                        leadingIcon = { Text("$") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    if (isSaving) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    } else {
+                        FilledTonalButton(onClick = onSave) { Text("Save") }
+                    }
                 }
             }
             if (logsTotal > 0) {
