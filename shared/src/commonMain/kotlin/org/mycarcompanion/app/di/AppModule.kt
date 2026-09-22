@@ -9,6 +9,7 @@ import org.koin.dsl.module
 import org.mycarcompanion.app.data.repository.AuthRepository
 import org.mycarcompanion.app.data.repository.MaintenanceRepository
 import org.mycarcompanion.app.data.repository.MechanicAssignmentRepository
+import org.mycarcompanion.app.data.repository.JobLineItemRepository
 import org.mycarcompanion.app.data.repository.MechanicJobIssueRepository
 import org.mycarcompanion.app.data.repository.MechanicJobMediaRepository
 import org.mycarcompanion.app.data.repository.MechanicJobRepository
@@ -66,6 +67,7 @@ val appModule = module {
     single { MechanicAssignmentRepository(get()) }
     single { MechanicJobRepository(get()) }
     single { MechanicJobIssueRepository(get()) }
+    single { JobLineItemRepository(get()) }
     single { MechanicJobMediaRepository(get()) }
     single { MessageRepository(get()) }
     single { JobRequestRepository(get()) }
@@ -81,14 +83,14 @@ val appModule = module {
     factoryOf(::HomeScreenModel)
     factoryOf(::VehicleListScreenModel)
     factoryOf(::AddVehicleScreenModel)
-    factory { VehicleDetailScreenModel(get(), get(), get(), get(), get(), get(), get()) }
+    factory { VehicleDetailScreenModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     factoryOf(::AddMaintenanceScreenModel)
     factoryOf(::AddReminderScreenModel)
     factoryOf(::MechanicDashboardScreenModel)
     factoryOf(::MechanicDirectoryScreenModel)
     factoryOf(::JobBoardScreenModel)
     factoryOf(::CreateMechanicJobScreenModel)
-    factory { MechanicJobDetailScreenModel(get(), get(), get(), get(), get()) }
+    factory { MechanicJobDetailScreenModel(get(), get(), get(), get(), get(), get()) }
     factoryOf(::MechanicSetupScreenModel)
     factoryOf(::MessagesListScreenModel)
     factoryOf(::MessagingScreenModel)

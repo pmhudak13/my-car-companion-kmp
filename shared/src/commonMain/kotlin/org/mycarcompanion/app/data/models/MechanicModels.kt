@@ -74,6 +74,45 @@ data class MechanicJob(
     @SerialName("payment_received") val paymentReceived: Boolean = false,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("completed_at") val completedAt: String? = null,
+    @SerialName("estimate_approved_at") val estimateApprovedAt: String? = null,
+    @SerialName("estimate_approved_by") val estimateApprovedBy: String? = null,
+    @SerialName("estimate_approved_total") val estimateApprovedTotal: Double? = null,
+)
+
+/** Mitchell-style document stage, derived from existing fields rather than stored. */
+val MechanicJob.stage: String get() = when {
+    paymentReceived -> "Paid"
+    status == "completed" -> "Invoiced"
+    estimateApprovedAt != null -> "Approved"
+    else -> "Estimate"
+}
+
+/** Amount the customer has OK'd: the approved estimate plus any approved add-on issues. */
+fun MechanicJob.authorizedTotal(issues: List<MechanicJobIssue>): Double =
+    (estimateApprovedTotal ?: 0.0) + issues.filter { it.status == "approved" }.sumOf { it.estimatedCost ?: 0.0 }
+
+@Serializable
+data class JobLineItem(
+    val id: String = "",
+    @SerialName("mechanic_job_id") val mechanicJobId: String = "",
+    @SerialName("mechanic_user_id") val mechanicUserId: String = "",
+    val kind: String = "labor",
+    val description: String = "",
+    val quantity: Double = 1.0,
+    @SerialName("unit_price") val unitPrice: Double = 0.0,
+    @SerialName("created_at") val createdAt: String = "",
+) {
+    val lineTotal: Double get() = quantity * unitPrice
+}
+
+@Serializable
+data class JobLineItemInsert(
+    @SerialName("mechanic_job_id") val mechanicJobId: String,
+    @SerialName("mechanic_user_id") val mechanicUserId: String,
+    val kind: String,
+    val description: String,
+    val quantity: Double,
+    @SerialName("unit_price") val unitPrice: Double,
 )
 
 @Serializable

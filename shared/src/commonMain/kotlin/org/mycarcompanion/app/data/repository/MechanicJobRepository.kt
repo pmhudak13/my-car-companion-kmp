@@ -248,6 +248,26 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         }.decodeList<MechanicJob>()
     }
 
+    /** This mechanic's jobs on the same car, matched by linked vehicle or VIN (solo mechanics often skip linking). */
+    suspend fun getMyJobsForSameVehicle(vehicleId: String?, vin: String?): Result<List<MechanicJob>> = runCatching {
+        if (vehicleId == null && vin.isNullOrBlank()) return@runCatching emptyList()
+        val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
+        jobsTable.select {
+            filter {
+                eq("mechanic_user_id", userId)
+                or {
+                    if (vehicleId != null) eq("vehicle_id", vehicleId)
+                    if (!vin.isNullOrBlank()) eq("vehicle_vin", vin)
+                }
+            }
+        }.decodeList<MechanicJob>()
+    }
+
+    /** Records estimate approval (owner in-app, or mechanic on the customer's in-person/phone OK). */
+    suspend fun approveEstimate(jobId: String): Result<Unit> = runCatching {
+        client.postgrest.rpc("approve_mechanic_job_estimate", buildJsonObject { put("p_job_id", jobId) })
+    }
+
     suspend fun sendInvite(
         jobId: String,
         clientEmail: String,

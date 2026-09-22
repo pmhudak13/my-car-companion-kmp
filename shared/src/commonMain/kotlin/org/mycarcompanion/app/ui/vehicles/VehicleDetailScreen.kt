@@ -57,7 +57,10 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.mycarcompanion.app.data.models.MaintenanceLog
 import org.mycarcompanion.app.data.models.MechanicAssignment
+import org.mycarcompanion.app.data.models.JobLineItem
 import org.mycarcompanion.app.data.models.MechanicJob
+import org.mycarcompanion.app.data.models.stage
+import org.mycarcompanion.app.ui.mechanics.OwnerEstimateSection
 import org.mycarcompanion.app.data.models.MechanicJobIssue
 import org.mycarcompanion.app.data.models.MechanicJobMedia
 import org.mycarcompanion.app.data.models.Reminder
@@ -216,6 +219,9 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
                                     onRespondToIssue = { issueId, approved ->
                                         model.respondToIssue(issueId, approved, null)
                                     },
+                                    lineItems = state.lineItemsByJobId[job.id] ?: emptyList(),
+                                    isApproving = state.approvingJobId == job.id,
+                                    onApproveEstimate = { model.approveEstimate(job.id) },
                                 )
                             }
                         }
@@ -562,6 +568,9 @@ private fun MechanicJobCard(
     media: List<MechanicJobMedia>,
     respondingIssueId: String?,
     onRespondToIssue: (issueId: String, approved: Boolean) -> Unit,
+    lineItems: List<JobLineItem>,
+    isApproving: Boolean,
+    onApproveEstimate: () -> Unit,
 ) {
     val pendingIssues = issues.filter { it.status == "pending" }
     Card(
@@ -593,7 +602,7 @@ private fun MechanicJobCard(
                     )
                 }
                 Text(
-                    text = if (job.status == "open") "In Progress" else "Completed",
+                    text = job.stage,
                     style = MaterialTheme.typography.labelSmall,
                     color = if (job.status == "open") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                 )
@@ -614,6 +623,9 @@ private fun MechanicJobCard(
                 progress = { job.progressPercent / 100f },
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            Spacer(modifier = Modifier.height(12.dp))
+            OwnerEstimateSection(job, lineItems, issues, isApproving, onApproveEstimate)
 
             // Pending issues requiring approval
             if (pendingIssues.isNotEmpty()) {

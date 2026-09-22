@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.mycarcompanion.app.data.models.JobLineItem
 import org.mycarcompanion.app.data.models.MaintenanceLog
 import org.mycarcompanion.app.data.models.MechanicAssignment
 import org.mycarcompanion.app.data.models.MechanicJob
@@ -14,6 +15,7 @@ import org.mycarcompanion.app.data.models.MechanicJobIssue
 import org.mycarcompanion.app.data.models.MechanicJobMedia
 import org.mycarcompanion.app.data.models.Reminder
 import org.mycarcompanion.app.data.models.Vehicle
+import org.mycarcompanion.app.data.repository.JobLineItemRepository
 import org.mycarcompanion.app.data.repository.MaintenanceRepository
 import org.mycarcompanion.app.data.repository.MechanicAssignmentRepository
 import org.mycarcompanion.app.data.repository.MechanicJobIssueRepository
@@ -34,6 +36,8 @@ data class VehicleDetailState(
     val error: String? = null,
     val deleted: Boolean = false,
     val respondingIssueId: String? = null,
+    val lineItemsByJobId: Map<String, List<JobLineItem>> = emptyMap(),
+    val approvingJobId: String? = null,
 )
 
 class VehicleDetailScreenModel(
@@ -44,6 +48,7 @@ class VehicleDetailScreenModel(
     private val mechanicJobRepository: MechanicJobRepository,
     private val issueRepository: MechanicJobIssueRepository,
     private val mediaRepository: MechanicJobMediaRepository,
+    private val lineItemRepository: JobLineItemRepository,
 ) : ScreenModel {
 
     private val _state = MutableStateFlow(VehicleDetailState())
@@ -108,14 +113,28 @@ class VehicleDetailScreenModel(
 
             val issuesDeferred = async { issueRepository.getIssuesForVehicleJobs(jobIds) }
             val mediaDeferred = async { mediaRepository.getMediaForJobs(jobIds) }
+            val lineItemsDeferred = async { lineItemRepository.getForJobs(jobIds) }
 
             val issues = issuesDeferred.await().getOrNull() ?: emptyList()
             val media = mediaDeferred.await().getOrNull() ?: emptyList()
+            val lineItems = lineItemsDeferred.await().getOrNull() ?: emptyList()
 
             _state.value = _state.value.copy(
                 issuesByJobId = issues.groupBy { it.mechanicJobId },
                 mediaByJobId = media.groupBy { it.mechanicJobId },
+                lineItemsByJobId = lineItems.groupBy { it.mechanicJobId },
             )
+        }
+    }
+
+    fun approveEstimate(jobId: String) {
+        val vehicleId = _state.value.vehicle?.id ?: return
+        screenModelScope.launch {
+            _state.value = _state.value.copy(approvingJobId = jobId)
+            mechanicJobRepository.approveEstimate(jobId)
+                .onSuccess { loadMechanicJobs(vehicleId) }
+                .onFailure { e -> _state.value = _state.value.copy(error = e.message ?: "Failed to approve estimate") }
+            _state.value = _state.value.copy(approvingJobId = null)
         }
     }
 

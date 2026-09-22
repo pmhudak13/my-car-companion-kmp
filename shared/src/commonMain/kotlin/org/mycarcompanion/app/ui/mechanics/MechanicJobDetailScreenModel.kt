@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.mycarcompanion.app.data.models.JobLineItem
+import org.mycarcompanion.app.data.models.JobLineItemInsert
 import org.mycarcompanion.app.data.models.MaintenanceFormData
 import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.data.models.MechanicJobIssue
@@ -15,6 +17,7 @@ import org.mycarcompanion.app.data.models.MechanicJobLog
 import org.mycarcompanion.app.data.models.MechanicJobLogInsert
 import org.mycarcompanion.app.data.models.MechanicJobMedia
 import org.mycarcompanion.app.data.repository.AuthRepository
+import org.mycarcompanion.app.data.repository.JobLineItemRepository
 import org.mycarcompanion.app.data.repository.MechanicJobIssueRepository
 import org.mycarcompanion.app.data.repository.MechanicJobMediaRepository
 import org.mycarcompanion.app.data.repository.MechanicJobRepository
@@ -24,6 +27,13 @@ data class IssueForm(
     val title: String = "",
     val description: String = "",
     val estimatedCost: String = "",
+)
+
+data class LineItemForm(
+    val kind: String = "labor",
+    val description: String = "",
+    val quantity: String = "1",
+    val unitPrice: String = "",
 )
 
 data class MechanicJobDetailState(
@@ -63,6 +73,14 @@ data class MechanicJobDetailState(
     val isSendingInvite: Boolean = false,
     val inviteMessage: String? = null,
     val mechanicShopName: String? = null,
+    // line items + estimate approval
+    val lineItems: List<JobLineItem> = emptyList(),
+    val lineItemForm: LineItemForm = LineItemForm(),
+    val isSavingLineItem: Boolean = false,
+    val lineItemError: String? = null,
+    val isApproving: Boolean = false,
+    // declined issues from earlier jobs on this car (Mitchell "Recommendations")
+    val previouslyDeclined: List<MechanicJobIssue> = emptyList(),
 ) {
     val pendingIssueCount: Int get() = issues.count { it.status == "pending" }
     val canComplete: Boolean get() = pendingIssueCount == 0 && job?.status == "open"
@@ -74,6 +92,7 @@ class MechanicJobDetailScreenModel(
     private val mediaRepository: MechanicJobMediaRepository,
     private val profileRepository: ProfileRepository,
     private val authRepository: AuthRepository,
+    private val lineItemRepository: JobLineItemRepository,
 ) : ScreenModel {
 
     private val _state = MutableStateFlow(MechanicJobDetailState())
@@ -86,11 +105,13 @@ class MechanicJobDetailScreenModel(
             val profileDeferred = async { profileRepository.getMyMechanicProfile() }
             val issuesDeferred = async { issueRepository.getIssuesForJob(jobId) }
             val mediaDeferred = async { mediaRepository.getMediaForJob(jobId) }
+            val lineItemsDeferred = async { lineItemRepository.getForJobs(listOf(jobId)) }
 
             val job = jobDeferred.await().getOrNull()
             val profile = profileDeferred.await().getOrNull()
             val issues = issuesDeferred.await().getOrNull() ?: emptyList()
             val media = mediaDeferred.await().getOrNull() ?: emptyList()
+            val lineItems = lineItemsDeferred.await().getOrNull() ?: emptyList()
 
             if (job == null) {
                 _state.value = _state.value.copy(isLoading = false, error = "Job not found")
@@ -107,8 +128,94 @@ class MechanicJobDetailScreenModel(
                 totalCostInput = job.totalCost?.toString()?.removeSuffix(".0") ?: "",
                 isLoading = false,
                 mechanicShopName = profile?.shopName,
+                lineItems = lineItems,
+                previouslyDeclined = loadPreviouslyDeclined(job, issues),
             )
         }
+    }
+
+    private suspend fun loadPreviouslyDeclined(job: MechanicJob, currentIssues: List<MechanicJobIssue>): List<MechanicJobIssue> {
+        val otherJobIds = jobRepository.getMyJobsForSameVehicle(job.vehicleId, job.vehicleVin).getOrNull()
+            ?.map { it.id }?.filter { it != job.id } ?: return emptyList()
+        // ponytail: dedupe by title; a re-flagged or repeat-declined item collapses to its newest entry
+        val onThisJob = currentIssues.map { it.title.lowercase() }.toSet()
+        return issueRepository.getIssuesForVehicleJobs(otherJobIds).getOrNull().orEmpty()
+            .filter { it.status == "declined" && it.title.lowercase() !in onThisJob }
+            .distinctBy { it.title.lowercase() }
+    }
+
+    // ── Line items ───────────────────────────────────────────────────────────────
+
+    fun updateLineItemForm(form: LineItemForm) {
+        _state.value = _state.value.copy(lineItemForm = form, lineItemError = null)
+    }
+
+    fun addLineItem() {
+        val job = _state.value.job ?: return
+        val form = _state.value.lineItemForm
+        val qty = form.quantity.trim().toDoubleOrNull()
+        val price = form.unitPrice.trim().toDoubleOrNull()
+        if (form.description.isBlank() || qty == null || qty <= 0 || price == null || price < 0) {
+            _state.value = _state.value.copy(lineItemError = "Description, a quantity above 0, and a price are required")
+            return
+        }
+        screenModelScope.launch {
+            _state.value = _state.value.copy(isSavingLineItem = true, lineItemError = null)
+            lineItemRepository.add(JobLineItemInsert(job.id, "", form.kind, form.description.trim(), qty, price))
+                .onSuccess { item ->
+                    setLineItems(_state.value.lineItems + item)
+                    _state.value = _state.value.copy(isSavingLineItem = false, lineItemForm = LineItemForm(kind = form.kind))
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(isSavingLineItem = false, lineItemError = e.message ?: "Failed to add line")
+                }
+        }
+    }
+
+    fun deleteLineItem(id: String) {
+        screenModelScope.launch {
+            lineItemRepository.delete(id)
+                .onSuccess { setLineItems(_state.value.lineItems.filter { it.id != id }) }
+                .onFailure { e -> _state.value = _state.value.copy(error = e.message ?: "Failed to delete line") }
+        }
+    }
+
+    /** Mirrors the DB trigger that sets total_cost to the sum of line items. */
+    private fun setLineItems(items: List<JobLineItem>) {
+        val total = items.takeIf { it.isNotEmpty() }?.sumOf { it.lineTotal }
+        _state.value = _state.value.copy(
+            lineItems = items,
+            job = _state.value.job?.copy(totalCost = total),
+            totalCostInput = total?.toString()?.removeSuffix(".0") ?: "",
+        )
+    }
+
+    fun approveEstimate() {
+        val job = _state.value.job ?: return
+        screenModelScope.launch {
+            _state.value = _state.value.copy(isApproving = true)
+            jobRepository.approveEstimate(job.id)
+                .onSuccess {
+                    val refreshed = jobRepository.getJobById(job.id).getOrNull()
+                    _state.value = _state.value.copy(isApproving = false, job = refreshed ?: _state.value.job)
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(isApproving = false, error = e.message ?: "Failed to record approval")
+                }
+        }
+    }
+
+    /** Opens the issue form pre-filled from a previously declined issue. */
+    fun reflagIssue(issue: MechanicJobIssue) {
+        _state.value = _state.value.copy(
+            showIssueForm = true,
+            issueError = null,
+            issueForm = IssueForm(
+                title = issue.title,
+                description = issue.description.orEmpty(),
+                estimatedCost = issue.estimatedCost?.toString()?.removeSuffix(".0").orEmpty(),
+            ),
+        )
     }
 
     // ── Progress ────────────────────────────────────────────────────────────────
@@ -369,6 +476,8 @@ class MechanicJobDetailScreenModel(
                         isSavingIssue = false,
                         showIssueForm = false,
                         issues = listOf(issue) + _state.value.issues,
+                        previouslyDeclined = _state.value.previouslyDeclined
+                            .filter { !it.title.equals(issue.title, ignoreCase = true) },
                     )
                 }
                 .onFailure { e ->

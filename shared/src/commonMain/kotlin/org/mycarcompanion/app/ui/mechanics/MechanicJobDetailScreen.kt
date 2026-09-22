@@ -78,6 +78,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.mycarcompanion.app.data.models.MechanicJob
+import org.mycarcompanion.app.data.models.stage
 import org.mycarcompanion.app.data.models.MechanicJobIssue
 import org.mycarcompanion.app.data.models.MechanicJobLog
 import org.mycarcompanion.app.data.models.MechanicJobMedia
@@ -165,6 +166,10 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                         // Job info card
                         item { JobInfoCard(job) }
 
+                        if (job.status == "open" && state.previouslyDeclined.isNotEmpty()) {
+                            item { PreviouslyDeclinedCard(state.previouslyDeclined, onReflag = model::reflagIssue) }
+                        }
+
                         // Progress section (always visible while job is open or recently completed)
                         item {
                             ProgressSection(
@@ -184,6 +189,22 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                     onSend = model::sendInvite,
                                 )
                             }
+                        }
+
+                        item {
+                            EstimateCard(
+                                job = job,
+                                lineItems = state.lineItems,
+                                issues = state.issues,
+                                form = state.lineItemForm,
+                                isSaving = state.isSavingLineItem,
+                                error = state.lineItemError,
+                                isApproving = state.isApproving,
+                                onFormChange = model::updateLineItemForm,
+                                onAdd = model::addLineItem,
+                                onDelete = model::deleteLineItem,
+                                onApprove = model::approveEstimate,
+                            )
                         }
 
                         // Cost of service & payment
@@ -369,7 +390,7 @@ private fun JobInfoCard(job: MechanicJob) {
             ) {
                 Text(job.clientName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    text = if (job.status == "open") "Open" else "Completed",
+                    text = job.stage,
                     style = MaterialTheme.typography.labelSmall,
                     color = if (job.status == "open") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                 )
