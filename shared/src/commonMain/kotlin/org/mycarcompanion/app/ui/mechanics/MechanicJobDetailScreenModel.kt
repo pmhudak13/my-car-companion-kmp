@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.mycarcompanion.app.data.models.CannedJob
 import org.mycarcompanion.app.data.models.CannedLine
+import org.mycarcompanion.app.data.models.LaborGuideResult
 import org.mycarcompanion.app.data.models.JobLineItem
 import org.mycarcompanion.app.data.models.JobLineItemInsert
 import org.mycarcompanion.app.data.models.MaintenanceFormData
@@ -96,6 +97,10 @@ data class MechanicJobDetailState(
     val showSaveCanned: Boolean = false,
     val taxRateInput: String = "",
     val isSavingTaxRate: Boolean = false,
+    // labor guide
+    val mechanicHourlyRate: Double? = null,
+    val laborGuide: LaborGuideResult? = null,
+    val isLookingUpLabor: Boolean = false,
 ) {
     val pendingIssueCount: Int get() = issues.count { it.status == "pending" }
     val canComplete: Boolean get() = pendingIssueCount == 0 && job?.status == "open"
@@ -146,6 +151,7 @@ class MechanicJobDetailScreenModel(
                 taxRateInput = job.taxRate.toString().removeSuffix(".0"),
                 isLoading = false,
                 mechanicShopName = profile?.shopName,
+                mechanicHourlyRate = profile?.hourlyRate,
                 lineItems = lineItems,
                 cannedJobs = cannedJobs,
                 previouslyDeclined = loadPreviouslyDeclined(job, issues),
@@ -166,7 +172,34 @@ class MechanicJobDetailScreenModel(
     // ── Line items ───────────────────────────────────────────────────────────────
 
     fun updateLineItemForm(form: LineItemForm) {
-        _state.value = _state.value.copy(lineItemForm = form, lineItemError = null)
+        val old = _state.value.lineItemForm
+        // a suggestion is for one repair; drop it once the mechanic changes what it was for
+        val guide = _state.value.laborGuide.takeIf { form.kind == old.kind && form.description == old.description }
+        _state.value = _state.value.copy(lineItemForm = form, lineItemError = null, laborGuide = guide)
+    }
+
+    fun suggestLaborTime() {
+        val job = _state.value.job ?: return
+        val form = _state.value.lineItemForm
+        if (form.description.isBlank()) {
+            _state.value = _state.value.copy(lineItemError = "Describe the repair first, e.g. \"Front brake pads and rotors\"")
+            return
+        }
+        screenModelScope.launch {
+            _state.value = _state.value.copy(isLookingUpLabor = true, lineItemError = null, laborGuide = null)
+            lineItemRepository.lookupLaborTime(job.vehicleYear, job.vehicleMake, job.vehicleModel, form.description.trim())
+                .onSuccess { result ->
+                    val rate = form.unitPrice.ifBlank { _state.value.mechanicHourlyRate?.let(::formatQty).orEmpty() }
+                    _state.value = _state.value.copy(
+                        isLookingUpLabor = false,
+                        laborGuide = result,
+                        lineItemForm = form.copy(kind = "labor", quantity = formatQty(result.hours), unitPrice = rate),
+                    )
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(isLookingUpLabor = false, lineItemError = e.message ?: "Labor lookup failed")
+                }
+        }
     }
 
     fun addLineItem() {
@@ -183,7 +216,7 @@ class MechanicJobDetailScreenModel(
             lineItemRepository.add(JobLineItemInsert(job.id, "", form.kind, form.description.trim(), qty, price))
                 .onSuccess { item ->
                     setLineItems(_state.value.lineItems + item)
-                    _state.value = _state.value.copy(isSavingLineItem = false, lineItemForm = LineItemForm(kind = form.kind))
+                    _state.value = _state.value.copy(isSavingLineItem = false, lineItemForm = LineItemForm(kind = form.kind), laborGuide = null)
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(isSavingLineItem = false, lineItemError = e.message ?: "Failed to add line")

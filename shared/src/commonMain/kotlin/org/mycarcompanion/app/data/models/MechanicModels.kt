@@ -155,6 +155,19 @@ data class CannedJobInsert(
     val lines: List<CannedLine>,
 )
 
+/** Labor guide answer: "mechanics" = median of real billed hours on similar cars, "ai" = Claude estimate. */
+@Serializable
+data class LaborGuideResult(
+    val hours: Double,
+    val source: String,
+    @SerialName("job_count") val jobCount: Int = 0,
+    val note: String? = null,
+) {
+    val sourceLabel: String get() =
+        if (source == "mechanics") "Median of $jobCount completed jobs by My Car Companion mechanics"
+        else "AI estimate. Check it before quoting."
+}
+
 @Serializable
 data class JobLineItemInsert(
     @SerialName("mechanic_job_id") val mechanicJobId: String,

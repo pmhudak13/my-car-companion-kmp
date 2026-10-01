@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.mycarcompanion.app.data.models.JobLineItem
+import org.mycarcompanion.app.data.models.LaborGuideResult
 import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.data.models.MechanicJobIssue
 import org.mycarcompanion.app.data.models.approvalMethodLabels
@@ -64,6 +65,9 @@ fun EstimateCard(
     onApprove: () -> Unit,
     onUseSavedJob: () -> Unit,
     onSaveAsJob: () -> Unit,
+    laborGuide: LaborGuideResult?,
+    isLookingUpLabor: Boolean,
+    onSuggestLabor: () -> Unit,
 ) {
     val editable = job.status == "open"
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -113,6 +117,15 @@ fun EstimateCard(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                if (form.kind == "labor") {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (isLookingUpLabor) CircularProgressIndicator(Modifier.size(20.dp))
+                        else TextButton(onClick = onSuggestLabor) { Text("Suggest hours") }
+                        laborGuide?.let {
+                            Text(it.sourceLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
                         value = form.quantity,
@@ -280,4 +293,4 @@ private fun ApprovalStatus(job: MechanicJob, issues: List<MechanicJobIssue>) {
 private fun needsApproval(job: MechanicJob, issues: List<MechanicJobIssue>): Boolean =
     job.estimateApprovedAt == null || (job.totalCost ?: 0.0) > job.authorizedTotal(issues) + 0.01
 
-private fun formatQty(q: Double): String = if (q % 1.0 == 0.0) q.toLong().toString() else q.toString()
+internal fun formatQty(q: Double): String = if (q % 1.0 == 0.0) q.toLong().toString() else q.toString()

@@ -211,6 +211,9 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                 onApprove = { model.promptApproval(ApprovalPrompt.Estimate) },
                                 onUseSavedJob = { model.showCannedPicker(true) },
                                 onSaveAsJob = { model.showSaveCanned(true) },
+                                laborGuide = state.laborGuide,
+                                isLookingUpLabor = state.isLookingUpLabor,
+                                onSuggestLabor = model::suggestLaborTime,
                             )
                         }
 

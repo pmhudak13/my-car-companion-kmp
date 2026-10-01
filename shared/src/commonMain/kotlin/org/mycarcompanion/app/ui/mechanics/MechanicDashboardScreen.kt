@@ -103,6 +103,13 @@ class MechanicDashboardScreen : Screen {
                             Icon(Icons.Default.MoreVert, contentDescription = "More options")
                         }
                         DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Labor Guide") },
+                                onClick = {
+                                    menuExpanded = false
+                                    navigator.push(LaborGuideScreen())
+                                },
+                            )
                             if (currentUser?.isAdmin == true) {
                                 DropdownMenuItem(
                                     text = { Text("Individual View") },
