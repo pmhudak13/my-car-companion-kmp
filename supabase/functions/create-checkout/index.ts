@@ -1,11 +1,39 @@
 import Stripe from "https://esm.sh/stripe@14?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://www.mycarcompanion.org",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-jwt",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const ALLOWED_ORIGINS = new Set([
+  "https://www.mycarcompanion.org",
+  "https://mycarcompanion.org",
+]);
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin") ?? "";
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin)
+      ? origin
+      : "https://www.mycarcompanion.org",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-jwt, x-region",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+}
+
+// Ktor 3.x on wasmJs is strict about Content-Length matching. The Supabase relay
+// can compress responses and alter the byte count, causing an IllegalStateException.
+// Explicitly setting Content-Encoding: identity disables relay compression and
+// setting Content-Length to the exact UTF-8 byte count prevents the mismatch.
+function jsonResponse(cors: Record<string, string>, body: object, status = 200): Response {
+  const text = JSON.stringify(body);
+  const bytes = new TextEncoder().encode(text);
+  return new Response(bytes, {
+    status,
+    headers: {
+      ...cors,
+      "Content-Type": "application/json",
+      "Content-Encoding": "identity",
+      "Content-Length": bytes.byteLength.toString(),
+    },
+  });
+}
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
   apiVersion: "2024-06-20",
@@ -24,13 +52,15 @@ const ALLOWED_PRICE_IDS = new Set([
 ]);
 
 Deno.serve(async (req) => {
+  const cors = corsHeaders(req);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+    return new Response("Method not allowed", { status: 405, headers: cors });
   }
 
   try {
@@ -43,10 +73,7 @@ Deno.serve(async (req) => {
       ?? null;
 
     if (!token) {
-      return new Response(JSON.stringify({ error: "Missing authorization" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(cors, { error: "Missing authorization" }, 401);
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -57,26 +84,17 @@ Deno.serve(async (req) => {
     } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(cors, { error: "Unauthorized" }, 401);
     }
 
     const { price_id, success_url, cancel_url } = await req.json();
 
     if (!price_id) {
-      return new Response(JSON.stringify({ error: "price_id is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(cors, { error: "price_id is required" }, 400);
     }
 
     if (!ALLOWED_PRICE_IDS.has(price_id)) {
-      return new Response(JSON.stringify({ error: "Invalid price_id" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(cors, { error: "Invalid price_id" }, 400);
     }
 
     // Look up or create a Stripe customer for this user
@@ -105,23 +123,14 @@ Deno.serve(async (req) => {
       customer: customerId,
       mode: "subscription",
       line_items: [{ price: price_id, quantity: 1 }],
-      success_url: success_url ?? "https://www.mycarcompanion.org/app/?checkout=success",
-      cancel_url: cancel_url ?? "https://www.mycarcompanion.org/app/",
+      success_url: success_url ?? "https://www.mycarcompanion.org/webapp/?checkout=success",
+      cancel_url: cancel_url ?? "https://www.mycarcompanion.org/webapp/",
       metadata: { supabase_user_id: user.id },
     });
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(cors, { url: session.url });
   } catch (err) {
     console.error("create-checkout error:", err);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    return jsonResponse(cors, { error: "Internal server error" }, 500);
   }
 });
