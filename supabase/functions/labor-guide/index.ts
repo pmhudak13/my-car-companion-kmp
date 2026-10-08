@@ -63,6 +63,11 @@ Deno.serve(async (req) => {
     return jsonResponse({ hours: Number(stats.median_hours), source: "mechanics", job_count: stats.job_count }, 200);
   }
 
+  // No key set = AI fallback off (no API budget yet); setting ANTHROPIC_API_KEY turns it back on
+  if (!anthropicApiKey) {
+    return jsonResponse({ error: "No labor data for this car yet. Enter the hours manually." }, 200);
+  }
+
   const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {

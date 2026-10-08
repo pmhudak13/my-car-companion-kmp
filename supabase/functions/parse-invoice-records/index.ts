@@ -95,6 +95,11 @@ Return ONLY a valid JSON array with no extra text, markdown, or explanation.
 Example: [{"date":"2024-01-15","category":"Oil Change","description":"Synthetic 5W-30 oil and filter","mileage":45000,"cost":89.99,"notes":"Mobil 1"}]`,
   });
 
+  // No key set = AI scan off (no API budget yet); setting ANTHROPIC_API_KEY turns it back on
+  if (!anthropicApiKey) {
+    return jsonResponse({ error: "Invoice scanning isn't available right now. Use CSV import instead." }, 200);
+  }
+
   const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
