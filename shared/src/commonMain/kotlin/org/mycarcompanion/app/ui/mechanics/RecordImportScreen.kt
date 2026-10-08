@@ -56,7 +56,7 @@ import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.platform.rememberBinaryFilePickerLauncher
 import org.mycarcompanion.app.platform.rememberTextFilePickerLauncher
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
-import org.mycarcompanion.app.ui.formatMoney
+import org.mycarcompanion.app.ui.formatUsd
 import org.mycarcompanion.app.platform.topBarWindowInsets
 
 data class RecordImportScreen(val job: MechanicJob) : Screen, CommonParcelable {
@@ -352,7 +352,7 @@ private fun ImportedRecordCard(record: ImportedRecord) {
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (record.mileage > 0) Text("${record.mileage} mi", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    record.cost?.let { Text("$${formatMoney(it)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    record.cost?.let { Text("${formatUsd(it)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
             }
             record.validationError?.let {

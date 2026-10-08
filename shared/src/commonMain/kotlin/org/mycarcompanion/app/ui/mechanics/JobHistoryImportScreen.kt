@@ -41,7 +41,7 @@ import org.mycarcompanion.app.data.repository.JobLineItemRepository
 import org.mycarcompanion.app.platform.rememberTextFilePickerLauncher
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 import org.mycarcompanion.app.platform.topBarWindowInsets
-import org.mycarcompanion.app.ui.formatMoney
+import org.mycarcompanion.app.ui.formatUsd
 
 /**
  * A new mechanic brings in their past jobs from a spreadsheet. They land as completed jobs with real
@@ -169,7 +169,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.previewItems(p: Histo
     }
     item {
         Text(
-            "${p.jobs.size} jobs · ${p.lineCount} lines · $${formatMoney(p.total)} before tax",
+            "${p.jobs.size} jobs · ${p.lineCount} lines · ${formatUsd(p.total)} before tax",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
         )
@@ -186,7 +186,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.previewItems(p: Histo
                 Text(listOfNotNull(job.clientName, job.description).joinToString(" · "), style = MaterialTheme.typography.bodySmall)
                 job.lines.forEach { l ->
                     Text(
-                        "${l.kind.replaceFirstChar { it.uppercase() }}: ${l.description} · ${formatQty(l.quantity)} × $${formatMoney(l.unitPrice)}",
+                        "${l.kind.replaceFirstChar { it.uppercase() }}: ${l.description} · ${formatQty(l.quantity)} × ${formatUsd(l.unitPrice)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

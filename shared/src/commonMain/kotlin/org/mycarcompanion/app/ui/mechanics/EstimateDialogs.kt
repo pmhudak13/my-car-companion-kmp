@@ -26,7 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.mycarcompanion.app.data.models.CannedJob
 import org.mycarcompanion.app.data.models.approvalMethodLabels
-import org.mycarcompanion.app.ui.formatMoney
+import org.mycarcompanion.app.ui.formatUsd
 
 /** Asks the mechanic how the customer gave their answer (the legal record of authorization). */
 @Composable
@@ -63,7 +63,7 @@ fun CannedJobPickerDialog(
                 jobs.forEach { job ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         TextButton(onClick = { onPick(job) }, modifier = Modifier.weight(1f)) {
-                            Text("${job.name} · $${formatMoney(job.lines.sumOf { it.quantity * it.unitPrice })}")
+                            Text("${job.name} · ${formatUsd(job.lines.sumOf { it.quantity * it.unitPrice })}")
                         }
                         IconButton(onClick = { onDelete(job.id) }) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete ${job.name}")
@@ -129,7 +129,7 @@ fun PastJobPickerDialog(jobs: List<PastJob>, onPick: (PastJob) -> Unit, onDismis
                             val j = past.job
                             TextButton(onClick = { onPick(past) }, modifier = Modifier.fillMaxWidth()) {
                                 Column(Modifier.fillMaxWidth()) {
-                                    Text("${j.vehicleYear} ${j.vehicleMake} ${j.vehicleModel} · $${formatMoney(past.total)}")
+                                    Text("${j.vehicleYear} ${j.vehicleMake} ${j.vehicleModel} · ${formatUsd(past.total)}")
                                     Text(
                                         listOfNotNull(past.date, j.description ?: past.lines.firstOrNull()?.description, "${past.lines.size} lines")
                                             .joinToString(" · "),

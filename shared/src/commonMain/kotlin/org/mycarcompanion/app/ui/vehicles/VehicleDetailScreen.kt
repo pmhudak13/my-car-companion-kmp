@@ -72,7 +72,7 @@ import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreen
 import org.mycarcompanion.app.ui.reminders.AddReminderScreen
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
-import org.mycarcompanion.app.ui.formatMoney
+import org.mycarcompanion.app.ui.formatUsd
 
 data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable {
 
@@ -445,7 +445,7 @@ fun MaintenanceLogCard(log: MaintenanceLog, onDelete: () -> Unit) {
                     log.cost?.let { cost ->
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
-                            "$${formatMoney(cost)}",
+                            "${formatUsd(cost)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -685,7 +685,7 @@ private fun PendingIssueRow(
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onTertiaryContainer)
             }
             issue.estimatedCost?.let {
-                Text("Estimated cost: $${formatMoney(it)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                Text("Estimated cost: ${formatUsd(it)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
             }
             Spacer(modifier = Modifier.height(8.dp))
             if (isResponding) {

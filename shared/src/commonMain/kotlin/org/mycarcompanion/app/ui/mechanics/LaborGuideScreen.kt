@@ -42,7 +42,7 @@ import org.mycarcompanion.app.data.repository.JobLineItemRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 import org.mycarcompanion.app.platform.topBarWindowInsets
-import org.mycarcompanion.app.ui.formatMoney
+import org.mycarcompanion.app.ui.formatUsd
 
 /** Labor time lookup without a job: quoting over the phone, checking a time before writing it up. */
 // ponytail: plain remember state, no ScreenModel; one call and no state worth surviving rotation
@@ -129,7 +129,7 @@ class LaborGuideScreen : Screen {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text("${formatQty(r.hours)} hrs", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                             rate?.takeIf { it > 0 }?.let {
-                                Text("About $${formatMoney(r.hours * it)} labor at your $${formatMoney(it)}/hr")
+                                Text("About ${formatUsd(r.hours * it)} labor at your ${formatUsd(it)}/hr")
                             }
                             r.note?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                             Text(r.sourceLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

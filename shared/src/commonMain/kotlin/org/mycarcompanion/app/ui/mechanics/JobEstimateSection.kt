@@ -41,7 +41,7 @@ import org.mycarcompanion.app.data.models.jobTotal
 import org.mycarcompanion.app.data.models.subtotal
 import org.mycarcompanion.app.data.models.taxAmount
 import org.mycarcompanion.app.data.models.stage
-import org.mycarcompanion.app.ui.formatMoney
+import org.mycarcompanion.app.ui.formatUsd
 
 private val lineKinds = listOf("labor" to "Labor", "part" to "Part", "fee" to "Fee")
 
@@ -127,7 +127,7 @@ fun EstimateCard(
                 lastCharged?.let { last ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            "Last charged: ${formatQty(last.quantity)} × $${formatMoney(last.unitPrice)} for \"${last.description}\" on ${last.createdAt.take(10)}",
+                            "Last charged: ${formatQty(last.quantity)} × ${formatUsd(last.unitPrice)} for \"${last.description}\" on ${last.createdAt.take(10)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.weight(1f),
@@ -175,7 +175,7 @@ fun EstimateCard(
                 Spacer(Modifier.height(8.dp))
                 if (isApproving) CircularProgressIndicator(Modifier.size(24.dp))
                 else Button(onClick = onApprove, modifier = Modifier.fillMaxWidth()) {
-                    Text("Customer approved $${formatMoney(job.totalCost)}")
+                    Text("Customer approved ${formatUsd(job.totalCost)}")
                 }
                 Text(
                     "Tap once the customer OKs this amount in person, by phone, or by text. Linked owners can approve in their app.",
@@ -205,7 +205,7 @@ fun OwnerEstimateSection(
             Spacer(Modifier.height(4.dp))
             if (isApproving) CircularProgressIndicator(Modifier.size(24.dp))
             else Button(onClick = onApprove, modifier = Modifier.fillMaxWidth()) {
-                Text("Approve $${formatMoney(job.totalCost)}")
+                Text("Approve ${formatUsd(job.totalCost)}")
             }
         }
     }
@@ -231,7 +231,7 @@ fun PreviouslyDeclinedCard(issues: List<MechanicJobIssue>, onReflag: (MechanicJo
                         Text(
                             listOfNotNull(
                                 issue.createdAt.take(10),
-                                issue.estimatedCost?.let { "$${formatMoney(it)}" },
+                                issue.estimatedCost?.let { "${formatUsd(it)}" },
                             ).joinToString(" · "),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -255,12 +255,12 @@ private fun LineItemList(items: List<JobLineItem>, taxRate: Double, onDelete: ((
             Column(Modifier.weight(1f)) {
                 Text(item.description, style = MaterialTheme.typography.bodyMedium)
                 Text(
-                    "${item.kind.replaceFirstChar { it.uppercase() }} · ${formatQty(item.quantity)} × $${formatMoney(item.unitPrice)}",
+                    "${item.kind.replaceFirstChar { it.uppercase() }} · ${formatQty(item.quantity)} × ${formatUsd(item.unitPrice)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Text("$${formatMoney(item.lineTotal)}", style = MaterialTheme.typography.bodyMedium)
+            Text("${formatUsd(item.lineTotal)}", style = MaterialTheme.typography.bodyMedium)
             if (onDelete != null) {
                 IconButton(onClick = { onDelete(item.id) }) { Icon(Icons.Default.Delete, contentDescription = "Remove line") }
             }
@@ -280,7 +280,7 @@ private fun TotalRow(label: String, amount: Double, bold: Boolean) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal, style = MaterialTheme.typography.bodyMedium)
         Text(
-            "$${formatMoney(amount)}",
+            "${formatUsd(amount)}",
             fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal,
             style = MaterialTheme.typography.bodyMedium,
         )
@@ -293,7 +293,7 @@ private fun ApprovalStatus(job: MechanicJob, issues: List<MechanicJobIssue>) {
     val authorized = job.authorizedTotal(issues)
     Spacer(Modifier.height(4.dp))
     Text(
-        "Approved $${formatMoney(authorized)} on ${approvedAt.take(10)}" +
+        "Approved ${formatUsd(authorized)} on ${approvedAt.take(10)}" +
             (job.estimateApprovalMethod?.let { " · ${approvalMethodLabels[it] ?: it}" } ?: ""),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,

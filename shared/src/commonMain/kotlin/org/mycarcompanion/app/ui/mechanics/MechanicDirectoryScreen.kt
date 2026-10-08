@@ -47,7 +47,7 @@ import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.ui.messaging.MessagingScreen
 import org.mycarcompanion.app.ui.reviews.MechanicReviewsScreen
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
-import org.mycarcompanion.app.ui.formatMoney
+import org.mycarcompanion.app.ui.formatUsd
 
 data class MechanicDirectoryScreen(val vehicleId: String? = null) : Screen, CommonParcelable {
 
@@ -241,7 +241,7 @@ fun MechanicCard(
             mechanic.hourlyRate?.let { rate ->
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "$${formatMoney(rate)}/hr",
+                    "${formatUsd(rate)}/hr",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

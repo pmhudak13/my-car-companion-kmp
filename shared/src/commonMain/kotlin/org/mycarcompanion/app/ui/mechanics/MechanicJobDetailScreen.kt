@@ -84,7 +84,7 @@ import org.mycarcompanion.app.data.models.MechanicJobMedia
 import org.mycarcompanion.app.data.models.maintenanceCategories
 import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
-import org.mycarcompanion.app.ui.formatMoney
+import org.mycarcompanion.app.ui.formatUsd
 import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.platform.rememberBinaryFilePickerLauncher
 import org.mycarcompanion.app.ui.components.DatePickerField
@@ -515,7 +515,7 @@ private fun PaymentCard(
             if (fromLineItems) {
                 // Line items own the total; editing here would be overwritten on the next line change.
                 Text(
-                    "$${formatMoney(job.totalCost ?: 0.0)}",
+                    "${formatUsd(job.totalCost ?: 0.0)}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
@@ -546,7 +546,7 @@ private fun PaymentCard(
             if (logsTotal > 0) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "Logged work totals $${formatMoney(logsTotal)}",
+                    "Logged work totals ${formatUsd(logsTotal)}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -729,7 +729,7 @@ private fun IssueCard(issue: MechanicJobIssue, onDelete: () -> Unit, onRespond: 
             }
             issue.estimatedCost?.let {
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Est. cost: $${formatMoney(it)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                Text("Est. cost: ${formatUsd(it)}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
             }
             issue.ownerResponse?.let {
                 Spacer(modifier = Modifier.height(4.dp))
@@ -952,7 +952,7 @@ private fun JobLogCard(log: MechanicJobLog, editable: Boolean, onEdit: () -> Uni
                     if (log.mileage > 0) Text("${log.mileage} mi", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     log.cost?.let { cost ->
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("$${formatMoney(cost)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("${formatUsd(cost)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 if (editable) {
