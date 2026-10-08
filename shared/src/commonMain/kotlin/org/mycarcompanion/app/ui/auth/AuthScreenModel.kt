@@ -68,6 +68,14 @@ class AuthScreenModel(private val authRepository: AuthRepository) : ScreenModel 
             _uiState.value = state.copy(errorMessage = "Passwords do not match")
             return
         }
+        // Mirrors the Supabase password policy so the rule shows before a round trip
+        val p = state.password
+        if (!(p.any(Char::isLowerCase) && p.any(Char::isUpperCase) && p.any(Char::isDigit) && p.any { !it.isLetterOrDigit() })) {
+            _uiState.value = state.copy(
+                errorMessage = "Password needs at least one lowercase letter, one uppercase letter, one number, and one symbol.",
+            )
+            return
+        }
         screenModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             val result = authRepository.signUp(state.email, state.password, state.selectedRole)

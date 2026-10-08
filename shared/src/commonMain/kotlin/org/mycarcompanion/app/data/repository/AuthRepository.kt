@@ -24,6 +24,7 @@ import org.mycarcompanion.app.data.models.AppUser
 import org.mycarcompanion.app.data.models.AuthResult
 import org.mycarcompanion.app.data.models.AuthState
 import org.mycarcompanion.app.platform.googleAuthRedirectUrl
+import org.mycarcompanion.app.platform.signUpRedirectUrl
 
 class AuthRepository(
     private val client: SupabaseClient,
@@ -106,16 +107,28 @@ class AuthRepository(
     }
 
     suspend fun signUp(email: String, password: String, role: String = "individual"): AuthResult = try {
-        client.auth.signUpWith(Email) {
+        val credentials: Email.Config.() -> Unit = {
             this.email = email
             this.password = password
             this.data = buildJsonObject { put("role", role) }
         }
+        // Only override where set (web); elsewhere keep the SDK's default redirect
+        val redirect = signUpRedirectUrl
+        if (redirect != null) client.auth.signUpWith(Email, redirectUrl = redirect, config = credentials)
+        else client.auth.signUpWith(Email, config = credentials)
         AuthResult.Success
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
-        AuthResult.Error(e.message ?: "Sign up failed")
+        AuthResult.Error(friendlySignUpError(e.message))
+    }
+
+    /** Supabase lists every allowed character on a weak password; say it the way the form does. */
+    private fun friendlySignUpError(message: String?): String = when {
+        message == null -> "Sign up failed"
+        message.contains("Password should contain", ignoreCase = true) ->
+            "Password needs at least one lowercase letter, one uppercase letter, one number, and one symbol."
+        else -> message
     }
 
     suspend fun signInWithGoogle(): AuthResult = try {

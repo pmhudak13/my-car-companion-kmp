@@ -125,6 +125,7 @@ class SignUpScreen : Screen {
                 value = uiState.password,
                 onValueChange = model::onPasswordChange,
                 label = { Text("Password") },
+                supportingText = { Text("Use upper and lowercase letters, a number, and a symbol") },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
