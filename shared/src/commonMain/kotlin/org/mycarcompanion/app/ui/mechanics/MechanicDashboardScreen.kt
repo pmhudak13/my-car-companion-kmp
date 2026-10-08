@@ -110,6 +110,13 @@ class MechanicDashboardScreen : Screen {
                                     navigator.push(LaborGuideScreen())
                                 },
                             )
+                            DropdownMenuItem(
+                                text = { Text("Import past jobs") },
+                                onClick = {
+                                    menuExpanded = false
+                                    navigator.push(JobHistoryImportScreen())
+                                },
+                            )
                             if (currentUser?.isAdmin == true) {
                                 DropdownMenuItem(
                                     text = { Text("Individual View") },
@@ -194,6 +201,7 @@ class MechanicDashboardScreen : Screen {
                                 jobs = state.myJobs,
                                 onJobClick = { job -> navigator.push(MechanicJobDetailScreen(job.id)) },
                                 onCreateJob = { navigator.push(CreateMechanicJobScreen()) },
+                                onImportHistory = { navigator.push(JobHistoryImportScreen()) },
                             )
                         }
                     }
@@ -245,6 +253,7 @@ private fun MyJobsTab(
     jobs: List<MechanicJob>,
     onJobClick: (MechanicJob) -> Unit,
     onCreateJob: () -> Unit,
+    onImportHistory: () -> Unit,
 ) {
     if (jobs.isEmpty()) {
         Box(
@@ -266,6 +275,9 @@ private fun MyJobsTab(
                 Spacer(modifier = Modifier.height(16.dp))
                 FilledTonalButton(onClick = onCreateJob) {
                     Text("Create a Job")
+                }
+                TextButton(onClick = onImportHistory) {
+                    Text("Import your past jobs")
                 }
             }
         }
@@ -300,7 +312,11 @@ private fun MyJobCard(job: MechanicJob, onClick: () -> Unit) {
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = if (job.status == "open") "Open" else "Completed",
+                    text = when {
+                        job.status == "open" -> "Open"
+                        job.imported -> "Imported"
+                        else -> "Completed"
+                    },
                     style = MaterialTheme.typography.labelSmall,
                     color = if (job.status == "open") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                 )

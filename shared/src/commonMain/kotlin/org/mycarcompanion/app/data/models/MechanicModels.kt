@@ -81,6 +81,8 @@ data class MechanicJob(
     @SerialName("estimate_approved_total") val estimateApprovedTotal: Double? = null,
     @SerialName("estimate_approval_method") val estimateApprovalMethod: String? = null,
     @SerialName("tax_rate") val taxRate: Double = 0.0,
+    /** Brought in from the mechanic's old records via job history import, not worked in the app. */
+    val imported: Boolean = false,
 )
 
 /** Mitchell-style document stage, derived from existing fields rather than stored. */
@@ -152,6 +154,18 @@ data class CannedJob(
 data class CannedJobInsert(
     @SerialName("mechanic_user_id") val mechanicUserId: String,
     val name: String,
+    val lines: List<CannedLine>,
+)
+
+/** One past job for import_mechanic_job_history(): rows of a history CSV grouped into a job. */
+@Serializable
+data class HistoryJob(
+    val date: String,
+    @SerialName("client_name") val clientName: String,
+    val year: Int,
+    val make: String,
+    val model: String,
+    val description: String? = null,
     val lines: List<CannedLine>,
 )
 

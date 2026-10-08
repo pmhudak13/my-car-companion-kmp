@@ -214,6 +214,9 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                 laborGuide = state.laborGuide,
                                 isLookingUpLabor = state.isLookingUpLabor,
                                 onSuggestLabor = model::suggestLaborTime,
+                                lastCharged = state.lastCharged,
+                                onUseLastCharged = model::useLastCharged,
+                                onCopyPastJob = { model.showPastJobPicker(true) },
                             )
                         }
 
@@ -382,6 +385,13 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                     onPick = model::applyCannedJob,
                     onDelete = model::deleteCannedJob,
                     onDismiss = { model.showCannedPicker(false) },
+                )
+            }
+            if (state.showPastJobPicker) {
+                PastJobPickerDialog(
+                    jobs = state.pastJobs,
+                    onPick = model::copyPastJob,
+                    onDismiss = { model.showPastJobPicker(false) },
                 )
             }
             if (state.showSaveCanned) {

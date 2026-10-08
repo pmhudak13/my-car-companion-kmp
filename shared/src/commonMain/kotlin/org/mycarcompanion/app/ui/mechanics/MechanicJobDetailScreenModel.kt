@@ -101,7 +101,12 @@ data class MechanicJobDetailState(
     val mechanicHourlyRate: Double? = null,
     val laborGuide: LaborGuideResult? = null,
     val isLookingUpLabor: Boolean = false,
+    // past work: the mechanic's own lines (newest first) and jobs they can copy from
+    val lineHistory: List<JobLineItem> = emptyList(),
+    val pastJobs: List<PastJob> = emptyList(),
+    val showPastJobPicker: Boolean = false,
 ) {
+    val lastCharged: JobLineItem? get() = lineHistory.lastCharged(lineItemForm.kind, lineItemForm.description)
     val pendingIssueCount: Int get() = issues.count { it.status == "pending" }
     val canComplete: Boolean get() = pendingIssueCount == 0 && job?.status == "open"
 }
@@ -127,6 +132,8 @@ class MechanicJobDetailScreenModel(
             val mediaDeferred = async { mediaRepository.getMediaForJob(jobId) }
             val lineItemsDeferred = async { lineItemRepository.getForJobs(listOf(jobId)) }
             val cannedDeferred = async { lineItemRepository.getCannedJobs() }
+            val historyDeferred = async { lineItemRepository.getMyLineHistory() }
+            val myJobsDeferred = async { jobRepository.getMyJobs() }
 
             val job = jobDeferred.await().getOrNull()
             val profile = profileDeferred.await().getOrNull()
@@ -134,6 +141,8 @@ class MechanicJobDetailScreenModel(
             val media = mediaDeferred.await().getOrNull() ?: emptyList()
             val lineItems = lineItemsDeferred.await().getOrNull() ?: emptyList()
             val cannedJobs = cannedDeferred.await().getOrNull() ?: emptyList()
+            val history = historyDeferred.await().getOrNull() ?: emptyList()
+            val myJobs = myJobsDeferred.await().getOrNull() ?: emptyList()
 
             if (job == null) {
                 _state.value = _state.value.copy(isLoading = false, error = "Job not found")
@@ -154,6 +163,8 @@ class MechanicJobDetailScreenModel(
                 mechanicHourlyRate = profile?.hourlyRate,
                 lineItems = lineItems,
                 cannedJobs = cannedJobs,
+                lineHistory = history,
+                pastJobs = pastJobs(myJobs, history, jobId),
                 previouslyDeclined = loadPreviouslyDeclined(job, issues),
             )
         }
@@ -216,7 +227,12 @@ class MechanicJobDetailScreenModel(
             lineItemRepository.add(JobLineItemInsert(job.id, "", form.kind, form.description.trim(), qty, price))
                 .onSuccess { item ->
                     setLineItems(_state.value.lineItems + item)
-                    _state.value = _state.value.copy(isSavingLineItem = false, lineItemForm = LineItemForm(kind = form.kind), laborGuide = null)
+                    _state.value = _state.value.copy(
+                        isSavingLineItem = false,
+                        lineItemForm = LineItemForm(kind = form.kind),
+                        laborGuide = null,
+                        lineHistory = listOf(item) + _state.value.lineHistory,
+                    )
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(isSavingLineItem = false, lineItemError = e.message ?: "Failed to add line")
@@ -303,6 +319,37 @@ class MechanicJobDetailScreenModel(
                 .onFailure { e ->
                     _state.value = _state.value.copy(isApproving = false, error = e.message ?: "Failed to record approval")
                 }
+        }
+    }
+
+    /** Fills the price (and hours, for labor) from what the mechanic charged last time. */
+    fun useLastCharged() {
+        val last = _state.value.lastCharged ?: return
+        val form = _state.value.lineItemForm
+        _state.value = _state.value.copy(
+            lineItemForm = form.copy(
+                description = form.description.ifBlank { last.description },
+                quantity = if (last.kind == "labor") formatQty(last.quantity) else form.quantity,
+                unitPrice = formatQty(last.unitPrice),
+            ),
+        )
+    }
+
+    // ── Copy from a past job ─────────────────────────────────────────────────────
+
+    fun showPastJobPicker(show: Boolean) {
+        _state.value = _state.value.copy(showPastJobPicker = show)
+    }
+
+    fun copyPastJob(past: PastJob) {
+        val job = _state.value.job ?: return
+        _state.value = _state.value.copy(showPastJobPicker = false)
+        screenModelScope.launch {
+            lineItemRepository.addAll(
+                past.lines.map { JobLineItemInsert(job.id, "", it.kind, it.description, it.quantity, it.unitPrice) },
+            )
+                .onSuccess { added -> setLineItems(_state.value.lineItems + added) }
+                .onFailure { e -> _state.value = _state.value.copy(error = e.message ?: "Failed to copy past job") }
         }
     }
 

@@ -68,6 +68,9 @@ fun EstimateCard(
     laborGuide: LaborGuideResult?,
     isLookingUpLabor: Boolean,
     onSuggestLabor: () -> Unit,
+    lastCharged: JobLineItem?,
+    onUseLastCharged: () -> Unit,
+    onCopyPastJob: () -> Unit,
 ) {
     val editable = job.status == "open"
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -99,6 +102,7 @@ fun EstimateCard(
                 )
                 Row {
                     TextButton(onClick = onUseSavedJob) { Text("Use saved job") }
+                    TextButton(onClick = onCopyPastJob) { Text("Copy past job") }
                     if (lineItems.isNotEmpty()) TextButton(onClick = onSaveAsJob) { Text("Save as job") }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -120,6 +124,17 @@ fun EstimateCard(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                lastCharged?.let { last ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Last charged: ${formatQty(last.quantity)} × $${formatMoney(last.unitPrice)} for \"${last.description}\" on ${last.createdAt.take(10)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = onUseLastCharged) { Text("Use") }
+                    }
+                }
                 if (form.kind == "labor") {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (isLookingUpLabor) CircularProgressIndicator(Modifier.size(20.dp))

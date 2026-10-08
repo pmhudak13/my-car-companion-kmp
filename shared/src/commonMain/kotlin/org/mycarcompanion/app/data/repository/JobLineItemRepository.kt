@@ -9,11 +9,13 @@ import io.ktor.client.statement.bodyAsText
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.models.CannedJob
 import org.mycarcompanion.app.data.models.CannedJobInsert
 import org.mycarcompanion.app.data.models.CannedLine
+import org.mycarcompanion.app.data.models.HistoryJob
 import org.mycarcompanion.app.data.models.JobLineItem
 import org.mycarcompanion.app.data.models.JobLineItemInsert
 import org.mycarcompanion.app.data.models.LaborGuideResult
@@ -60,6 +62,28 @@ class JobLineItemRepository(private val client: SupabaseClient) {
 
     suspend fun deleteCannedJob(id: String): Result<Unit> = runCatching {
         cannedTable.delete { filter { eq("id", id) } }
+    }
+
+    // ── Past work: price memory, copy from a past job, history import ──
+
+    /** The mechanic's own lines, newest first; what they charged before for the same item. */
+    suspend fun getMyLineHistory(): Result<List<JobLineItem>> = runCatching {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
+        table.select {
+            filter { eq("mechanic_user_id", userId) }
+            order("created_at", Order.DESCENDING)
+            // ponytail: newest 2000 lines covers years of a small shop; page it if anyone outgrows that
+            limit(2000)
+        }.decodeList<JobLineItem>()
+    }
+
+    /** All-or-nothing: the DB function runs the whole file in one transaction. */
+    suspend fun importJobHistory(jobs: List<HistoryJob>): Result<Int> = runCatching {
+        client.postgrest.rpc(
+            function = "import_mechanic_job_history",
+            parameters = buildJsonObject { put("p_jobs", Json.encodeToJsonElement(jobs)) },
+        )
+        jobs.size
     }
 
     // ── Labor guide (edge function: mechanics' billed hours first, AI estimate as fallback) ──
