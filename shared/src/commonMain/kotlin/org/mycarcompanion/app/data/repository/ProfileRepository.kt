@@ -121,6 +121,12 @@ class ProfileRepository(private val client: SupabaseClient) {
 
     suspend fun convertToMechanic(userId: String): Result<Unit> = runCatching {
         val now = Clock.System.now().toString()
+        // Existing profile (e.g. a revoked mechanic): just re-approve. RLS blocks an admin insert for
+        // another user with a 403, not a duplicate-key error, so the insert below would abort the restore.
+        val hasProfile = client.postgrest["mechanic_profiles"].select {
+            filter { eq("user_id", userId) }
+        }.decodeList<MechanicProfile>().isNotEmpty()
+        if (hasProfile) return@runCatching approveMechanic(userId).getOrThrow()
         // Insert a minimal profile if one doesn't exist yet (idempotent — ignore duplicate-key conflicts)
         val insertResult = runCatching {
             client.postgrest["mechanic_profiles"].insert(
