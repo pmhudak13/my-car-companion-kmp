@@ -38,8 +38,37 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Use service-role client to delete the user (cascades to all user data via FK)
   const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+
+  // Files first: once the user row is gone nothing points at them. Any failure stops here so the
+  // user can retry, rather than ending up with no account and their photos still stored.
+  const { data: files, error: filesError } = await adminClient.rpc("storage_files_for_user", { p_user_id: user.id });
+  if (filesError) {
+    console.error("delete-account storage listing error:", filesError);
+    return new Response(JSON.stringify({ error: "Failed to delete account" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+  }
+  const pathsByBucket = new Map<string, string[]>();
+  for (const f of (files ?? []) as { bucket_id: string; name: string }[]) {
+    pathsByBucket.set(f.bucket_id, [...(pathsByBucket.get(f.bucket_id) ?? []), f.name]);
+  }
+  for (const [bucket, paths] of pathsByBucket) {
+    // Storage removes at most 1000 paths per call; 100 keeps each request small
+    for (let i = 0; i < paths.length; i += 100) {
+      const { error: removeError } = await adminClient.storage.from(bucket).remove(paths.slice(i, i + 100));
+      if (removeError) {
+        console.error(`delete-account storage remove error (${bucket}):`, removeError);
+        return new Response(JSON.stringify({ error: "Failed to delete account" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+    }
+  }
+
+  // Service-role delete of the user cascades to all user data via FK
   const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id);
   if (deleteError) {
     console.error("delete-account error:", deleteError);
