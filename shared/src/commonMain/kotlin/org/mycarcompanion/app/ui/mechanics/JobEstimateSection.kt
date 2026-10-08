@@ -113,7 +113,10 @@ fun EstimateCard(
                 OutlinedTextField(
                     value = form.description,
                     onValueChange = { onFormChange(form.copy(description = it)) },
-                    label = { Text("Description") },
+                    label = { Text(if (form.kind == "part") "Part needed" else "Description") },
+                    supportingText = if (form.kind == "part") {
+                        { Text("Add each part as its own line") }
+                    } else null,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -139,7 +142,7 @@ fun EstimateCard(
                     OutlinedTextField(
                         value = form.unitPrice,
                         onValueChange = { onFormChange(form.copy(unitPrice = it)) },
-                        label = { Text(if (form.kind == "labor") "Rate" else "Price") },
+                        label = { Text(when (form.kind) { "labor" -> "Rate"; "part" -> "Price per part"; else -> "Price" }) },
                         leadingIcon = { Text("$") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
