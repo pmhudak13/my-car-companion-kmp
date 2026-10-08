@@ -92,10 +92,10 @@ Deno.serve(async (req) => {
             and communicate with your mechanic directly through the app.
           </p>
           <div style="text-align: center; margin: 32px 0;">
-            <a href="https://mycarcompanion.app"
+            <a href="https://www.mycarcompanion.org/app/"
                style="background-color: #4F46E5; color: white; padding: 14px 28px;
                       text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">
-              Download My Car Companion
+              Get Started with My Car Companion
             </a>
           </div>
           <p style="color: #888; font-size: 13px; margin-top: 32px;">
