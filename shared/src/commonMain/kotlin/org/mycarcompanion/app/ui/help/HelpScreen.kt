@@ -20,9 +20,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
@@ -31,7 +33,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
-private data class FaqItem(val question: String, val answer: String)
+private data class FaqItem(val question: String, val answer: String, val link: String? = null)
 
 private val faqs = listOf(
     FaqItem(
@@ -73,6 +75,11 @@ private val faqs = listOf(
     FaqItem(
         "How does mechanic verification work?",
         "After completing your mechanic profile, an admin will review and approve your account. Once verified, you'll appear in the mechanic directory for customers to find.",
+    ),
+    FaqItem(
+        "I'm a mechanic — how do I bring in my past customers?",
+        "Tap 'Import past jobs' in your dashboard's ⋮ menu, or in Settings. Upload a spreadsheet of your old service records, then tap 'Email Invites to Customers' to invite everyone at once. Include each customer's email so their history shows up when they sign up.",
+        link = "https://www.mycarcompanion.org/import-records",
     ),
 )
 
@@ -120,6 +127,12 @@ private fun FaqCard(faq: FaqItem) {
             Text(faq.question, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(6.dp))
             Text(faq.answer, style = MaterialTheme.typography.bodyMedium)
+            faq.link?.let { link ->
+                val uriHandler = LocalUriHandler.current
+                TextButton(onClick = { uriHandler.openUri(link) }) {
+                    Text("Read the full import guide")
+                }
+            }
         }
     }
 }
