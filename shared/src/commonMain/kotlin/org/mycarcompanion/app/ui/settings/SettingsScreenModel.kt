@@ -16,6 +16,7 @@ data class SettingsUiState(
     val signingOut: Boolean = false,
     val signedOut: Boolean = false,
     val isPremium: Boolean = false,
+    val isMechanic: Boolean = false,
     val deletingAccount: Boolean = false,
     val deleteError: String? = null,
 )
@@ -33,6 +34,11 @@ class SettingsScreenModel(
         screenModelScope.launch {
             profileRepository.getMyProfile().onSuccess { profile ->
                 _state.update { it.copy(isPremium = profile?.isPremium == true) }
+            }
+        }
+        screenModelScope.launch {
+            profileRepository.hasRole("mechanic").onSuccess { isMechanic ->
+                _state.update { it.copy(isMechanic = isMechanic) }
             }
         }
     }

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
@@ -56,6 +57,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.help.HelpScreen
+import org.mycarcompanion.app.ui.mechanics.JobHistoryImportScreen
 import org.mycarcompanion.app.ui.subscription.SubscribeScreen
 import org.mycarcompanion.app.ui.notifications.NotificationsScreen
 import org.mycarcompanion.app.ui.profile.ProfileScreen
@@ -186,6 +188,13 @@ class SettingsScreen : Screen {
                         label = "Receive Vehicle Transfer",
                         onClick = { navigator.push(ReceiveTransferScreen()) },
                     )
+                    if (state.isMechanic) {
+                        SettingsRow(
+                            icon = Icons.Default.Upload,
+                            label = "Import Past Jobs",
+                            onClick = { navigator.push(JobHistoryImportScreen()) },
+                        )
+                    }
                     Divider(modifier = Modifier.padding(horizontal = 16.dp))
 
                     Spacer(modifier = Modifier.height(8.dp))
