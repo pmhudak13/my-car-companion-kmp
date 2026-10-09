@@ -128,6 +128,29 @@ class MechanicJobRepository(private val client: SupabaseClient) {
     suspend fun triggerJobUpdatePushPublic(clientEmail: String, title: String, body: String) =
         triggerJobUpdatePush(clientEmail, title, body)
 
+    /** Tells the customer an estimate is waiting for their approval (push + email, best-effort). */
+    suspend fun sendEstimateToClient(clientEmail: String, body: String) {
+        triggerJobUpdatePush(clientEmail, "Estimate Ready", body)
+        triggerJobUpdateEmail(clientEmail, "Estimate Ready", body)
+    }
+
+    /** Best-effort push to a known user, e.g. the job's mechanic when the owner approves. */
+    suspend fun notifyUser(recipientId: String, title: String, body: String) {
+        try {
+            client.functions.invoke(
+                "send-push-notification",
+                body = buildJsonObject {
+                    put("recipient_id", recipientId)
+                    put("title", title)
+                    put("body", body)
+                    put("type", "mechanic_update")
+                },
+            )
+        } catch (_: Exception) {
+            // Best-effort
+        }
+    }
+
     private suspend fun triggerJobUpdatePush(clientEmail: String?, title: String, body: String) {
         if (clientEmail == null) return
         try {

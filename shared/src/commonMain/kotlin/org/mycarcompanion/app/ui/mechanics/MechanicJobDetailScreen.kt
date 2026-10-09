@@ -208,6 +208,7 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                 lastCharged = state.lastCharged,
                                 onUseLastCharged = model::useLastCharged,
                                 onCopyPastJob = { model.showPastJobPicker(true) },
+                                onSendEstimate = if (job.clientEmail.isNullOrBlank()) null else model::sendEstimate,
                             )
                         }
 

@@ -22,6 +22,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -71,6 +72,7 @@ fun EstimateCard(
     lastCharged: JobLineItem?,
     onUseLastCharged: () -> Unit,
     onCopyPastJob: () -> Unit,
+    onSendEstimate: (() -> Unit)?,
 ) {
     val editable = job.status == "open"
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -173,6 +175,11 @@ fun EstimateCard(
             ApprovalStatus(job, issues)
             if (editable && job.totalCost != null && needsApproval(job, issues)) {
                 Spacer(Modifier.height(8.dp))
+                if (onSendEstimate != null) {
+                    OutlinedButton(onClick = onSendEstimate, modifier = Modifier.fillMaxWidth()) {
+                        Text("Send estimate to customer")
+                    }
+                }
                 if (isApproving) CircularProgressIndicator(Modifier.size(24.dp))
                 else Button(onClick = onApprove, modifier = Modifier.fillMaxWidth()) {
                     Text("Customer approved ${formatUsd(job.totalCost)}")

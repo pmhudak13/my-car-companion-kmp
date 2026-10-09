@@ -23,6 +23,7 @@ import org.mycarcompanion.app.data.repository.MechanicJobMediaRepository
 import org.mycarcompanion.app.data.repository.MechanicJobRepository
 import org.mycarcompanion.app.data.repository.ReminderRepository
 import org.mycarcompanion.app.data.repository.VehicleRepository
+import org.mycarcompanion.app.ui.formatUsd
 
 data class VehicleDetailState(
     val vehicle: Vehicle? = null,
@@ -132,7 +133,16 @@ class VehicleDetailScreenModel(
         screenModelScope.launch {
             _state.value = _state.value.copy(approvingJobId = jobId)
             mechanicJobRepository.approveEstimate(jobId)
-                .onSuccess { loadMechanicJobs(vehicleId) }
+                .onSuccess {
+                    _state.value.mechanicJobs.find { it.id == jobId }?.let { job ->
+                        mechanicJobRepository.notifyUser(
+                            job.mechanicUserId,
+                            "Estimate Approved",
+                            "${job.clientName.ifBlank { "Your customer" }} approved ${formatUsd(job.totalCost ?: 0.0)} for the ${job.vehicleYear} ${job.vehicleMake} ${job.vehicleModel}.",
+                        )
+                    }
+                    loadMechanicJobs(vehicleId)
+                }
                 .onFailure { e -> _state.value = _state.value.copy(error = e.message ?: "Failed to approve estimate") }
             _state.value = _state.value.copy(approvingJobId = null)
         }

@@ -25,6 +25,7 @@ import org.mycarcompanion.app.data.repository.MechanicJobIssueRepository
 import org.mycarcompanion.app.data.repository.MechanicJobMediaRepository
 import org.mycarcompanion.app.data.repository.MechanicJobRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
+import org.mycarcompanion.app.ui.formatUsd
 
 data class IssueForm(
     val title: String = "",
@@ -319,6 +320,19 @@ class MechanicJobDetailScreenModel(
                 .onFailure { e ->
                     _state.value = _state.value.copy(isApproving = false, error = e.message ?: "Failed to record approval")
                 }
+        }
+    }
+
+    fun sendEstimate() {
+        val job = _state.value.job ?: return
+        val email = job.clientEmail?.takeIf { it.isNotBlank() } ?: return
+        val total = job.totalCost ?: return
+        screenModelScope.launch {
+            jobRepository.sendEstimateToClient(
+                email,
+                "Your mechanic sent an estimate of ${formatUsd(total)} for your ${job.vehicleYear} ${job.vehicleMake} ${job.vehicleModel}. Open My Car Companion to review and approve it.",
+            )
+            _state.value = _state.value.copy(inviteMessage = "Estimate sent to $email")
         }
     }
 
