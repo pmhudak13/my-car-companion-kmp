@@ -803,6 +803,19 @@ class MechanicJobDetailScreenModel(
         }
     }
 
+    fun updateClientEmail(email: String) {
+        val job = _state.value.job ?: return
+        screenModelScope.launch {
+            jobRepository.updateClientEmail(job.id, email)
+                .onSuccess {
+                    // re-read: the DB may have just linked the job to the customer's car
+                    val refreshed = jobRepository.getJobById(job.id).getOrNull() ?: job.copy(clientEmail = email)
+                    _state.value = _state.value.copy(job = refreshed, inviteMessage = "Client email saved")
+                }
+                .onFailure { e -> _state.value = _state.value.copy(inviteMessage = "Couldn't save email: ${e.message}") }
+        }
+    }
+
     fun clearInviteMessage() {
         _state.value = _state.value.copy(inviteMessage = null)
     }

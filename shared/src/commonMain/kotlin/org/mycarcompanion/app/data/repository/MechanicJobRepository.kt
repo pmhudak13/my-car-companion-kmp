@@ -6,6 +6,7 @@ import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.ktor.client.statement.bodyAsText
+import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -304,6 +305,33 @@ class MechanicJobRepository(private val client: SupabaseClient) {
                 put("p_method", method)
             },
         )
+    }
+
+    /** A DB trigger links the job to the customer's car (and copies its history over) once the email matches. */
+    suspend fun updateClientEmail(jobId: String, email: String?): Result<Unit> = runCatching {
+        jobsTable.update({ set("client_email", email) }) {
+            filter { eq("id", jobId) }
+        }
+    }
+
+    /**
+     * Emails one invite per customer that has an email on any of this mechanic's jobs and was never
+     * invited, using their latest job. Returns how many were sent.
+     */
+    suspend fun inviteUninvitedCustomers(mechanicName: String): Result<Int> = runCatching {
+        val byCustomer = getMyJobs().getOrThrow()
+            .filter { !it.clientEmail.isNullOrBlank() }
+            .groupBy { it.clientEmail!!.trim().lowercase() }
+            .filterValues { jobs -> jobs.none { it.inviteSent } }
+        var sent = 0
+        for (jobs in byCustomer.values) {
+            val job = jobs.maxBy { it.createdAt }
+            sendInvite(job.id, job.clientEmail!!.trim(), job.clientName, mechanicName, "${job.vehicleYear} ${job.vehicleMake} ${job.vehicleModel}")
+                .onSuccess { sent++ }
+            // ponytail: stays under Resend's 2 emails/sec; a server-side batch send if shops invite thousands
+            delay(600)
+        }
+        sent
     }
 
     suspend fun sendInvite(

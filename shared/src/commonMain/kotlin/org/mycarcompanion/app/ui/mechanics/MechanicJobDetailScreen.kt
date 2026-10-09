@@ -172,15 +172,14 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                             )
                         }
 
-                        // Invite card
-                        if (!job.clientEmail.isNullOrBlank()) {
-                            item {
-                                InviteCard(
-                                    job = job,
-                                    isSending = state.isSendingInvite,
-                                    onSend = model::sendInvite,
-                                )
-                            }
+                        // Invite card (shown without an email too, so one can be added later)
+                        item {
+                            InviteCard(
+                                job = job,
+                                isSending = state.isSendingInvite,
+                                onSend = model::sendInvite,
+                                onSaveEmail = model::updateClientEmail,
+                            )
                         }
 
                         item {
@@ -896,7 +895,9 @@ private fun MediaFileRow(media: MechanicJobMedia, onDelete: () -> Unit) {
 // ── Invite Card ───────────────────────────────────────────────────────────────
 
 @Composable
-private fun InviteCard(job: MechanicJob, isSending: Boolean, onSend: () -> Unit) {
+private fun InviteCard(job: MechanicJob, isSending: Boolean, onSend: () -> Unit, onSaveEmail: (String) -> Unit) {
+    var editing by remember { mutableStateOf(false) }
+    val hasEmail = !job.clientEmail.isNullOrBlank()
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
@@ -908,15 +909,56 @@ private fun InviteCard(job: MechanicJob, isSending: Boolean, onSend: () -> Unit)
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("Invite to App", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Text(job.clientEmail ?: "", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        if (hasEmail) job.clientEmail!! else "No email yet",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                    if (hasEmail) {
+                        IconButton(onClick = { editing = true }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit client email", modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
                 if (job.inviteSent) {
                     Text("Invite sent", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                 }
             }
             Spacer(modifier = Modifier.width(8.dp))
-            if (isSending) CircularProgressIndicator()
-            else OutlinedButton(onClick = onSend) { Text(if (job.inviteSent) "Resend" else "Send Invite") }
+            when {
+                isSending -> CircularProgressIndicator()
+                !hasEmail -> OutlinedButton(onClick = { editing = true }) { Text("Add Email") }
+                else -> OutlinedButton(onClick = onSend) { Text(if (job.inviteSent) "Resend" else "Send Invite") }
+            }
         }
+    }
+
+    if (editing) {
+        var email by remember { mutableStateOf(job.clientEmail.orEmpty()) }
+        val valid = email.trim().matches(Regex("""[^@\s]+@[^@\s]+\.[^@\s]+"""))
+        AlertDialog(
+            onDismissRequest = { editing = false },
+            title = { Text(if (hasEmail) "Edit client email" else "Add client email") },
+            text = {
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Client email") },
+                    singleLine = true,
+                    isError = email.isNotBlank() && !valid,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    supportingText = { Text("When they join with this email, this job's history shows on their car.") },
+                )
+            },
+            confirmButton = {
+                Button(enabled = valid, onClick = {
+                    editing = false
+                    onSaveEmail(email.trim())
+                }) { Text("Save") }
+            },
+            dismissButton = { TextButton(onClick = { editing = false }) { Text("Cancel") } },
+        )
     }
 }
 

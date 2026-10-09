@@ -167,6 +167,11 @@ data class HistoryJob(
     val model: String,
     val description: String? = null,
     val lines: List<CannedLine>,
+    @SerialName("client_email") val clientEmail: String? = null,
+    val vin: String? = null,
+    val mileage: Int? = null,
+    /** Service-record category for the customer's car history, guessed from the job and items. */
+    val category: String = "Other",
 )
 
 /** Labor guide answer: "mechanics" = median of real billed hours on similar cars, "ai" = Claude estimate. */

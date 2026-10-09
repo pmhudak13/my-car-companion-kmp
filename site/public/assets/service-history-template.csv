@@ -1,0 +1,5 @@
+Date,Customer,Year,Make,Model,Job,Type,Item,Qty,Price,Email,VIN,Mileage
+3/4/2025,Maria Lopez,2018,Honda,Civic,Front brakes,Labor,Replace front pads and rotors,1.5,120,maria@example.com,,48200
+3/4/2025,Maria Lopez,2018,Honda,Civic,Front brakes,Part,Brake pads,1,89.99,,,
+3/4/2025,Maria Lopez,2018,Honda,Civic,Front brakes,Part,Rotor,2,64.50,,,
+6/12/2025,James Carter,2015,Ford,F-150,Oil change,Fee,Oil change (total),1,79.99,james@example.com,1FTEW1EF5FKD12345,96500

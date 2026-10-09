@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GF4JRQKMSQ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-GF4JRQKMSQ');
+  </script>
+  <title>Import Your Old Service Records — My Car Companion</title>
+  <meta name="description" content="Mechanics: bring all your past jobs and customers into My Car Companion with one spreadsheet, then invite customers in one tap.">
+  <link rel="canonical" href="https://www.mycarcompanion.org/import-records">
+  <link rel="icon" href="/assets/logo.png" type="image/png">
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    .legal-hero { padding: 64px 0 40px; }
+    .legal-hero h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 12px; }
+    .legal-hero p { color: var(--text-muted); font-size: 0.9rem; }
+    .legal-body { padding: 0 0 80px; }
+    .legal-content { max-width: 720px; }
+    .legal-content h2 {
+      font-size: 1.2rem; font-weight: 600; margin: 40px 0 12px;
+      padding-bottom: 10px; border-bottom: 1px solid var(--border);
+      scroll-margin-top: 88px;
+    }
+    .legal-content h2:first-child { margin-top: 0; }
+    .legal-content p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.75; margin-bottom: 14px; }
+    .legal-content ul, .legal-content ol { padding-left: 20px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
+    .legal-content li { font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
+    .legal-content strong { color: var(--text); font-weight: 600; }
+    .legal-content a { color: var(--accent); }
+    .info-box {
+      background: rgba(107,188,222,0.06);
+      border: 1px solid rgba(107,188,222,0.15);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 20px 0;
+    }
+    .legal-content table { width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 0.85rem; }
+    .legal-content th, .legal-content td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text-muted); vertical-align: top; }
+    .legal-content th { color: var(--text); font-weight: 600; }
+    .legal-content code { font-size: 0.85em; background: rgba(107,188,222,0.08); padding: 1px 5px; border-radius: 4px; }
+    .table-wrap { overflow-x: auto; }
+    .legal-content a.btn { color: var(--bg); }
+    .info-box p { margin: 0; font-size: 0.88rem; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="container nav-inner">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon"><img src="/assets/logo.png" alt="My Car Companion logo"></div>
+      <span class="nav-logo-text">My Car Companion</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/#features">Features</a></li>
+      <li><a href="/mechanics.html">For Mechanics</a></li>
+      <li><a href="/#pricing">Pricing</a></li>
+      <li><a href="/app">Get Started Free →</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="/app" class="btn btn-secondary btn-sm">Sign In</a>
+      <a href="/app" class="btn btn-primary btn-sm">Get Started Free</a>
+    </div>
+    <button class="nav-hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<section class="legal-hero">
+  <div class="container">
+    <span class="section-label">For Mechanics</span>
+    <h1>Import Your Old Service Records</h1>
+    <p>All your past jobs and customers, in one upload.</p>
+  </div>
+</section>
+
+<div class="legal-body">
+  <div class="container">
+    <div class="legal-content">
+
+      <div class="info-box">
+        <p><strong>Bring in every customer at once.</strong> One spreadsheet, one upload. The app creates the jobs, adds the service history, and can email every customer an invite.</p>
+      </div>
+
+      <h2>4 steps</h2>
+      <ol>
+        <li><strong>Download the template</strong> and open it in Excel or Google Sheets.<br>
+          <a href="/assets/service-history-template.csv" download class="btn btn-primary btn-sm" style="margin-top:8px">Download the template</a></li>
+        <li><strong>Fill it in</strong> with your past work (or paste it from your shop software). Save it as <strong>CSV</strong>.</li>
+        <li>In the app, open your mechanic dashboard, tap <strong>&#8942;</strong> (top right) &rarr; <strong>Import past jobs</strong> &rarr; <strong>Pick CSV File</strong> &rarr; <strong>Import</strong>.</li>
+        <li>Tap <strong>Email Invites to Customers</strong>. That's it.</li>
+      </ol>
+      <p>When a customer joins using the email you entered and adds their car, their full service history is already there.</p>
+
+      <h2>Filling in the spreadsheet</h2>
+      <p>One row per item on the invoice (each part, labor charge, or fee). Rows with the same date, customer, car, and job are grouped into one job.</p>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Column</th><th>What to put</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Date</strong></td><td>Date of the work</td><td><code>3/4/2025</code></td></tr>
+          <tr><td><strong>Customer</strong></td><td>Customer's name</td><td><code>Maria Lopez</code></td></tr>
+          <tr><td><strong>Year, Make, Model</strong></td><td>The car</td><td><code>2018</code> <code>Honda</code> <code>Civic</code></td></tr>
+          <tr><td><strong>Job</strong></td><td>Short name for the visit</td><td><code>Front brakes</code></td></tr>
+          <tr><td><strong>Type</strong></td><td><code>Labor</code>, <code>Part</code>, or <code>Fee</code></td><td><code>Part</code></td></tr>
+          <tr><td><strong>Item</strong></td><td>What it was</td><td><code>Brake pads</code></td></tr>
+          <tr><td><strong>Qty</strong></td><td>How many (hours, for labor)</td><td><code>1.5</code></td></tr>
+          <tr><td><strong>Price</strong></td><td>Price each (hourly rate, for labor)</td><td><code>120</code></td></tr>
+          <tr><td><strong>Email</strong> <em>(optional)</em></td><td>Customer's email, needed to invite them</td><td><code>maria@example.com</code></td></tr>
+          <tr><td><strong>VIN</strong> <em>(optional)</em></td><td>Helps match the right car</td><td><code>1FTEW1EF5FKD12345</code></td></tr>
+          <tr><td><strong>Mileage</strong> <em>(optional)</em></td><td>Odometer at the visit</td><td><code>48200</code></td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p>Email, VIN, and mileage only need to be on one row of each job.</p>
+
+      <h2>Shortcuts</h2>
+      <ul>
+        <li><strong>Only have the invoice total?</strong> Use one row per visit: Type <code>Fee</code>, Qty <code>1</code>, Price = the total.</li>
+        <li><strong>Dates</strong> can be <code>3/4/2025</code> or <code>2025-03-04</code>. <strong>Prices</strong> can include <code>$</code> and commas.</li>
+        <li><strong>Up to 500 jobs per file.</strong> More than that? Split it into a few files.</li>
+        <li>If a row has a problem, the app lists it by row number and imports nothing until it's fixed, so you never end up with half an import.</li>
+      </ul>
+
+      <h2>Only have paper invoices?</h2>
+      <p>Create a job for the customer (tap <strong>+</strong> on your dashboard, include their email), open it, tap the <strong>upload icon</strong> next to <strong>Service Logs</strong>, and choose <strong>AI Scan</strong>. Snap a photo of the invoice and the app fills in the records for you to check.</p>
+
+      <h2>Forgot an email?</h2>
+      <p>Open the job and tap <strong>Add Email</strong> (or the pencil next to the email to fix a typo) on the <strong>Invite to App</strong> card, then <strong>Send Invite</strong>. The history moves over to their car once they join with that email.</p>
+
+      <h2>Need help?</h2>
+      <p>Stuck on an export from your shop software? Email <a href="mailto:paul@thecooconsultant.com?subject=Record%20Import%20Help">paul@thecooconsultant.com</a> and we'll help you get it in.</p>
+
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="/" class="nav-logo" style="display:inline-flex;">
+          <div class="nav-logo-icon"><img src="/assets/logo.png" alt="My Car Companion logo"></div>
+          <span class="nav-logo-text">My Car Companion</span>
+        </a>
+        <p>Track maintenance, find trusted mechanics, and manage your vehicle history — all in one place.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="/#features">Features</a></li>
+          <li><a href="/#pricing">Pricing</a></li>
+          <li><a href="/mechanics.html">For Mechanics</a></li>
+          <li><a href="/app">Web App</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="/privacy.html">Privacy Policy</a></li>
+          <li><a href="/terms.html">Terms of Service</a></li>
+          <li><a href="/delete-account.html">Delete Account</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 My Car Companion. All rights reserved.</p>
+      <p><a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+    </div>
+  </div>
+</footer>
+
+<script src="/assets/app.js"></script>
+</body>
+</html>

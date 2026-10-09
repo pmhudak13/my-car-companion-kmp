@@ -2,15 +2,19 @@ package org.mycarcompanion.app.ui.mechanics
 
 import org.mycarcompanion.app.data.models.CannedLine
 import org.mycarcompanion.app.data.models.HistoryJob
+import org.mycarcompanion.app.data.models.maintenanceCategories
 
 /** Columns, in order. One row per part, labor, or fee line; rows for the same job share the first six. */
 val historyCsvColumns = listOf("Date", "Customer", "Year", "Make", "Model", "Job", "Type", "Item", "Qty", "Price")
 
+/** Optional trailing columns: the email links the job to the customer's car once they join, and enables invites. */
+val historyCsvOptionalColumns = listOf("Email", "VIN", "Mileage")
+
 val historyCsvExample = """
-Date,Customer,Year,Make,Model,Job,Type,Item,Qty,Price
-2025-03-04,Maria Lopez,2018,Honda,Civic,Front brakes,Labor,Front brake pads and rotors,1.5,120
-2025-03-04,Maria Lopez,2018,Honda,Civic,Front brakes,Part,Brake pads,1,89.99
-2025-03-04,Maria Lopez,2018,Honda,Civic,Front brakes,Part,Rotor,2,64.50
+Date,Customer,Year,Make,Model,Job,Type,Item,Qty,Price,Email,VIN,Mileage
+2025-03-04,Maria Lopez,2018,Honda,Civic,Front brakes,Labor,Front brake pads and rotors,1.5,120,maria@example.com,,48200
+2025-03-04,Maria Lopez,2018,Honda,Civic,Front brakes,Part,Brake pads,1,89.99,,,
+2025-03-04,Maria Lopez,2018,Honda,Civic,Front brakes,Part,Rotor,2,64.50,,,
 """.trim()
 
 /** The DB function takes at most this many jobs per call. */
@@ -44,16 +48,36 @@ fun parseJobHistoryCsv(raw: String): HistoryParse {
         val qty = if (f[8].isBlank()) 1.0 else f[8].toDoubleOrNull()?.takeIf { it > 0 } ?: run { bad("qty '${f[8]}' must be above 0"); null }
         val price = f[9].replace("$", "").replace(",", "").toDoubleOrNull()
             ?.takeIf { it >= 0 || kind == "fee" } ?: run { bad("price '${f[9]}' isn't a valid price (only a Fee can be negative)"); null }
+        val email = f.getOrNull(10).orEmpty().ifBlank { null }
+        if (email != null && !email.matches(Regex("""[^@\s]+@[^@\s]+\.[^@\s]+"""))) bad("email '$email' doesn't look like an email")
+        val vin = f.getOrNull(11).orEmpty().ifBlank { null }
+        val mileageRaw = f.getOrNull(12).orEmpty().replace(",", "")
+        val mileage = if (mileageRaw.isBlank()) null else mileageRaw.toIntOrNull()?.takeIf { it >= 0 } ?: run { bad("mileage '${f[12]}' should be a whole number"); null }
         if (date == null || year == null || kind == null || qty == null || price == null || f[3].isBlank() || f[4].isBlank() || f[7].isBlank()) continue
 
         val customer = f[1].ifBlank { "Past customer" }
         val key = listOf(date, customer, year, f[3], f[4], f[5]).joinToString("|").lowercase()
         val line = CannedLine(kind, f[7], qty, price)
-        jobs[key] = jobs[key]?.let { it.copy(lines = it.lines + line) }
-            ?: HistoryJob(date, customer, year, f[3], f[4], f[5].ifBlank { null }, listOf(line))
+        // Email, VIN, and mileage only need to be on one of the job's rows
+        jobs[key] = jobs[key]?.let { it.copy(lines = it.lines + line, clientEmail = it.clientEmail ?: email, vin = it.vin ?: vin, mileage = it.mileage ?: mileage) }
+            ?: HistoryJob(date, customer, year, f[3], f[4], f[5].ifBlank { null }, listOf(line), email, vin, mileage)
     }
+    val categorized = jobs.mapValues { (_, j) -> j.copy(category = guessCategory(listOfNotNull(j.description) + j.lines.map { it.description })) }
     if (jobs.size > MAX_HISTORY_JOBS) errors += "That's ${jobs.size} jobs; import up to $MAX_HISTORY_JOBS at a time by splitting the file."
-    return HistoryParse(jobs.values.toList(), errors)
+    return HistoryParse(categorized.values.toList(), errors)
+}
+
+// ponytail: first category named in the job or its items, else Other; a keyword map if this guesses badly
+private fun guessCategory(texts: List<String>): String {
+    val text = texts.joinToString(" ").lowercase()
+    return maintenanceCategories.firstOrNull { it != "Other" && text.contains(it.lowercase()) }
+        ?: when {
+            "brake" in text -> "Brake Service"
+            "oil" in text -> "Oil Change"
+            "tire" in text -> "Tire Rotation"
+            "battery" in text -> "Battery Replacement"
+            else -> "Other"
+        }
 }
 
 private fun toKind(raw: String): String? = when (raw.lowercase().trimEnd('s')) {

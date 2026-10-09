@@ -12,6 +12,11 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Names come from mechanics' spreadsheets, so keep them as text in the email HTML
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -82,10 +87,14 @@ Deno.serve(async (req) => {
       subject: `${mechanicName} invited you to track your ${vehicleInfo}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
-          <h2 style="color: #1a1a1a;">Hi ${clientName},</h2>
+          <h2 style="color: #1a1a1a;">Hi ${esc(clientName)},</h2>
           <p style="color: #444; font-size: 16px; line-height: 1.5;">
-            <strong>${mechanicName}</strong> has invited you to join <strong>My Car Companion</strong>
-            to track service history for your <strong>${vehicleInfo}</strong>.
+            <strong>${esc(mechanicName)}</strong> has invited you to join <strong>My Car Companion</strong>
+            to track service history for your <strong>${esc(vehicleInfo)}</strong>.
+          </p>
+          <p style="color: #444; font-size: 16px; line-height: 1.5;">
+            Sign up with this email address (<strong>${esc(clientEmail)}</strong>) and add your car.
+            Your service history from ${esc(mechanicName)} will already be there.
           </p>
           <p style="color: #444; font-size: 16px; line-height: 1.5;">
             With My Car Companion you can view your vehicle's full service history, get maintenance reminders,

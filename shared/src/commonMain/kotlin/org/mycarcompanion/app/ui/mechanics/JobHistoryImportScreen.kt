@@ -21,6 +21,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -38,6 +40,8 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.mycarcompanion.app.data.repository.JobLineItemRepository
+import org.mycarcompanion.app.data.repository.MechanicJobRepository
+import org.mycarcompanion.app.data.repository.ProfileRepository
 import org.mycarcompanion.app.platform.rememberTextFilePickerLauncher
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 import org.mycarcompanion.app.platform.topBarWindowInsets
@@ -55,12 +59,17 @@ class JobHistoryImportScreen : Screen {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val repository: JobLineItemRepository = koinInject()
+        val jobRepository: MechanicJobRepository = koinInject()
+        val profileRepository: ProfileRepository = koinInject()
         val scope = rememberCoroutineScope()
 
         var parsed by remember { mutableStateOf<HistoryParse?>(null) }
         var saving by remember { mutableStateOf(false) }
         var error by remember { mutableStateOf<String?>(null) }
         var importedCount by remember { mutableStateOf<Int?>(null) }
+        var customersWithEmail by remember { mutableStateOf(0) }
+        var inviting by remember { mutableStateOf(false) }
+        var inviteResult by remember { mutableStateOf<String?>(null) }
 
         val picker = rememberTextFilePickerLauncher { _, content ->
             error = null
@@ -73,9 +82,25 @@ class JobHistoryImportScreen : Screen {
             scope.launch {
                 saving = true; error = null
                 repository.importJobHistory(jobs)
-                    .onSuccess { importedCount = it; parsed = null }
+                    .onSuccess {
+                        importedCount = it
+                        customersWithEmail = jobs.mapNotNull { j -> j.clientEmail?.lowercase() }.distinct().size
+                        parsed = null
+                    }
                     .onFailure { error = "Import failed, nothing was saved: ${it.message}" }
                 saving = false
+            }
+        }
+
+        fun inviteAll() {
+            scope.launch {
+                inviting = true
+                val shop = profileRepository.getMyMechanicProfile().getOrNull()?.shopName ?: "Your Mechanic"
+                inviteResult = jobRepository.inviteUninvitedCustomers(shop).fold(
+                    onSuccess = { "Sent $it invite${if (it == 1) "" else "s"}." },
+                    onFailure = { "Invites failed: ${it.message}" },
+                )
+                inviting = false
             }
         }
 
@@ -113,6 +138,18 @@ class JobHistoryImportScreen : Screen {
                                     "They're in My Jobs as completed. On any estimate, use \"Copy past job\", and you'll see what you charged last time as you type.",
                                     style = MaterialTheme.typography.bodyMedium,
                                 )
+                                if (customersWithEmail > 0) {
+                                    Text(
+                                        "Invite your $customersWithEmail customer${if (customersWithEmail == 1) "" else "s"} with an email. " +
+                                            "When they join with that email, their service history is already on their car.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                    when {
+                                        inviting -> CircularProgressIndicator()
+                                        inviteResult != null -> Text(inviteResult!!, fontWeight = FontWeight.Bold)
+                                        else -> FilledTonalButton(onClick = ::inviteAll) { Text("Email Invites to Customers") }
+                                    }
+                                }
                                 Button(onClick = { navigator.pop() }) { Text("Done") }
                             }
                         }
@@ -136,12 +173,21 @@ private fun HowToCard() {
             )
             Text(historyCsvColumns.joinToString(" · "), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
             Text(
+                "Optional: ${historyCsvOptionalColumns.joinToString(" · ")}. Add the customer's email so you can invite them " +
+                    "and their history shows on their car when they join.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
                 "Rows with the same date, customer, car, and job become one job. Type is Labor, Part, or Fee " +
                     "(a Fee can be negative for a discount). For labor, Qty is hours and Price is your hourly rate. " +
                     "Dates can be 2025-03-04 or 3/4/2025. Up to $MAX_HISTORY_JOBS jobs per file.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            val uriHandler = LocalUriHandler.current
+            TextButton(onClick = { uriHandler.openUri("https://www.mycarcompanion.org/import-records") }) {
+                Text("Step-by-step guide and template")
+            }
             Text("Example:", style = MaterialTheme.typography.bodySmall)
             SelectionContainer {
                 Text(historyCsvExample, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)

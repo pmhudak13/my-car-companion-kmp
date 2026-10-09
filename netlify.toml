@@ -36,6 +36,11 @@
   to = "/delete-account.html"
   status = 301
 
+[[redirects]]
+  from = "/import-records"
+  to = "/import-records.html"
+  status = 301
+
 # Bare /app path
 [[redirects]]
   from = "/app"
