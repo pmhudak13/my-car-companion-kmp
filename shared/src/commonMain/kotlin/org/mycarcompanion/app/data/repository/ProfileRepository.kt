@@ -2,8 +2,11 @@ package org.mycarcompanion.app.data.repository
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.datetime.Clock
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.models.AdminUserEntry
 import org.mycarcompanion.app.data.models.GiftedSubscription
 import org.mycarcompanion.app.data.models.MechanicProfile
@@ -117,6 +120,14 @@ class ProfileRepository(private val client: SupabaseClient) {
             filter { eq("user_id", userId) }
         }
         client.postgrest["user_roles"].insert(UserRoleInsert(userId = userId, role = "mechanic"))
+        // Best-effort "you're approved" email; the approval itself already succeeded
+        try {
+            client.functions.invoke(
+                "notify-verification-status",
+                body = buildJsonObject { put("mechanicUserId", userId) },
+            )
+        } catch (_: Exception) {
+        }
     }
 
     suspend fun convertToMechanic(userId: String): Result<Unit> = runCatching {
