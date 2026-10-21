@@ -87,7 +87,8 @@ class PlayBillingManager(context: Context) : PlatformBillingHandler {
         }
         billingClient.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(result: BillingResult) {
-                cont.resume(result.responseCode == BillingClient.BillingResponseCode.OK)
+                // The listener outlives this call: a disconnect can resume first, then setup fires again.
+                if (cont.isActive) cont.resume(result.responseCode == BillingClient.BillingResponseCode.OK)
             }
             override fun onBillingServiceDisconnected() {
                 if (cont.isActive) cont.resume(false)
