@@ -8,6 +8,8 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Mechanics' real billed hours win once this many completed jobs agree; below it, ask Claude.
 const MIN_JOBS = 3;
+// Fresh Claude calls per Mechanic Pro user per calendar month (UTC); cached answers don't count.
+const MONTHLY_AI_LIMIT = 300;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://www.mycarcompanion.org",
@@ -24,6 +26,24 @@ function jsonResponse(body: unknown, status: number): Response {
 
 const text = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
+type Part = { name: string; low: number; high: number };
+
+// Claude's parts list is untrusted model output: keep only well-formed rows, at most 8.
+function cleanParts(v: unknown): Part[] {
+  if (!Array.isArray(v)) return [];
+  return v.flatMap((p) => {
+    const name = text(p?.name).slice(0, 80);
+    const low = Number(p?.low), high = Number(p?.high);
+    if (!name || !Number.isFinite(low) || !Number.isFinite(high) || low < 0 || high < low || high > 20000) return [];
+    return [{ name, low: Math.round(low), high: Math.round(high) }];
+  }).slice(0, 8);
+}
+
+const upgradeResponse = () => jsonResponse({
+  error: "Not enough job data for this car yet. AI estimates with hours and parts come with Mechanic Pro.",
+  upgrade: true,
+}, 200);
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -34,7 +54,6 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
   if (authError || !user) return jsonResponse({ error: "Unauthorized" }, 401);
 
-  // ponytail: mechanics only, no per-user rate limit; add one if AI spend shows abuse
   const { data: profile } = await supabase
     .from("mechanic_profiles").select("id").eq("user_id", user.id).maybeSingle();
   if (!profile) return jsonResponse({ error: "Labor guide is for mechanics" }, 403);
@@ -63,9 +82,40 @@ Deno.serve(async (req) => {
     return jsonResponse({ hours: Number(stats.median_hours), source: "mechanics", job_count: stats.job_count }, 200);
   }
 
-  // No key set = AI fallback off (no API budget yet); setting ANTHROPIC_API_KEY turns it back on
+  // AI estimates are a paid feature; is_mechanic_pro is set only by the billing functions
+  const { data: billing } = await supabase
+    .from("profiles").select("is_mechanic_pro").eq("user_id", user.id).maybeSingle();
+  if (!billing?.is_mechanic_pro) return upgradeResponse();
+
+  // No key set = AI fallback off; setting ANTHROPIC_API_KEY turns it on for Mechanic Pro
   if (!anthropicApiKey) {
     return jsonResponse({ error: "No labor data for this car yet. Enter the hours manually." }, 200);
+  }
+
+  const cacheKey = [year, make, model, repair].join("|").toLowerCase().replace(/\s+/g, " ");
+  const { data: cached } = await supabase
+    .from("labor_guide_ai_cache").select("hours, note, parts").eq("cache_key", cacheKey).maybeSingle();
+  if (cached) {
+    return jsonResponse({
+      hours: Number(cached.hours), source: "ai", job_count: stats?.job_count ?? 0,
+      note: cached.note, parts: cached.parts ?? [],
+    }, 200);
+  }
+
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+  const { count: usedThisMonth, error: countError } = await supabase
+    .from("labor_guide_ai_lookups").select("id", { count: "exact", head: true })
+    .eq("user_id", user.id).gte("created_at", monthStart.toISOString());
+  if (countError) {
+    console.error("labor_guide_ai_lookups count failed:", countError.message);
+    return jsonResponse({ error: "Labor lookup failed. Please try again." }, 500);
+  }
+  if ((usedThisMonth ?? 0) >= MONTHLY_AI_LIMIT) {
+    return jsonResponse({
+      error: `You've used all ${MONTHLY_AI_LIMIT} AI lookups this month. Times you've looked up before still work.`,
+    }, 200);
   }
 
   const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
@@ -77,17 +127,18 @@ Deno.serve(async (req) => {
     },
     body: JSON.stringify({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 200,
+      max_tokens: 600,
       // ponytail: temperature 0 keeps repeat lookups steady; cache answers in a table if they still drift
       temperature: 0,
       messages: [{
         role: "user",
-        content: `You are an automotive flat-rate labor guide. Estimate the standard labor time a professional technician would bill for this repair.
+        content: `You are an automotive flat-rate labor guide. Estimate the standard labor time a professional technician would bill for this repair, and the parts it usually needs.
 
 Vehicle: ${year} ${make} ${model}
 Repair: ${repair}
 
-Return ONLY JSON, no markdown: {"hours": <number, one decimal>, "note": "<one short sentence on what the time covers>"}`,
+Return ONLY JSON, no markdown: {"hours": <number, one decimal>, "note": "<one short sentence on what the time covers>", "parts": [{"name": "<part>", "low": <typical US aftermarket price in dollars>, "high": <typical OEM price in dollars>}]}
+List at most 6 parts, each one the shop would buy for this job. Use an empty list if the repair needs no parts.`,
       }],
     }),
   });
@@ -98,7 +149,11 @@ Return ONLY JSON, no markdown: {"hours": <number, one decimal>, "note": "<one sh
   }
 
   const raw: string = (await claudeRes.json())?.content?.[0]?.text ?? "";
-  let parsed: { hours?: unknown; note?: unknown } = {};
+  // the call cost money whether or not the answer parses, so it counts toward the cap
+  const { error: logError } = await supabase.from("labor_guide_ai_lookups").insert({ user_id: user.id });
+  if (logError) console.error("labor_guide_ai_lookups insert failed:", logError.message);
+
+  let parsed: { hours?: unknown; note?: unknown; parts?: unknown } = {};
   try {
     parsed = JSON.parse(raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim());
   } catch {
@@ -110,10 +165,14 @@ Return ONLY JSON, no markdown: {"hours": <number, one decimal>, "note": "<one sh
     return jsonResponse({ error: "No labor time found for that repair. Try wording it differently." }, 200);
   }
 
-  return jsonResponse({
+  const answer = {
     hours: Math.round(hours * 10) / 10,
-    source: "ai",
-    job_count: stats?.job_count ?? 0,
-    note: text(parsed.note) || null,
-  }, 200);
+    note: text(parsed.note).slice(0, 300) || null,
+    parts: cleanParts(parsed.parts),
+  };
+  const { error: cacheError } = await supabase
+    .from("labor_guide_ai_cache").upsert({ cache_key: cacheKey, ...answer }, { ignoreDuplicates: true });
+  if (cacheError) console.error("labor_guide_ai_cache insert failed:", cacheError.message);
+
+  return jsonResponse({ ...answer, source: "ai", job_count: stats?.job_count ?? 0 }, 200);
 });

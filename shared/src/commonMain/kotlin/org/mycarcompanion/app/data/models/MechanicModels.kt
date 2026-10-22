@@ -181,11 +181,19 @@ data class LaborGuideResult(
     val source: String,
     @SerialName("job_count") val jobCount: Int = 0,
     val note: String? = null,
+    /** AI answers only: parts the job usually needs, with an aftermarket-to-OEM price range. */
+    val parts: List<LaborGuidePart> = emptyList(),
 ) {
     val sourceLabel: String get() =
         if (source == "mechanics") "Median of $jobCount completed jobs by My Car Companion mechanics"
         else "AI estimate. Check it before quoting."
 }
+
+@Serializable
+data class LaborGuidePart(val name: String, val low: Double, val high: Double)
+
+/** The labor guide had no job data and AI estimates need Mechanic Pro. */
+class LaborGuideUpgradeRequired(message: String) : IllegalStateException(message)
 
 @Serializable
 data class JobLineItemInsert(

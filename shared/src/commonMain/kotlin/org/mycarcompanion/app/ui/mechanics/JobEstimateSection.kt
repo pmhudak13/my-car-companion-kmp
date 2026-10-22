@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.mycarcompanion.app.data.models.JobLineItem
+import org.mycarcompanion.app.data.models.LaborGuidePart
 import org.mycarcompanion.app.data.models.LaborGuideResult
 import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.data.models.MechanicJobIssue
@@ -69,6 +70,8 @@ fun EstimateCard(
     laborGuide: LaborGuideResult?,
     isLookingUpLabor: Boolean,
     onSuggestLabor: () -> Unit,
+    suggestedParts: List<LaborGuidePart>,
+    onUseSuggestedPart: (LaborGuidePart) -> Unit,
     lastCharged: JobLineItem?,
     onUseLastCharged: () -> Unit,
     onCopyPastJob: () -> Unit,
@@ -143,6 +146,19 @@ fun EstimateCard(
                         else TextButton(onClick = onSuggestLabor) { Text("Suggest hours") }
                         laborGuide?.let {
                             Text(it.sourceLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+                if (suggestedParts.isNotEmpty()) {
+                    Text("Parts usually needed", style = MaterialTheme.typography.labelMedium)
+                    suggestedParts.forEach { part ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "${part.name}: ${formatUsd(part.low)} to ${formatUsd(part.high)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextButton(onClick = { onUseSuggestedPart(part) }) { Text("Use") }
                         }
                     }
                 }

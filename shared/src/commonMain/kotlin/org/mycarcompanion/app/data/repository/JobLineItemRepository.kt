@@ -19,6 +19,7 @@ import org.mycarcompanion.app.data.models.HistoryJob
 import org.mycarcompanion.app.data.models.JobLineItem
 import org.mycarcompanion.app.data.models.JobLineItemInsert
 import org.mycarcompanion.app.data.models.LaborGuideResult
+import org.mycarcompanion.app.data.models.LaborGuideUpgradeRequired
 
 /** Line items on a mechanic job, plus the mechanic's canned jobs. A DB trigger keeps mechanic_jobs.total_cost equal to their sum. */
 class JobLineItemRepository(private val client: SupabaseClient) {
@@ -99,7 +100,10 @@ class JobLineItemRepository(private val client: SupabaseClient) {
             },
         ).bodyAsText()
         val json = Json.parseToJsonElement(body).jsonObject
-        (json["error"] as? JsonPrimitive)?.content?.let { error(it) }
+        (json["error"] as? JsonPrimitive)?.content?.let {
+            if ((json["upgrade"] as? JsonPrimitive)?.content == "true") throw LaborGuideUpgradeRequired(it)
+            error(it)
+        }
         Json { ignoreUnknownKeys = true }.decodeFromString<LaborGuideResult>(body)
     }.recoverCatching { e ->
         // Non-2xx from the function (auth, outage) arrives as an exception with an unreadable message

@@ -204,6 +204,8 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                 laborGuide = state.laborGuide,
                                 isLookingUpLabor = state.isLookingUpLabor,
                                 onSuggestLabor = model::suggestLaborTime,
+                                suggestedParts = state.suggestedParts,
+                                onUseSuggestedPart = model::useSuggestedPart,
                                 lastCharged = state.lastCharged,
                                 onUseLastCharged = model::useLastCharged,
                                 onCopyPastJob = { model.showPastJobPicker(true) },

@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,11 +39,13 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.mycarcompanion.app.data.models.LaborGuideResult
+import org.mycarcompanion.app.data.models.LaborGuideUpgradeRequired
 import org.mycarcompanion.app.data.repository.JobLineItemRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.ui.formatUsd
+import org.mycarcompanion.app.ui.subscription.SubscribeScreen
 
 /** Labor time lookup without a job: quoting over the phone, checking a time before writing it up. */
 // ponytail: plain remember state, no ScreenModel; one call and no state worth surviving rotation
@@ -63,6 +66,7 @@ class LaborGuideScreen : Screen {
         var result by remember { mutableStateOf<LaborGuideResult?>(null) }
         var rate by remember { mutableStateOf<Double?>(null) }
         var error by remember { mutableStateOf<String?>(null) }
+        var needsPro by remember { mutableStateOf(false) }
         var loading by remember { mutableStateOf(false) }
 
         fun lookUp() {
@@ -72,11 +76,11 @@ class LaborGuideScreen : Screen {
                 return
             }
             scope.launch {
-                loading = true; error = null; result = null
+                loading = true; error = null; result = null; needsPro = false
                 rate = profileRepository.getMyMechanicProfile().getOrNull()?.hourlyRate
                 repository.lookupLaborTime(y, make.trim(), model.trim(), repair.trim())
                     .onSuccess { result = it }
-                    .onFailure { error = it.message ?: "Labor lookup failed" }
+                    .onFailure { error = it.message ?: "Labor lookup failed"; needsPro = it is LaborGuideUpgradeRequired }
                 loading = false
             }
         }
@@ -123,6 +127,7 @@ class LaborGuideScreen : Screen {
                 if (loading) CircularProgressIndicator()
                 else Button(onClick = ::lookUp, modifier = Modifier.fillMaxWidth()) { Text("Look up labor time") }
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                if (needsPro) TextButton(onClick = { navigator.push(SubscribeScreen()) }) { Text("See Mechanic Pro") }
 
                 result?.let { r ->
                     Card(modifier = Modifier.fillMaxWidth()) {
@@ -132,6 +137,10 @@ class LaborGuideScreen : Screen {
                                 Text("About ${formatUsd(r.hours * it)} labor at your ${formatUsd(it)}/hr")
                             }
                             r.note?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                            if (r.parts.isNotEmpty()) {
+                                Text("Parts usually needed", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
+                                r.parts.forEach { Text("${it.name}: ${formatUsd(it.low)} to ${formatUsd(it.high)}") }
+                            }
                             Text(r.sourceLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }

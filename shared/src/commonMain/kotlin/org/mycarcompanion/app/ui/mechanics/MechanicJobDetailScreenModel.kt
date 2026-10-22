@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.mycarcompanion.app.data.models.CannedJob
 import org.mycarcompanion.app.data.models.CannedLine
+import org.mycarcompanion.app.data.models.LaborGuidePart
 import org.mycarcompanion.app.data.models.LaborGuideResult
 import org.mycarcompanion.app.data.models.JobLineItem
 import org.mycarcompanion.app.data.models.JobLineItemInsert
@@ -101,6 +102,8 @@ data class MechanicJobDetailState(
     // labor guide
     val mechanicHourlyRate: Double? = null,
     val laborGuide: LaborGuideResult? = null,
+    /** Parts from the last AI labor lookup; outlive the labor line so they can be added after it. */
+    val suggestedParts: List<LaborGuidePart> = emptyList(),
     val isLookingUpLabor: Boolean = false,
     // past work: the mechanic's own lines (newest first) and jobs they can copy from
     val lineHistory: List<JobLineItem> = emptyList(),
@@ -198,13 +201,14 @@ class MechanicJobDetailScreenModel(
             return
         }
         screenModelScope.launch {
-            _state.value = _state.value.copy(isLookingUpLabor = true, lineItemError = null, laborGuide = null)
+            _state.value = _state.value.copy(isLookingUpLabor = true, lineItemError = null, laborGuide = null, suggestedParts = emptyList())
             lineItemRepository.lookupLaborTime(job.vehicleYear, job.vehicleMake, job.vehicleModel, form.description.trim())
                 .onSuccess { result ->
                     val rate = form.unitPrice.ifBlank { _state.value.mechanicHourlyRate?.let(::formatQty).orEmpty() }
                     _state.value = _state.value.copy(
                         isLookingUpLabor = false,
                         laborGuide = result,
+                        suggestedParts = result.parts,
                         lineItemForm = form.copy(kind = "labor", quantity = formatQty(result.hours), unitPrice = rate),
                     )
                 }
@@ -212,6 +216,12 @@ class MechanicJobDetailScreenModel(
                     _state.value = _state.value.copy(isLookingUpLabor = false, lineItemError = e.message ?: "Labor lookup failed")
                 }
         }
+    }
+
+    /** Fills the form with a suggested part; the mechanic still enters their own price. */
+    fun useSuggestedPart(part: LaborGuidePart) {
+        updateLineItemForm(LineItemForm(kind = "part", description = part.name))
+        _state.value = _state.value.copy(suggestedParts = _state.value.suggestedParts - part)
     }
 
     fun addLineItem() {
