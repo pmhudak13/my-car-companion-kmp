@@ -2,11 +2,12 @@ package org.mycarcompanion.app.ui.mechanics
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -30,7 +31,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
@@ -69,12 +73,15 @@ class LaborGuideScreen : Screen {
         var needsPro by remember { mutableStateOf(false) }
         var loading by remember { mutableStateOf(false) }
 
+        val focusManager = LocalFocusManager.current
+
         fun lookUp() {
             val y = year.trim().toIntOrNull()
             if (y == null || make.isBlank() || model.isBlank() || repair.isBlank()) {
-                error = "Year, make, model, and repair are required"
+                error = "Make, model, year, and repair are required"
                 return
             }
+            focusManager.clearFocus()
             scope.launch {
                 loading = true; error = null; result = null; needsPro = false
                 rate = profileRepository.getMyMechanicProfile().getOrNull()?.hourlyRate
@@ -100,29 +107,35 @@ class LaborGuideScreen : Screen {
             },
         ) { padding ->
             Column(
-                modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp).verticalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = year, onValueChange = { year = it.filter(Char::isDigit).take(4) },
-                        label = { Text("Year") }, singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                    )
-                    OutlinedTextField(
-                        value = make, onValueChange = { make = it }, label = { Text("Make") },
-                        singleLine = true, modifier = Modifier.weight(1.5f),
-                    )
-                }
+                Text(
+                    "Check a labor time before quoting. Start a job from the result to put the hours on its estimate.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                MakeModelFields(
+                    make = make,
+                    model = model,
+                    onMakeChange = { make = it; model = "" },
+                    onModelChange = { model = it },
+                    required = false,
+                )
                 OutlinedTextField(
-                    value = model, onValueChange = { model = it }, label = { Text("Model") },
-                    singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    value = year, onValueChange = { year = it.filter(Char::isDigit).take(4) },
+                    label = { Text("Year") }, singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = repair, onValueChange = { repair = it },
-                    label = { Text("Repair, e.g. Front brake pads and rotors") },
-                    singleLine = true, modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Repair") },
+                    placeholder = { Text("e.g. Front brake pads and rotors") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { lookUp() }),
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 if (loading) CircularProgressIndicator()
                 else Button(onClick = ::lookUp, modifier = Modifier.fillMaxWidth()) { Text("Look up labor time") }
@@ -142,6 +155,21 @@ class LaborGuideScreen : Screen {
                                 r.parts.forEach { Text("${it.name}: ${formatUsd(it.low)} to ${formatUsd(it.high)}") }
                             }
                             Text(r.sourceLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Button(
+                                onClick = {
+                                    navigator.push(
+                                        CreateMechanicJobScreen(
+                                            vehicleYear = year.toIntOrNull(),
+                                            vehicleMake = make.trim(),
+                                            vehicleModel = model.trim(),
+                                            repair = repair.trim(),
+                                            laborHours = r.hours,
+                                            laborRate = rate,
+                                        ),
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            ) { Text("Start a job with this") }
                         }
                     }
                 }

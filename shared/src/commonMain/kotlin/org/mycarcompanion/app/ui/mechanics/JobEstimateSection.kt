@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -70,6 +71,8 @@ fun EstimateCard(
     laborGuide: LaborGuideResult?,
     isLookingUpLabor: Boolean,
     onSuggestLabor: () -> Unit,
+    laborNeedsPro: Boolean,
+    onSeePro: () -> Unit,
     suggestedParts: List<LaborGuidePart>,
     onUseSuggestedPart: (LaborGuidePart) -> Unit,
     lastCharged: JobLineItem?,
@@ -87,24 +90,6 @@ fun EstimateCard(
             LineItemList(lineItems, job.taxRate, onDelete = onDelete.takeIf { editable })
 
             if (editable) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = taxRateInput,
-                        onValueChange = onTaxRateChange,
-                        label = { Text("Sales tax % on parts") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    if (isSavingTaxRate) CircularProgressIndicator(Modifier.size(24.dp))
-                    else TextButton(onClick = onSaveTaxRate) { Text("Save rate") }
-                }
-                Text(
-                    "Saved as your default for new jobs. For a discount, add a Fee line with a negative price.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
                 Row {
                     TextButton(onClick = onUseSavedJob) { Text("Use saved job") }
                     TextButton(onClick = onCopyPastJob) { Text("Copy past job") }
@@ -123,9 +108,11 @@ fun EstimateCard(
                     value = form.description,
                     onValueChange = { onFormChange(form.copy(description = it)) },
                     label = { Text(if (form.kind == "part") "Part needed" else "Description") },
-                    supportingText = if (form.kind == "part") {
-                        { Text("Add each part as its own line") }
-                    } else null,
+                    supportingText = when (form.kind) {
+                        "part" -> { { Text("Add each part as its own line") } }
+                        "labor" -> { { Text("Name the repair, then tap Suggest hours") } }
+                        else -> null
+                    },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -141,13 +128,29 @@ fun EstimateCard(
                     }
                 }
                 if (form.kind == "labor") {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (isLookingUpLabor) CircularProgressIndicator(Modifier.size(20.dp))
-                        else TextButton(onClick = onSuggestLabor) { Text("Suggest hours") }
-                        laborGuide?.let {
-                            Text(it.sourceLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                    OutlinedButton(
+                        onClick = onSuggestLabor,
+                        enabled = !isLookingUpLabor,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        if (isLookingUpLabor) {
+                            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Looking up hours…")
+                        } else {
+                            Icon(Icons.Default.Timer, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Suggest hours from Labor Guide")
                         }
                     }
+                    laborGuide?.let {
+                        Text(
+                            "${formatQty(it.hours)} hrs filled in below. ${it.sourceLabel}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (laborNeedsPro) TextButton(onClick = onSeePro) { Text("See Mechanic Pro") }
                 }
                 if (suggestedParts.isNotEmpty()) {
                     Text("Parts usually needed", style = MaterialTheme.typography.labelMedium)
@@ -186,6 +189,24 @@ fun EstimateCard(
                     else FilledTonalButton(onClick = onAdd) { Text("Add") }
                 }
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                    OutlinedTextField(
+                        value = taxRateInput,
+                        onValueChange = onTaxRateChange,
+                        label = { Text("Sales tax % on parts") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    if (isSavingTaxRate) CircularProgressIndicator(Modifier.size(24.dp))
+                    else TextButton(onClick = onSaveTaxRate) { Text("Save rate") }
+                }
+                Text(
+                    "Saved as your default for new jobs. For a discount, add a Fee line with a negative price.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
             ApprovalStatus(job, issues)

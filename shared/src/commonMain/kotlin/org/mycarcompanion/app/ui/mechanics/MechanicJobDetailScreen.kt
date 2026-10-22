@@ -88,6 +88,7 @@ import org.mycarcompanion.app.ui.formatUsd
 import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.platform.rememberBinaryFilePickerLauncher
 import org.mycarcompanion.app.ui.components.DatePickerField
+import org.mycarcompanion.app.ui.subscription.SubscribeScreen
 
 data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable {
 
@@ -204,6 +205,8 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                 laborGuide = state.laborGuide,
                                 isLookingUpLabor = state.isLookingUpLabor,
                                 onSuggestLabor = model::suggestLaborTime,
+                                laborNeedsPro = state.laborNeedsPro,
+                                onSeePro = { navigator.push(SubscribeScreen()) },
                                 suggestedParts = state.suggestedParts,
                                 onUseSuggestedPart = model::useSuggestedPart,
                                 lastCharged = state.lastCharged,

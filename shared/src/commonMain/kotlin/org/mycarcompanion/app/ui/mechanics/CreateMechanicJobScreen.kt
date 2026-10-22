@@ -43,9 +43,18 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import org.mycarcompanion.app.platform.CommonParcelable
+import org.mycarcompanion.app.ui.formatUsd
 
-@OptIn(ExperimentalMaterial3Api::class)
-class CreateMechanicJobScreen : Screen {
+/** Optional prefill comes from a Labor Guide result: the car, the repair, and its hours as the first labor line. */
+data class CreateMechanicJobScreen(
+    val vehicleYear: Int? = null,
+    val vehicleMake: String = "",
+    val vehicleModel: String = "",
+    val repair: String = "",
+    val laborHours: Double? = null,
+    val laborRate: Double? = null,
+) : Screen, CommonParcelable {
 
     @Composable
     override fun Content() {
@@ -53,21 +62,19 @@ class CreateMechanicJobScreen : Screen {
         val model: CreateMechanicJobScreenModel = koinScreenModel()
         val state by model.state.collectAsState()
 
-        var makeExpanded by remember { mutableStateOf(false) }
-        var modelExpanded by remember { mutableStateOf(false) }
-
-        val filteredMakes = remember(state.form.vehicleMake) {
-            val query = state.form.vehicleMake.trim().lowercase()
-            if (query.isEmpty()) carMakes else carMakes.filter { it.lowercase().contains(query) }
-        }
-
-        val availableModels = remember(state.form.vehicleMake) {
-            carModelsByMake[state.form.vehicleMake] ?: emptyList()
-        }
-
-        val filteredModels = remember(state.form.vehicleModel, availableModels) {
-            val query = state.form.vehicleModel.trim().lowercase()
-            if (query.isEmpty()) availableModels else availableModels.filter { it.lowercase().contains(query) }
+        LaunchedEffect(Unit) {
+            if (vehicleMake.isNotBlank()) {
+                model.prefill(
+                    CreateJobForm(
+                        vehicleMake = vehicleMake,
+                        vehicleModel = vehicleModel,
+                        vehicleYear = vehicleYear?.toString().orEmpty(),
+                        description = repair,
+                    ),
+                    laborHours = laborHours,
+                    laborRate = laborRate,
+                )
+            }
         }
 
         LaunchedEffect(state.createdJob) {
@@ -126,78 +133,13 @@ class CreateMechanicJobScreen : Screen {
                 Text("Vehicle Info", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Make dropdown
-                ExposedDropdownMenuBox(
-                    expanded = makeExpanded && filteredMakes.isNotEmpty(),
-                    onExpandedChange = { makeExpanded = it },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    OutlinedTextField(
-                        value = state.form.vehicleMake,
-                        onValueChange = {
-                            model.updateForm(state.form.copy(vehicleMake = it, vehicleModel = ""))
-                            makeExpanded = true
-                        },
-                        label = { Text("Make *") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = makeExpanded) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    )
-                    ExposedDropdownMenu(
-                        expanded = makeExpanded && filteredMakes.isNotEmpty(),
-                        onDismissRequest = { makeExpanded = false },
-                    ) {
-                        filteredMakes.forEach { make ->
-                            DropdownMenuItem(
-                                text = { Text(make) },
-                                onClick = {
-                                    model.updateForm(state.form.copy(vehicleMake = make, vehicleModel = ""))
-                                    makeExpanded = false
-                                },
-                                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Model dropdown
-                ExposedDropdownMenuBox(
-                    expanded = modelExpanded && filteredModels.isNotEmpty(),
-                    onExpandedChange = { modelExpanded = it },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    OutlinedTextField(
-                        value = state.form.vehicleModel,
-                        onValueChange = {
-                            model.updateForm(state.form.copy(vehicleModel = it))
-                            modelExpanded = true
-                        },
-                        label = { Text("Model *") },
-                        trailingIcon = {
-                            if (availableModels.isNotEmpty()) {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelExpanded)
-                            }
-                        },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    )
-                    ExposedDropdownMenu(
-                        expanded = modelExpanded && filteredModels.isNotEmpty(),
-                        onDismissRequest = { modelExpanded = false },
-                    ) {
-                        filteredModels.forEach { vehicleModel ->
-                            DropdownMenuItem(
-                                text = { Text(vehicleModel) },
-                                onClick = {
-                                    model.updateForm(state.form.copy(vehicleModel = vehicleModel))
-                                    modelExpanded = false
-                                },
-                                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
-                            )
-                        }
-                    }
-                }
+                MakeModelFields(
+                    make = state.form.vehicleMake,
+                    model = state.form.vehicleModel,
+                    onMakeChange = { model.updateForm(state.form.copy(vehicleMake = it, vehicleModel = "")) },
+                    onModelChange = { model.updateForm(state.form.copy(vehicleModel = it)) },
+                    required = true,
+                )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -252,6 +194,20 @@ class CreateMechanicJobScreen : Screen {
                     minLines = 2,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                val laborHours = state.laborHours
+                val laborRate = state.laborRate
+                if (laborHours != null) {
+                    Text(
+                        if (laborRate != null && laborRate > 0) {
+                            "From the Labor Guide: ${formatQty(laborHours)} hrs at ${formatUsd(laborRate)}/hr will be added to the estimate."
+                        } else {
+                            "From the Labor Guide: ${formatQty(laborHours)} hrs. Set your hourly rate in your profile to add it to the estimate automatically."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedTextField(
@@ -282,6 +238,102 @@ class CreateMechanicJobScreen : Screen {
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+/** Make and model with autocomplete from CarData; free text still allowed for anything not listed. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun MakeModelFields(
+    make: String,
+    model: String,
+    onMakeChange: (String) -> Unit,
+    onModelChange: (String) -> Unit,
+    required: Boolean,
+) {
+    var makeExpanded by remember { mutableStateOf(false) }
+    var modelExpanded by remember { mutableStateOf(false) }
+    val filteredMakes = remember(make) {
+        val query = make.trim().lowercase()
+        if (query.isEmpty()) carMakes else carMakes.filter { it.lowercase().contains(query) }
+    }
+    val availableModels = remember(make) { carModelsByMake[make] ?: emptyList() }
+    val filteredModels = remember(model, availableModels) {
+        val query = model.trim().lowercase()
+        if (query.isEmpty()) availableModels else availableModels.filter { it.lowercase().contains(query) }
+    }
+    val suffix = if (required) " *" else ""
+
+    Column {
+        ExposedDropdownMenuBox(
+            expanded = makeExpanded && filteredMakes.isNotEmpty(),
+            onExpandedChange = { makeExpanded = it },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            OutlinedTextField(
+                value = make,
+                onValueChange = {
+                    onMakeChange(it)
+                    makeExpanded = true
+                },
+                label = { Text("Make$suffix") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = makeExpanded) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().menuAnchor(),
+            )
+            ExposedDropdownMenu(
+                expanded = makeExpanded && filteredMakes.isNotEmpty(),
+                onDismissRequest = { makeExpanded = false },
+            ) {
+                filteredMakes.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onMakeChange(option)
+                            makeExpanded = false
+                        },
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                    )
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        ExposedDropdownMenuBox(
+            expanded = modelExpanded && filteredModels.isNotEmpty(),
+            onExpandedChange = { modelExpanded = it },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            OutlinedTextField(
+                value = model,
+                onValueChange = {
+                    onModelChange(it)
+                    modelExpanded = true
+                },
+                label = { Text("Model$suffix") },
+                trailingIcon = {
+                    if (availableModels.isNotEmpty()) {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelExpanded)
+                    }
+                },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().menuAnchor(),
+            )
+            ExposedDropdownMenu(
+                expanded = modelExpanded && filteredModels.isNotEmpty(),
+                onDismissRequest = { modelExpanded = false },
+            ) {
+                filteredModels.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            onModelChange(option)
+                            modelExpanded = false
+                        },
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                    )
+                }
             }
         }
     }

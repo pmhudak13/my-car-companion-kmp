@@ -11,6 +11,7 @@ import org.mycarcompanion.app.data.models.CannedJob
 import org.mycarcompanion.app.data.models.CannedLine
 import org.mycarcompanion.app.data.models.LaborGuidePart
 import org.mycarcompanion.app.data.models.LaborGuideResult
+import org.mycarcompanion.app.data.models.LaborGuideUpgradeRequired
 import org.mycarcompanion.app.data.models.JobLineItem
 import org.mycarcompanion.app.data.models.JobLineItemInsert
 import org.mycarcompanion.app.data.models.MaintenanceFormData
@@ -105,6 +106,7 @@ data class MechanicJobDetailState(
     /** Parts from the last AI labor lookup; outlive the labor line so they can be added after it. */
     val suggestedParts: List<LaborGuidePart> = emptyList(),
     val isLookingUpLabor: Boolean = false,
+    val laborNeedsPro: Boolean = false,
     // past work: the mechanic's own lines (newest first) and jobs they can copy from
     val lineHistory: List<JobLineItem> = emptyList(),
     val pastJobs: List<PastJob> = emptyList(),
@@ -201,7 +203,7 @@ class MechanicJobDetailScreenModel(
             return
         }
         screenModelScope.launch {
-            _state.value = _state.value.copy(isLookingUpLabor = true, lineItemError = null, laborGuide = null, suggestedParts = emptyList())
+            _state.value = _state.value.copy(isLookingUpLabor = true, lineItemError = null, laborGuide = null, suggestedParts = emptyList(), laborNeedsPro = false)
             lineItemRepository.lookupLaborTime(job.vehicleYear, job.vehicleMake, job.vehicleModel, form.description.trim())
                 .onSuccess { result ->
                     val rate = form.unitPrice.ifBlank { _state.value.mechanicHourlyRate?.let(::formatQty).orEmpty() }
@@ -213,7 +215,11 @@ class MechanicJobDetailScreenModel(
                     )
                 }
                 .onFailure { e ->
-                    _state.value = _state.value.copy(isLookingUpLabor = false, lineItemError = e.message ?: "Labor lookup failed")
+                    _state.value = _state.value.copy(
+                        isLookingUpLabor = false,
+                        lineItemError = e.message ?: "Labor lookup failed",
+                        laborNeedsPro = e is LaborGuideUpgradeRequired,
+                    )
                 }
         }
     }

@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -89,6 +90,9 @@ class MechanicDashboardScreen : Screen {
                 TopAppBar(
                     title = { Text(state.profile?.shopName ?: "My Dashboard") },
                     actions = {
+                        IconButton(onClick = { navigator.push(LaborGuideScreen()) }) {
+                            Icon(Icons.Default.Timer, contentDescription = "Labor Guide")
+                        }
                         IconButton(onClick = { navigator.push(JobBoardScreen(asMechanic = true)) }) {
                             Icon(Icons.Default.Search, contentDescription = "Job Board")
                         }
@@ -103,13 +107,6 @@ class MechanicDashboardScreen : Screen {
                             Icon(Icons.Default.MoreVert, contentDescription = "More options")
                         }
                         DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Labor Guide") },
-                                onClick = {
-                                    menuExpanded = false
-                                    navigator.push(LaborGuideScreen())
-                                },
-                            )
                             DropdownMenuItem(
                                 text = { Text("Import past jobs") },
                                 onClick = {

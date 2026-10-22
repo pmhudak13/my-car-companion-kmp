@@ -81,6 +81,10 @@ private val faqs = listOf(
         "Tap 'Import past jobs' in your dashboard's ⋮ menu, or in Settings. Upload a spreadsheet of your old service records, then tap 'Email Invites to Customers' to invite everyone at once. Include each customer's email so their history shows up when they sign up.",
         link = "https://www.mycarcompanion.org/import-records",
     ),
+    FaqItem(
+        "I'm a mechanic — how do I look up labor hours?",
+        "Tap the timer icon at the top of your dashboard to open the Labor Guide, enter the car and the repair, and tap 'Start a job with this' to turn the result into a job with the hours already on the estimate. Inside a job, pick Labor, name the repair, and tap 'Suggest hours from Labor Guide'.",
+    ),
 )
 
 class HelpScreen : Screen {
