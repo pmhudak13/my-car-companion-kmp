@@ -51,6 +51,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.MileageTrip
 import org.mycarcompanion.app.data.models.tripPurposeLabels
 import org.mycarcompanion.app.data.models.tripPurposes
+import org.mycarcompanion.app.platform.rememberCsvFileSaver
 
 class MileageTrackerScreen : Screen {
 
@@ -61,6 +62,8 @@ class MileageTrackerScreen : Screen {
         val model: MileageTrackerScreenModel = koinScreenModel()
         val state by model.state.collectAsState()
         var tripPendingDelete by remember { mutableStateOf<String?>(null) }
+        var reportYear by remember { mutableStateOf<Int?>(null) }
+        val csvSaver = rememberCsvFileSaver()
 
         if (tripPendingDelete != null) {
             AlertDialog(
@@ -238,6 +241,38 @@ class MileageTrackerScreen : Screen {
                         // Trip history
                         val completedTrips = state.trips.filter { it.endedAt != null }
                         if (completedTrips.isNotEmpty()) {
+                            item {
+                                val years = mileageReportYears(completedTrips)
+                                val year = reportYear?.takeIf { it in years } ?: years.first()
+                                Card(modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text("Tax Report", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                        Text(
+                                            "Trip log with IRS standard mileage rates, ready for your accountant or reimbursement.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            years.forEach { y ->
+                                                FilterChip(
+                                                    selected = y == year,
+                                                    onClick = { reportYear = y },
+                                                    label = { Text(y.toString()) },
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Button(
+                                            onClick = {
+                                                val vehicleNames = state.vehicles.associate { it.id to "${it.year} ${it.make} ${it.model}" }
+                                                csvSaver.save("mileage-$year.csv", buildMileageCsv(state.trips, vehicleNames, year))
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                        ) { Text("Download $year CSV") }
+                                    }
+                                }
+                            }
                             item {
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(

@@ -17,6 +17,7 @@ kotlin {
         namespace = "org.mycarcompanion.app.shared"
         compileSdk = 36
         minSdk = 26
+        withHostTest {}
         compilations.configureEach {
             compileTaskProvider.configure {
                 compilerOptions {
@@ -54,6 +55,10 @@ kotlin {
             implementation(libs.coil.network.ktor)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
+        }
+
+        commonTest.dependencies {
+            implementation(kotlin("test"))
         }
 
         androidMain.dependencies {
