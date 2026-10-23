@@ -8,7 +8,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Mechanics' real billed hours win once this many completed jobs agree; below it, ask Claude.
 const MIN_JOBS = 3;
-// Fresh Claude calls per Mechanic Pro user per calendar month (UTC); cached answers don't count.
+// Fresh Claude calls per paying user (Mechanic Pro or Premium) per calendar month (UTC); cached answers don't count.
 const MONTHLY_AI_LIMIT = 300;
 
 const corsHeaders = {
@@ -39,8 +39,10 @@ function cleanParts(v: unknown): Part[] {
   }).slice(0, 8);
 }
 
-const upgradeResponse = () => jsonResponse({
-  error: "Not enough job data for this car yet. AI estimates with hours and parts come with Mechanic Pro.",
+const upgradeResponse = (isMechanic: boolean) => jsonResponse({
+  error: isMechanic
+    ? "Not enough job data for this car yet. AI estimates with hours and parts come with Mechanic Pro."
+    : "Not enough job data for this car yet. AI fair-price checks come with Premium.",
   upgrade: true,
 }, 200);
 
@@ -54,9 +56,10 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
   if (authError || !user) return jsonResponse({ error: "Unauthorized" }, 401);
 
+  // Mechanics use it to quote; car owners use it to check a quote (the fair-price check)
   const { data: profile } = await supabase
     .from("mechanic_profiles").select("id").eq("user_id", user.id).maybeSingle();
-  if (!profile) return jsonResponse({ error: "Labor guide is for mechanics" }, 403);
+  const isMechanic = !!profile;
 
   let body: Record<string, unknown>;
   try {
@@ -82,10 +85,10 @@ Deno.serve(async (req) => {
     return jsonResponse({ hours: Number(stats.median_hours), source: "mechanics", job_count: stats.job_count }, 200);
   }
 
-  // AI estimates are a paid feature; is_mechanic_pro is set only by the billing functions
+  // AI estimates are paid: Mechanic Pro for mechanics, Premium for owners; both flags are set only by the billing functions
   const { data: billing } = await supabase
-    .from("profiles").select("is_mechanic_pro").eq("user_id", user.id).maybeSingle();
-  if (!billing?.is_mechanic_pro) return upgradeResponse();
+    .from("profiles").select("is_mechanic_pro, is_premium").eq("user_id", user.id).maybeSingle();
+  if (!(isMechanic ? billing?.is_mechanic_pro : billing?.is_premium)) return upgradeResponse(isMechanic);
 
   // No key set = AI fallback off; setting ANTHROPIC_API_KEY turns it on for Mechanic Pro
   if (!anthropicApiKey) {

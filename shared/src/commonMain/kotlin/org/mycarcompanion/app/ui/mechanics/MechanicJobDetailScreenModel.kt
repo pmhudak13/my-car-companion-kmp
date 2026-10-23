@@ -16,6 +16,7 @@ import org.mycarcompanion.app.data.models.JobLineItem
 import org.mycarcompanion.app.data.models.JobLineItemInsert
 import org.mycarcompanion.app.data.models.MaintenanceFormData
 import org.mycarcompanion.app.data.models.MechanicJob
+import kotlinx.datetime.Clock
 import org.mycarcompanion.app.data.models.MechanicJobIssue
 import org.mycarcompanion.app.data.models.MechanicJobIssueInsert
 import org.mycarcompanion.app.data.models.MechanicJobLog
@@ -267,6 +268,37 @@ class MechanicJobDetailScreenModel(
 
     fun setTaxRateInput(value: String) {
         _state.value = _state.value.copy(taxRateInput = value)
+    }
+
+    // ── Job timer (stored on the job so it survives leaving the screen or switching devices) ──
+
+    fun startTimer() = saveTimer { job -> Clock.System.now().toString() to job.timerLoggedSeconds }
+
+    fun stopTimer() = saveTimer { job -> null to timerSeconds(job, Clock.System.now()) }
+
+    fun resetTimer() = saveTimer { null to 0L }
+
+    private fun saveTimer(next: (MechanicJob) -> Pair<String?, Long>) {
+        val job = _state.value.job ?: return
+        val (startedAt, logged) = next(job)
+        screenModelScope.launch {
+            jobRepository.setJobTimer(job.id, startedAt, logged)
+                .onSuccess {
+                    _state.value = _state.value.copy(job = _state.value.job?.copy(timerStartedAt = startedAt, timerLoggedSeconds = logged))
+                }
+                .onFailure { e -> _state.value = _state.value.copy(lineItemError = e.message ?: "Failed to save the timer") }
+        }
+    }
+
+    fun useTimerForLabor(hours: Double) {
+        val form = _state.value.lineItemForm
+        updateLineItemForm(
+            form.copy(
+                kind = "labor",
+                quantity = formatQty(hours),
+                unitPrice = form.unitPrice.ifBlank { _state.value.mechanicHourlyRate?.let(::formatQty).orEmpty() },
+            ),
+        )
     }
 
     fun saveTaxRate() {

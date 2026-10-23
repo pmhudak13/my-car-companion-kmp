@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.mycarcompanion.app.data.models.JobLineItem
+import org.mycarcompanion.app.data.models.LaborGuideResult
+import org.mycarcompanion.app.ui.mechanics.FairPriceState
 import org.mycarcompanion.app.data.models.MaintenanceLog
 import org.mycarcompanion.app.data.models.MechanicAssignment
 import org.mycarcompanion.app.data.models.MechanicJob
@@ -21,6 +23,8 @@ import org.mycarcompanion.app.data.repository.MechanicAssignmentRepository
 import org.mycarcompanion.app.data.repository.MechanicJobIssueRepository
 import org.mycarcompanion.app.data.repository.MechanicJobMediaRepository
 import org.mycarcompanion.app.data.repository.MechanicJobRepository
+import org.mycarcompanion.app.data.repository.Recall
+import org.mycarcompanion.app.data.repository.RecallRepository
 import org.mycarcompanion.app.data.repository.ReminderRepository
 import org.mycarcompanion.app.data.repository.VehicleRepository
 import org.mycarcompanion.app.ui.formatUsd
@@ -39,6 +43,9 @@ data class VehicleDetailState(
     val respondingIssueId: String? = null,
     val lineItemsByJobId: Map<String, List<JobLineItem>> = emptyMap(),
     val approvingJobId: String? = null,
+    // null = not loaded or lookup failed; the section stays hidden rather than claiming "no recalls"
+    val recalls: List<Recall>? = null,
+    val fairPriceByJobId: Map<String, FairPriceState> = emptyMap(),
 )
 
 class VehicleDetailScreenModel(
@@ -50,6 +57,7 @@ class VehicleDetailScreenModel(
     private val issueRepository: MechanicJobIssueRepository,
     private val mediaRepository: MechanicJobMediaRepository,
     private val lineItemRepository: JobLineItemRepository,
+    private val recallRepository: RecallRepository,
 ) : ScreenModel {
 
     private val _state = MutableStateFlow(VehicleDetailState())
@@ -70,6 +78,7 @@ class VehicleDetailScreenModel(
                     loadReminders(vehicleId)
                     loadAssignments(vehicleId)
                     loadMechanicJobs(vehicleId)
+                    if (_state.value.recalls == null) loadRecalls(vehicle)
                 }
                 .onFailure { e ->
                     if (!silent) {
@@ -84,6 +93,14 @@ class VehicleDetailScreenModel(
             maintenanceRepository.getLogsForVehicle(vehicleId)
                 .onSuccess { logs -> _state.value = _state.value.copy(logs = logs) }
                 .onFailure { e -> _state.value = _state.value.copy(error = e.message ?: "Failed to load logs") }
+        }
+    }
+
+    private fun loadRecalls(vehicle: Vehicle) {
+        if (vehicle.make.isBlank() || vehicle.model.isBlank() || vehicle.year <= 0) return
+        screenModelScope.launch {
+            recallRepository.getRecalls(vehicle.make, vehicle.model, vehicle.year)
+                .onSuccess { recalls -> _state.value = _state.value.copy(recalls = recalls) }
         }
     }
 
@@ -128,11 +145,31 @@ class VehicleDetailScreenModel(
         }
     }
 
-    fun approveEstimate(jobId: String) {
+    fun checkFairPrice(job: MechanicJob) {
+        val labor = _state.value.lineItemsByJobId[job.id].orEmpty().filter { it.kind == "labor" && it.description.isNotBlank() }
+        if (labor.isEmpty()) return
+        fun update(f: FairPriceState) {
+            _state.value = _state.value.copy(fairPriceByJobId = _state.value.fairPriceByJobId + (job.id to f))
+        }
+        screenModelScope.launch {
+            update(FairPriceState(isChecking = true))
+            val typical = mutableMapOf<String, LaborGuideResult>()
+            var message: String? = null
+            for (item in labor) {
+                lineItemRepository.lookupLaborTime(job.vehicleYear, job.vehicleMake, job.vehicleModel, item.description)
+                    .onSuccess { typical[item.id] = it }
+                    .onFailure { e -> if (message == null) message = e.message }
+            }
+            if (typical.isEmpty() && message == null) message = "No typical time found for these repairs."
+            update(FairPriceState(typicalHours = typical, message = message.takeIf { typical.size < labor.size }))
+        }
+    }
+
+    fun approveEstimate(jobId: String, signedName: String) {
         val vehicleId = _state.value.vehicle?.id ?: return
         screenModelScope.launch {
             _state.value = _state.value.copy(approvingJobId = jobId)
-            mechanicJobRepository.approveEstimate(jobId)
+            mechanicJobRepository.approveEstimate(jobId, signedName = signedName)
                 .onSuccess {
                     _state.value.mechanicJobs.find { it.id == jobId }?.let { job ->
                         mechanicJobRepository.notifyUser(

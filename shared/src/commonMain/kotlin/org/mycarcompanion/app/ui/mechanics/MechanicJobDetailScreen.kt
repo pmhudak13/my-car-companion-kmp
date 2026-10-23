@@ -183,6 +183,18 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                             )
                         }
 
+                        if (job.status == "open") {
+                            item {
+                                JobTimerCard(
+                                    job = job,
+                                    onStart = model::startTimer,
+                                    onStop = model::stopTimer,
+                                    onReset = model::resetTimer,
+                                    onUseAsLabor = model::useTimerForLabor,
+                                )
+                            }
+                        }
+
                         item {
                             EstimateCard(
                                 job = job,

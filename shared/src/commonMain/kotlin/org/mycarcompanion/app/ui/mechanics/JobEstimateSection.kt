@@ -27,7 +27,12 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Checkbox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -238,22 +243,60 @@ fun OwnerEstimateSection(
     lineItems: List<JobLineItem>,
     issues: List<MechanicJobIssue>,
     isApproving: Boolean,
-    onApprove: () -> Unit,
+    onApprove: (signedName: String) -> Unit,
+    fairPrice: FairPriceState = FairPriceState(),
+    onCheckFairPrice: (() -> Unit)? = null,
 ) {
     if (lineItems.isEmpty() && job.totalCost == null) return
+    var signedName by rememberSaveable(job.id) { mutableStateOf("") }
+    var authorized by rememberSaveable(job.id) { mutableStateOf(false) }
     Column {
         Text("Estimate · ${job.stage}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-        LineItemList(lineItems, job.taxRate, onDelete = null)
+        LineItemList(lineItems, job.taxRate, onDelete = null, typicalHours = fairPrice.typicalHours)
+        if (onCheckFairPrice != null && lineItems.any { it.kind == "labor" }) {
+            when {
+                fairPrice.isChecking -> CircularProgressIndicator(Modifier.size(20.dp))
+                fairPrice.typicalHours.isEmpty() -> TextButton(onClick = onCheckFairPrice) { Text("Check fair price") }
+            }
+            fairPrice.message?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
         ApprovalStatus(job, issues)
         if (job.status == "open" && job.totalCost != null && needsApproval(job, issues)) {
             Spacer(Modifier.height(4.dp))
+            OutlinedTextField(
+                value = signedName,
+                onValueChange = { signedName = it.take(100) },
+                label = { Text("Your full name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = authorized, onCheckedChange = { authorized = it })
+                Text(
+                    "I authorize this work up to ${formatUsd(job.totalCost)}.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
             if (isApproving) CircularProgressIndicator(Modifier.size(24.dp))
-            else Button(onClick = onApprove, modifier = Modifier.fillMaxWidth()) {
-                Text("Approve ${formatUsd(job.totalCost)}")
+            else Button(
+                onClick = { onApprove(signedName.trim()) },
+                enabled = authorized && signedName.trim().length >= 2,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Sign and approve ${formatUsd(job.totalCost)}")
             }
         }
     }
 }
+
+/** Owner-side fair-price check: typical labor hours per labor line, keyed by line item id. */
+data class FairPriceState(
+    val isChecking: Boolean = false,
+    val typicalHours: Map<String, LaborGuideResult> = emptyMap(),
+    val message: String? = null,
+)
 
 /** Mitchell "Recommendations": work the customer declined on earlier visits to this car. */
 @Composable
@@ -289,7 +332,12 @@ fun PreviouslyDeclinedCard(issues: List<MechanicJobIssue>, onReflag: (MechanicJo
 }
 
 @Composable
-private fun LineItemList(items: List<JobLineItem>, taxRate: Double, onDelete: ((String) -> Unit)?) {
+private fun LineItemList(
+    items: List<JobLineItem>,
+    taxRate: Double,
+    onDelete: ((String) -> Unit)?,
+    typicalHours: Map<String, LaborGuideResult> = emptyMap(),
+) {
     if (items.isEmpty()) {
         Text("No line items yet.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         return
@@ -303,6 +351,17 @@ private fun LineItemList(items: List<JobLineItem>, taxRate: Double, onDelete: ((
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                typicalHours[item.id]?.let { typical ->
+                    // ponytail: 25% over typical is the flag; tune if owners see too many false alarms
+                    val high = item.quantity > typical.hours * 1.25
+                    Text(
+                        "Typical: ${formatQty(typical.hours)} h" +
+                            (if (typical.source == "mechanics") " (median of ${typical.jobCount} jobs)" else " (AI estimate)") +
+                            (if (high) " · higher than usual, worth asking why" else ""),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (high) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
             Text("${formatUsd(item.lineTotal)}", style = MaterialTheme.typography.bodyMedium)
             if (onDelete != null) {
@@ -338,7 +397,8 @@ private fun ApprovalStatus(job: MechanicJob, issues: List<MechanicJobIssue>) {
     Spacer(Modifier.height(4.dp))
     Text(
         "Approved ${formatUsd(authorized)} on ${approvedAt.take(10)}" +
-            (job.estimateApprovalMethod?.let { " · ${approvalMethodLabels[it] ?: it}" } ?: ""),
+            (job.estimateApprovalMethod?.let { " · ${approvalMethodLabels[it] ?: it}" } ?: "") +
+            (job.estimateSignedName?.let { " · signed by $it" } ?: ""),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )

@@ -287,6 +287,13 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         }.decodeList<MechanicJob>()
     }
 
+    suspend fun setJobTimer(jobId: String, startedAt: String?, loggedSeconds: Long): Result<Unit> = runCatching {
+        jobsTable.update({
+            set("timer_started_at", startedAt)
+            set("timer_logged_seconds", loggedSeconds)
+        }) { filter { eq("id", jobId) } }
+    }
+
     /** Sets the job's tax rate and remembers it as this mechanic's default for new jobs. */
     suspend fun updateTaxRate(jobId: String, rate: Double): Result<Double> = runCatching {
         val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
@@ -297,12 +304,13 @@ class MechanicJobRepository(private val client: SupabaseClient) {
     }
 
     /** Records estimate approval (owner in-app, or mechanic on the customer's in-person/phone OK). */
-    suspend fun approveEstimate(jobId: String, method: String = "in_app"): Result<Unit> = runCatching {
+    suspend fun approveEstimate(jobId: String, method: String = "in_app", signedName: String? = null): Result<Unit> = runCatching {
         client.postgrest.rpc(
             "approve_mechanic_job_estimate",
             buildJsonObject {
                 put("p_job_id", jobId)
                 put("p_method", method)
+                if (signedName != null) put("p_signed_name", signedName)
             },
         )
     }

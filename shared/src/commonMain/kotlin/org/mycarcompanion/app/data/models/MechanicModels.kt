@@ -80,6 +80,9 @@ data class MechanicJob(
     @SerialName("estimate_approved_by") val estimateApprovedBy: String? = null,
     @SerialName("estimate_approved_total") val estimateApprovedTotal: Double? = null,
     @SerialName("estimate_approval_method") val estimateApprovalMethod: String? = null,
+    @SerialName("estimate_signed_name") val estimateSignedName: String? = null,
+    @SerialName("timer_started_at") val timerStartedAt: String? = null,
+    @SerialName("timer_logged_seconds") val timerLoggedSeconds: Long = 0,
     @SerialName("tax_rate") val taxRate: Double = 0.0,
     /** Brought in from the mechanic's old records via job history import, not worked in the app. */
     val imported: Boolean = false,

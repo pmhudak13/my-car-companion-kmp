@@ -61,11 +61,13 @@ import org.mycarcompanion.app.data.models.JobLineItem
 import org.mycarcompanion.app.data.models.MechanicJob
 import org.mycarcompanion.app.data.models.stage
 import org.mycarcompanion.app.ui.mechanics.OwnerEstimateSection
+import org.mycarcompanion.app.ui.mechanics.FairPriceState
 import org.mycarcompanion.app.data.models.MechanicJobIssue
 import org.mycarcompanion.app.data.models.MechanicJobMedia
 import org.mycarcompanion.app.data.models.Reminder
 import org.mycarcompanion.app.data.models.Vehicle
 import org.mycarcompanion.app.data.models.reminderTypeLabels
+import org.mycarcompanion.app.data.repository.Recall
 import org.mycarcompanion.app.data.supabase.SupabaseConfig
 import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.ui.maintenance.AddMaintenanceScreen
@@ -132,6 +134,7 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
                     ) {
                         item { VehicleHeader(vehicle, onBack = { navigator.pop() }, onSettings = { navigator.push(VehicleSettingsScreen(vehicleId)) }) }
                         item { VehicleInfo(vehicle, onDeleteVehicle = { deleteVehicleConfirm = true }) }
+                        state.recalls?.let { recalls -> item { RecallsCard(recalls) } }
 
                         // --- Reminders Section ---
                         item {
@@ -221,7 +224,9 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
                                     },
                                     lineItems = state.lineItemsByJobId[job.id] ?: emptyList(),
                                     isApproving = state.approvingJobId == job.id,
-                                    onApproveEstimate = { model.approveEstimate(job.id) },
+                                    onApproveEstimate = { name -> model.approveEstimate(job.id, name) },
+                                    fairPrice = state.fairPriceByJobId[job.id] ?: FairPriceState(),
+                                    onCheckFairPrice = { model.checkFairPrice(job) },
                                 )
                             }
                         }
@@ -308,6 +313,56 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
                     TextButton(onClick = { deleteReminderId = null }) { Text("Cancel") }
                 },
             )
+        }
+    }
+}
+
+@Composable
+private fun RecallsCard(recalls: List<Recall>) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val urgent = recalls.any { it.parkIt }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (recalls.isEmpty()) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.errorContainer,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                when (recalls.size) {
+                    0 -> "No open safety recalls found"
+                    1 -> "1 safety recall"
+                    else -> "${recalls.size} safety recalls"
+                },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                if (recalls.isEmpty()) "Checked against NHTSA records for this make, model and year."
+                else "NHTSA recalls for this make, model and year. Repairs are free at a dealer. Not every car of this model is affected; enter your VIN at nhtsa.gov/recalls to confirm.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            if (urgent) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "One or more of these recalls says do not drive the vehicle until it is repaired.",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            if (recalls.isNotEmpty()) {
+                TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Hide details" else "Show details") }
+                if (expanded) {
+                    recalls.forEach { recall ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(recall.component, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                        Text("Campaign ${recall.campaignNumber} · ${recall.reportDate}", style = MaterialTheme.typography.labelSmall)
+                        Text(recall.summary, style = MaterialTheme.typography.bodySmall)
+                        if (recall.remedy.isNotBlank()) Text("Fix: ${recall.remedy}", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
         }
     }
 }
@@ -570,7 +625,9 @@ private fun MechanicJobCard(
     onRespondToIssue: (issueId: String, approved: Boolean) -> Unit,
     lineItems: List<JobLineItem>,
     isApproving: Boolean,
-    onApproveEstimate: () -> Unit,
+    onApproveEstimate: (signedName: String) -> Unit,
+    fairPrice: FairPriceState,
+    onCheckFairPrice: () -> Unit,
 ) {
     val pendingIssues = issues.filter { it.status == "pending" }
     Card(
@@ -625,7 +682,11 @@ private fun MechanicJobCard(
             )
 
             Spacer(modifier = Modifier.height(12.dp))
-            OwnerEstimateSection(job, lineItems, issues, isApproving, onApproveEstimate)
+            OwnerEstimateSection(
+                job, lineItems, issues, isApproving, onApproveEstimate,
+                fairPrice = fairPrice,
+                onCheckFairPrice = onCheckFairPrice.takeIf { job.status == "open" },
+            )
 
             // Pending issues requiring approval
             if (pendingIssues.isNotEmpty()) {
