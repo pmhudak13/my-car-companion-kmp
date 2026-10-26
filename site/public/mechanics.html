@@ -3,12 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GF4JRQKMSQ"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-GF4JRQKMSQ');
+    // Fetch gtag.js after the page loads so it doesn't compete with page assets; calls above queue in dataLayer
+    window.addEventListener('load', function () {
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-GF4JRQKMSQ';
+      document.head.appendChild(s);
+    });
   </script>
   <title>My Car Companion for Mechanics — Manage Jobs, Clients &amp; Reputation</title>
   <meta name="description" content="The mechanic dashboard built to grow your business. Manage jobs, message clients, collect reviews, and get discovered by local car owners.">
@@ -117,11 +123,11 @@
       <li><a href="/#features">Features</a></li>
       <li><a href="/mechanics.html" style="color:var(--text);">For Mechanics</a></li>
       <li><a href="/#pricing">Pricing</a></li>
-      <li><a href="/app">Get Started Free →</a></li>
+      <li><a href="/app/">Get Started Free →</a></li>
     </ul>
     <div class="nav-actions">
-      <a href="/app" class="btn btn-secondary btn-sm">Sign In</a>
-      <a href="/app" class="btn btn-primary btn-sm">Get Started Free</a>
+      <a href="/app/" class="btn btn-secondary btn-sm">Sign In</a>
+      <a href="/app/" class="btn btn-primary btn-sm">Get Started Free</a>
     </div>
     <button class="nav-hamburger" aria-label="Menu">
       <span></span><span></span><span></span>
@@ -139,7 +145,7 @@
       <h1>Run your shop smarter.<br><span style="color:var(--accent);">Grow your reputation.</span></h1>
       <p>My Car Companion gives independent mechanics and shops a professional dashboard to manage jobs, communicate with clients, and get discovered by car owners in your area.</p>
       <div class="mech-hero-ctas">
-        <a href="/app" class="btn btn-primary">Start Free — Mechanic Plan</a>
+        <a href="/app/" class="btn btn-primary">Start Free — Mechanic Plan</a>
         <a href="/#pricing" class="btn btn-secondary">See Pricing</a>
       </div>
     </div>
@@ -285,7 +291,7 @@
       <h2>Ready to grow your mechanic business?</h2>
       <p>Create your free account and start your Mechanic Pro trial. No credit card required.</p>
       <div class="cta-btns">
-        <a href="/app" class="btn btn-primary">Start Free — Mechanic Plan</a>
+        <a href="/app/" class="btn btn-primary">Start Free — Mechanic Plan</a>
         <a href="/#pricing" class="btn btn-secondary">View Pricing</a>
       </div>
     </div>
@@ -312,7 +318,7 @@
           <li><a href="/#pricing">Pricing</a></li>
           <li><a href="/mechanics.html">For Mechanics</a></li>
           <li><a href="/import-records">Import Past Records</a></li>
-          <li><a href="/app">Web App</a></li>
+          <li><a href="/app/">Web App</a></li>
         </ul>
       </div>
       <div class="footer-col">

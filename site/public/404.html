@@ -3,12 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GF4JRQKMSQ"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-GF4JRQKMSQ');
+    // Fetch gtag.js after the page loads so it doesn't compete with page assets; calls above queue in dataLayer
+    window.addEventListener('load', function () {
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-GF4JRQKMSQ';
+      document.head.appendChild(s);
+    });
   </script>
   <title>Page Not Found — My Car Companion</title>
   <link rel="icon" href="/assets/logo.png" type="image/png">
@@ -68,7 +74,7 @@
   <p>That page doesn't exist. Head back home or open the app.</p>
   <div class="not-found-actions">
     <a href="/" class="btn btn-primary">Back to Home</a>
-    <a href="/app" class="btn btn-secondary">Open App</a>
+    <a href="/app/" class="btn btn-secondary">Open App</a>
   </div>
 </div>
 

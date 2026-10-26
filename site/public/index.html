@@ -3,12 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GF4JRQKMSQ"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-GF4JRQKMSQ');
+    // Fetch gtag.js after the page loads so it doesn't compete with page assets; calls above queue in dataLayer
+    window.addEventListener('load', function () {
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-GF4JRQKMSQ';
+      document.head.appendChild(s);
+    });
   </script>
   <title>My Car Companion — Track Maintenance, Find Mechanics</title>
   <meta name="description" content="Track your vehicle maintenance, manage service history, and connect with trusted local mechanics. Free to get started on Android and web.">
@@ -300,11 +306,11 @@
       <li><a href="#features">Features</a></li>
       <li><a href="/mechanics.html">For Mechanics</a></li>
       <li><a href="#pricing">Pricing</a></li>
-      <li><a href="/app">Get Started Free →</a></li>
+      <li><a href="/app/">Get Started Free →</a></li>
     </ul>
     <div class="nav-actions">
-      <a href="/app" class="btn btn-secondary btn-sm">Sign In</a>
-      <a href="/app" class="btn btn-primary btn-sm">Get Started Free</a>
+      <a href="/app/" class="btn btn-secondary btn-sm">Sign In</a>
+      <a href="/app/" class="btn btn-primary btn-sm">Get Started Free</a>
     </div>
     <button class="nav-hamburger" aria-label="Menu">
       <span></span><span></span><span></span>
@@ -322,7 +328,7 @@
       <h1>Your Car.<br>Your History.<br><span class="highlight">Your Mechanic.</span></h1>
       <p>Track vehicle maintenance, manage service records, and connect with trusted local mechanics — all in one place.</p>
       <div class="hero-ctas">
-        <a href="/app" class="btn btn-primary">Create Free Account</a>
+        <a href="/app/" class="btn btn-primary">Create Free Account</a>
         <a href="/mechanics.html" class="btn btn-secondary">I'm a Mechanic →</a>
       </div>
     </div>
@@ -479,7 +485,7 @@
           <li>Mechanic directory access</li>
           <li>Android &amp; web access</li>
         </ul>
-        <a href="/app" class="btn btn-secondary" style="width:100%;justify-content:center;">Get Started Free</a>
+        <a href="/app/" class="btn btn-secondary" style="width:100%;justify-content:center;">Get Started Free</a>
       </div>
 
       <!-- Premium -->
@@ -497,7 +503,7 @@
           <li>Direct mechanic messaging</li>
           <li>Priority support</li>
         </ul>
-        <a href="/app" class="btn btn-primary" style="width:100%;justify-content:center;">Start Free Trial</a>
+        <a href="/app/" class="btn btn-primary" style="width:100%;justify-content:center;">Start Free Trial</a>
       </div>
 
       <!-- Mechanic Pro -->
@@ -514,7 +520,7 @@
           <li>Review &amp; reputation tools</li>
           <li>Profile &amp; directory listing</li>
         </ul>
-        <a href="/app" class="btn btn-secondary" style="width:100%;justify-content:center;">Start Free Trial</a>
+        <a href="/app/" class="btn btn-secondary" style="width:100%;justify-content:center;">Start Free Trial</a>
       </div>
 
     </div>

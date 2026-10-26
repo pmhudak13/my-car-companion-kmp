@@ -3,12 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GF4JRQKMSQ"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-GF4JRQKMSQ');
+    // Fetch gtag.js after the page loads so it doesn't compete with page assets; calls above queue in dataLayer
+    window.addEventListener('load', function () {
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-GF4JRQKMSQ';
+      document.head.appendChild(s);
+    });
   </script>
   <title>Privacy Policy — My Car Companion</title>
   <meta name="description" content="Privacy Policy for My Car Companion. Learn how we collect, use, and protect your personal information.">
@@ -75,11 +81,11 @@
       <li><a href="/#features">Features</a></li>
       <li><a href="/mechanics.html">For Mechanics</a></li>
       <li><a href="/#pricing">Pricing</a></li>
-      <li><a href="/app">Get Started Free →</a></li>
+      <li><a href="/app/">Get Started Free →</a></li>
     </ul>
     <div class="nav-actions">
-      <a href="/app" class="btn btn-secondary btn-sm">Sign In</a>
-      <a href="/app" class="btn btn-primary btn-sm">Get Started Free</a>
+      <a href="/app/" class="btn btn-secondary btn-sm">Sign In</a>
+      <a href="/app/" class="btn btn-primary btn-sm">Get Started Free</a>
     </div>
     <button class="nav-hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
   </div>
@@ -308,7 +314,7 @@
           <li><a href="/#features">Features</a></li>
           <li><a href="/#pricing">Pricing</a></li>
           <li><a href="/mechanics.html">For Mechanics</a></li>
-          <li><a href="/app">Web App</a></li>
+          <li><a href="/app/">Web App</a></li>
         </ul>
       </div>
       <div class="footer-col">
