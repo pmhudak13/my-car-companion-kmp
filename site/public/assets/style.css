@@ -45,7 +45,8 @@ body {
 a { color: var(--accent); text-decoration: none; transition: color var(--transition); }
 a:hover { color: var(--accent-hover); }
 /* Links inside body text need more than color to stand out (WCAG 1.4.1) */
-main p a:not([class]) { text-decoration: underline; text-underline-offset: 2px; }
+main p a:not([class]),
+.legal-content li a:not([class]) { text-decoration: underline; text-underline-offset: 2px; }
 
 img { max-width: 100%; height: auto; }
 
