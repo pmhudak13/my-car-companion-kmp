@@ -20,7 +20,8 @@
   <meta name="robots" content="noindex">
   <meta name="description" content="Sign in or create your My Car Companion account.">
   <link rel="icon" href="/assets/logo.png" type="image/png">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3"></script>
+  <!-- Fetch early without blocking first paint; the script tag itself sits just above the init script -->
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3" as="script">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -494,6 +495,7 @@
   </footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3"></script>
 <script>
   // ── Fatal error handler (catches JS errors and Supabase CDN failures) ──
   function showInitError(msg) {
