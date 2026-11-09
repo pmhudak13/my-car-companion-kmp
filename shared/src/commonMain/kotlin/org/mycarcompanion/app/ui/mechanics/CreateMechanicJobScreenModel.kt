@@ -21,6 +21,7 @@ data class CreateJobForm(
     val vehicleVin: String = "",
     val vehicleColor: String = "",
     val vehicleLicensePlate: String = "",
+    val mileageIn: String = "",
     val description: String = "",
     val notes: String = "",
 )
@@ -83,6 +84,7 @@ class CreateMechanicJobScreenModel(
                 vehicleVin = form.vehicleVin.trim().ifBlank { null },
                 vehicleColor = form.vehicleColor.trim().ifBlank { null },
                 vehicleLicensePlate = form.vehicleLicensePlate.trim().ifBlank { null },
+                mileageIn = form.mileageIn.toIntOrNull(),
                 description = form.description.trim().ifBlank { null },
                 notes = form.notes.trim().ifBlank { null },
             )

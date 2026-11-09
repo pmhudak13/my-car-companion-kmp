@@ -376,11 +376,14 @@ class MechanicJobDetailScreenModel(
         val email = job.clientEmail?.takeIf { it.isNotBlank() } ?: return
         val total = job.totalCost ?: return
         screenModelScope.launch {
-            jobRepository.sendEstimateToClient(
+            val sent = jobRepository.sendEstimateToClient(
                 email,
                 "Your mechanic sent an estimate of ${formatUsd(total)} for your ${job.vehicleYear} ${job.vehicleMake} ${job.vehicleModel}. Open My Car Companion to review and approve it.",
             )
-            _state.value = _state.value.copy(inviteMessage = "Estimate sent to $email")
+            _state.value = _state.value.copy(
+                inviteMessage = if (sent) "Estimate sent to $email"
+                else "Estimate not emailed. $email needs a My Car Companion account first, or has job emails turned off. Send them an invite, or get approval in person or by phone.",
+            )
         }
     }
 

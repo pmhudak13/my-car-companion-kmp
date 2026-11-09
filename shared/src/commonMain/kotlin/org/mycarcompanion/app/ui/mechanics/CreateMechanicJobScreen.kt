@@ -180,6 +180,17 @@ data class CreateMechanicJobScreen(
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.form.mileageIn,
+                    onValueChange = { model.updateForm(state.form.copy(mileageIn = it.filter(Char::isDigit))) },
+                    label = { Text("Mileage in") },
+                    supportingText = { Text("Odometer reading at drop-off. Shown on the invoice.") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
 
                 Spacer(modifier = Modifier.height(20.dp))
 

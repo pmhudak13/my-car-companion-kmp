@@ -76,6 +76,10 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.mycarcompanion.app.data.models.MechanicJob
+import org.mycarcompanion.app.data.models.JobLineItem
+import org.mycarcompanion.app.data.models.jobTotal
+import org.mycarcompanion.app.data.models.subtotal
+import org.mycarcompanion.app.data.models.taxAmount
 import org.mycarcompanion.app.data.models.approvalMethodLabels
 import org.mycarcompanion.app.data.models.stage
 import org.mycarcompanion.app.data.models.MechanicJobIssue
@@ -233,7 +237,7 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                             PaymentCard(
                                 job = job,
                                 costInput = state.totalCostInput,
-                                fromLineItems = state.lineItems.isNotEmpty(),
+                                lineItems = state.lineItems,
                                 logsTotal = state.logs.mapNotNull { it.cost }.sum(),
                                 isSaving = state.isSavingPayment,
                                 onCostChange = model::setTotalCostInput,
@@ -440,7 +444,10 @@ private fun JobInfoCard(job: MechanicJob) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(job.clientName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Column {
+                    Text(job.clientName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Invoice #${job.invoiceNumber}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 Text(
                     text = job.stage,
                     style = MaterialTheme.typography.labelSmall,
@@ -456,6 +463,7 @@ private fun JobInfoCard(job: MechanicJob) {
             job.vehicleColor?.let { Text("Color: $it", style = MaterialTheme.typography.bodySmall) }
             job.vehicleLicensePlate?.let { Text("Plate: $it", style = MaterialTheme.typography.bodySmall) }
             job.vehicleVin?.let { Text("VIN: $it", style = MaterialTheme.typography.bodySmall) }
+            job.mileageIn?.let { Text("Mileage in: $it", style = MaterialTheme.typography.bodySmall) }
             job.description?.let {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -518,7 +526,7 @@ private fun ProgressSection(
 private fun PaymentCard(
     job: MechanicJob,
     costInput: String,
-    fromLineItems: Boolean,
+    lineItems: List<JobLineItem>,
     logsTotal: Double,
     isSaving: Boolean,
     onCostChange: (String) -> Unit,
@@ -527,26 +535,30 @@ private fun PaymentCard(
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Cost of Service", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text("Invoice Total", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
-            if (fromLineItems) {
-                // Line items own the total; editing here would be overwritten on the next line change.
+            if (lineItems.isNotEmpty()) {
+                // Line items own the total (DB mechanic_job_total()); a typed total only applies with no lines.
+                TotalRow("Subtotal (labor, parts, fees)", lineItems.subtotal(), bold = false)
+                TotalRow("Sales tax (${job.taxRate}% on parts)", lineItems.taxAmount(job.taxRate), bold = false)
+                TotalRow("Total", lineItems.jobTotal(job.taxRate) ?: 0.0, bold = true)
                 Text(
-                    "${formatUsd(job.totalCost ?: 0.0)}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    "From the estimate line items above. Edit the lines to change it.",
+                    "Adds up every line in the estimate above. Edit the lines to change it.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
+                Text(
+                    "No line items yet. Add lines to the estimate above to have the total add up for you, or type a flat total here.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
                         value = costInput,
                         onValueChange = onCostChange,
-                        label = { Text("Total cost") },
+                        label = { Text("Flat total") },
                         leadingIcon = { Text("$") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,

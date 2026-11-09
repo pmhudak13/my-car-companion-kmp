@@ -84,6 +84,9 @@ data class MechanicJob(
     @SerialName("timer_started_at") val timerStartedAt: String? = null,
     @SerialName("timer_logged_seconds") val timerLoggedSeconds: Long = 0,
     @SerialName("tax_rate") val taxRate: Double = 0.0,
+    @SerialName("mileage_in") val mileageIn: Int? = null,
+    /** Per-mechanic, assigned by the DB on insert. 0 only before the row exists. */
+    @SerialName("invoice_number") val invoiceNumber: Int = 0,
     /** Brought in from the mechanic's old records via job history import, not worked in the app. */
     val imported: Boolean = false,
 )
@@ -281,6 +284,7 @@ data class MechanicJobInsert(
     @SerialName("vehicle_vin") val vehicleVin: String? = null,
     @SerialName("vehicle_color") val vehicleColor: String? = null,
     @SerialName("vehicle_license_plate") val vehicleLicensePlate: String? = null,
+    @SerialName("mileage_in") val mileageIn: Int? = null,
     val description: String? = null,
     val notes: String? = null,
 )

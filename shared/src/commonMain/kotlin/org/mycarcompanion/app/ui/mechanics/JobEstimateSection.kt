@@ -379,7 +379,7 @@ private fun LineItemList(
 }
 
 @Composable
-private fun TotalRow(label: String, amount: Double, bold: Boolean) {
+internal fun TotalRow(label: String, amount: Double, bold: Boolean) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal, style = MaterialTheme.typography.bodyMedium)
         Text(

@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
@@ -27,7 +26,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -99,14 +98,18 @@ class MechanicDashboardScreen : Screen {
                         IconButton(onClick = { navigator.push(MessagesListScreen()) }) {
                             Icon(Icons.Default.Email, contentDescription = "Messages")
                         }
-                        IconButton(onClick = { navigator.push(MechanicSetupScreen()) }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit Profile")
-                        }
                         var menuExpanded by remember { mutableStateOf(false) }
                         IconButton(onClick = { menuExpanded = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = "More options")
                         }
                         DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                            DropdownMenuItem(
+                                text = { Text("Edit shop profile") },
+                                onClick = {
+                                    menuExpanded = false
+                                    navigator.push(MechanicSetupScreen())
+                                },
+                            )
                             DropdownMenuItem(
                                 text = { Text("Import past jobs") },
                                 onClick = {
@@ -136,11 +139,11 @@ class MechanicDashboardScreen : Screen {
                 )
             },
             floatingActionButton = {
-                if (state.selectedTab == MechanicDashboardTab.MY_JOBS) {
-                    FloatingActionButton(onClick = { navigator.push(CreateMechanicJobScreen()) }) {
-                        Icon(Icons.Default.Add, contentDescription = "Create Job")
-                    }
-                }
+                ExtendedFloatingActionButton(
+                    onClick = { navigator.push(CreateMechanicJobScreen()) },
+                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    text = { Text("New job") },
+                )
             },
         ) { paddingValues ->
             Column(
@@ -150,14 +153,14 @@ class MechanicDashboardScreen : Screen {
             ) {
                 TabRow(selectedTabIndex = state.selectedTab.ordinal) {
                     Tab(
-                        selected = state.selectedTab == MechanicDashboardTab.CLIENT_JOBS,
-                        onClick = { model.selectTab(MechanicDashboardTab.CLIENT_JOBS) },
-                        text = { Text("Client Jobs") },
-                    )
-                    Tab(
                         selected = state.selectedTab == MechanicDashboardTab.MY_JOBS,
                         onClick = { model.selectTab(MechanicDashboardTab.MY_JOBS) },
                         text = { Text("My Jobs") },
+                    )
+                    Tab(
+                        selected = state.selectedTab == MechanicDashboardTab.CLIENT_JOBS,
+                        onClick = { model.selectTab(MechanicDashboardTab.CLIENT_JOBS) },
+                        text = { Text("Client Jobs") },
                     )
                 }
 
@@ -265,7 +268,7 @@ private fun MyJobsTab(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Tap + to create a job for any client, even if they're not in the app yet.",
+                    text = "Tap New job to create a job for any client, even if they're not in the app yet.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -329,7 +332,7 @@ private fun MyJobCard(job: MechanicJob, onClick: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Created ${job.createdAt.take(10)}",
+                text = "Invoice #${job.invoiceNumber} · Created ${job.createdAt.take(10)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline,
             )

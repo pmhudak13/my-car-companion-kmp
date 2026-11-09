@@ -14,10 +14,10 @@ import org.mycarcompanion.app.data.repository.MechanicAssignmentRepository
 import org.mycarcompanion.app.data.repository.MechanicJobRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
 
-enum class MechanicDashboardTab { CLIENT_JOBS, MY_JOBS }
+enum class MechanicDashboardTab { MY_JOBS, CLIENT_JOBS }
 
 data class MechanicDashboardState(
-    val selectedTab: MechanicDashboardTab = MechanicDashboardTab.CLIENT_JOBS,
+    val selectedTab: MechanicDashboardTab = MechanicDashboardTab.MY_JOBS,
     val assignments: List<MechanicAssignment> = emptyList(),
     val myJobs: List<MechanicJob> = emptyList(),
     val profile: MechanicProfile? = null,
