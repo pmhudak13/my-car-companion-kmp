@@ -194,15 +194,28 @@ data class CreateMechanicJobScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // ── Job Details ──────────────────────────────────────────────
-                Text("Job Details", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                // ── Check-in ─────────────────────────────────────────────────
+                Text("Check-in", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 OutlinedTextField(
                     value = state.form.description,
                     onValueChange = { model.updateForm(state.form.copy(description = it)) },
-                    label = { Text("Job Description") },
+                    label = { Text("Customer states") },
+                    supportingText = { Text("The problem in the customer's words, e.g. \"Grinding noise when braking\"") },
                     minLines = 2,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = state.form.diagnosticFee,
+                    onValueChange = { model.updateForm(state.form.copy(diagnosticFee = it)) },
+                    label = { Text("Diagnostic fee") },
+                    leadingIcon = { Text("$") },
+                    supportingText = { Text("Added to the estimate as a fee line. Leave blank for none; you can remove it later.") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 val laborHours = state.laborHours

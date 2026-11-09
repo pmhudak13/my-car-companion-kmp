@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
@@ -86,6 +87,7 @@ fun EstimateCard(
     onSendEstimate: (() -> Unit)?,
 ) {
     val editable = job.status == "open"
+    var addingLine by rememberSaveable(job.id) { mutableStateOf(false) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -100,118 +102,129 @@ fun EstimateCard(
                     TextButton(onClick = onCopyPastJob) { Text("Copy past job") }
                     if (lineItems.isNotEmpty()) TextButton(onClick = onSaveAsJob) { Text("Save as job") }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    lineKinds.forEach { (kind, label) ->
-                        FilterChip(
-                            selected = form.kind == kind,
-                            onClick = { onFormChange(form.copy(kind = kind)) },
-                            label = { Text(label) },
-                        )
+                // Saved jobs, suggested parts and the timer fill the form, so show it whenever it has something
+                if (!addingLine && form == LineItemForm()) {
+                    // He missed the always-open form (it read like settings), so adding a line is one clear button
+                    Button(onClick = { addingLine = true }, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Add a line: labor, part or fee")
                     }
-                }
-                OutlinedTextField(
-                    value = form.description,
-                    onValueChange = { onFormChange(form.copy(description = it)) },
-                    label = { Text(if (form.kind == "part") "Part needed" else "Description") },
-                    supportingText = when (form.kind) {
-                        "part" -> { { Text("Add each part as its own line") } }
-                        "labor" -> { { Text("Name the repair, then tap Suggest hours") } }
-                        else -> null
-                    },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                lastCharged?.let { last ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "Last charged: ${formatQty(last.quantity)} × ${formatUsd(last.unitPrice)} for \"${last.description}\" on ${last.createdAt.take(10)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.weight(1f),
-                        )
-                        TextButton(onClick = onUseLastCharged) { Text("Use") }
-                    }
-                }
-                if (form.kind == "labor") {
-                    OutlinedButton(
-                        onClick = onSuggestLabor,
-                        enabled = !isLookingUpLabor,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        if (isLookingUpLabor) {
-                            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Looking up hours…")
-                        } else {
-                            Icon(Icons.Default.Timer, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Suggest hours from Labor Guide")
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        lineKinds.forEach { (kind, label) ->
+                            FilterChip(
+                                selected = form.kind == kind,
+                                onClick = { onFormChange(form.copy(kind = kind)) },
+                                label = { Text(label) },
+                            )
                         }
                     }
-                    laborGuide?.let {
-                        Text(
-                            "${formatQty(it.hours)} hrs filled in below. ${it.sourceLabel}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    if (laborNeedsPro) TextButton(onClick = onSeePro) { Text("See Mechanic Pro") }
-                }
-                if (suggestedParts.isNotEmpty()) {
-                    Text("Parts usually needed", style = MaterialTheme.typography.labelMedium)
-                    suggestedParts.forEach { part ->
+                    OutlinedTextField(
+                        value = form.description,
+                        onValueChange = { onFormChange(form.copy(description = it)) },
+                        label = { Text(if (form.kind == "part") "Part needed" else "Description") },
+                        supportingText = when (form.kind) {
+                            "part" -> { { Text("Add each part as its own line") } }
+                            "labor" -> { { Text("Name the repair. Hours fill in from the Labor Guide when you pause typing.") } }
+                            else -> null
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    lastCharged?.let { last ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                "${part.name}: ${formatUsd(part.low)} to ${formatUsd(part.high)}",
+                                "Last charged: ${formatQty(last.quantity)} × ${formatUsd(last.unitPrice)} for \"${last.description}\" on ${last.createdAt.take(10)}",
                                 style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f),
                             )
-                            TextButton(onClick = { onUseSuggestedPart(part) }) { Text("Use") }
+                            TextButton(onClick = onUseLastCharged) { Text("Use") }
                         }
                     }
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = form.quantity,
-                        onValueChange = { onFormChange(form.copy(quantity = it)) },
-                        label = { Text(if (form.kind == "labor") "Hours" else "Qty") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
+                    if (form.kind == "labor") {
+                        OutlinedButton(
+                            onClick = onSuggestLabor,
+                            enabled = !isLookingUpLabor,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            if (isLookingUpLabor) {
+                                CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Looking up hours…")
+                            } else {
+                                Icon(Icons.Default.Timer, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Suggest hours from Labor Guide")
+                            }
+                        }
+                        laborGuide?.let {
+                            Text(
+                                "${formatQty(it.hours)} hrs filled in below. ${it.sourceLabel}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (laborNeedsPro) TextButton(onClick = onSeePro) { Text("See Mechanic Pro") }
+                    }
+                    if (suggestedParts.isNotEmpty()) {
+                        Text("Parts usually needed", style = MaterialTheme.typography.labelMedium)
+                        suggestedParts.forEach { part ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "${part.name}: ${formatUsd(part.low)} to ${formatUsd(part.high)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                TextButton(onClick = { onUseSuggestedPart(part) }) { Text("Use") }
+                            }
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = form.quantity,
+                            onValueChange = { onFormChange(form.copy(quantity = it)) },
+                            label = { Text(if (form.kind == "labor") "Hours" else "Qty") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        OutlinedTextField(
+                            value = form.unitPrice,
+                            onValueChange = { onFormChange(form.copy(unitPrice = it)) },
+                            label = { Text(when (form.kind) { "labor" -> "Rate"; "part" -> "Price per part"; else -> "Price" }) },
+                            leadingIcon = { Text("$") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        if (isSaving) CircularProgressIndicator(Modifier.size(24.dp))
+                        else FilledTonalButton(onClick = onAdd) { Text("Add") }
+                    }
+                    error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                        OutlinedTextField(
+                            value = taxRateInput,
+                            onValueChange = onTaxRateChange,
+                            label = { Text("Sales tax % on parts") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        if (isSavingTaxRate) CircularProgressIndicator(Modifier.size(24.dp))
+                        else TextButton(onClick = onSaveTaxRate) { Text("Save rate") }
+                    }
+                    Text(
+                        "Saved as your default for new jobs. For a discount, add a Fee line with a negative price.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Spacer(Modifier.width(8.dp))
-                    OutlinedTextField(
-                        value = form.unitPrice,
-                        onValueChange = { onFormChange(form.copy(unitPrice = it)) },
-                        label = { Text(when (form.kind) { "labor" -> "Rate"; "part" -> "Price per part"; else -> "Price" }) },
-                        leadingIcon = { Text("$") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    if (isSaving) CircularProgressIndicator(Modifier.size(24.dp))
-                    else FilledTonalButton(onClick = onAdd) { Text("Add") }
+                    TextButton(onClick = { addingLine = false; onFormChange(LineItemForm()) }) { Text("Done adding lines") }
                 }
-                error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
-                    OutlinedTextField(
-                        value = taxRateInput,
-                        onValueChange = onTaxRateChange,
-                        label = { Text("Sales tax % on parts") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    if (isSavingTaxRate) CircularProgressIndicator(Modifier.size(24.dp))
-                    else TextButton(onClick = onSaveTaxRate) { Text("Save rate") }
-                }
-                Text(
-                    "Saved as your default for new jobs. For a discount, add a Fee line with a negative price.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
 
             ApprovalStatus(job, issues)

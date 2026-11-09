@@ -50,6 +50,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -155,6 +157,16 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
 
                 else -> {
                     val job = state.job!!
+                    // Open on the stage the job is in; the mechanic can still switch tabs freely
+                    var stage by rememberSaveable(job.id) {
+                        mutableStateOf(
+                            when {
+                                job.status == "completed" || job.estimateApprovedAt != null -> JobStageTab.INVOICE
+                                state.lineItems.isNotEmpty() || state.issues.isNotEmpty() -> JobStageTab.ESTIMATE
+                                else -> JobStageTab.CHECK_IN
+                            },
+                        )
+                    }
                     LazyColumn(
                         modifier = Modifier.fillMaxSize().padding(paddingValues),
                         contentPadding = PaddingValues(16.dp),
@@ -163,185 +175,208 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                         // Job info card
                         item { JobInfoCard(job) }
 
-                        if (job.status == "open" && state.previouslyDeclined.isNotEmpty()) {
-                            item { PreviouslyDeclinedCard(state.previouslyDeclined, onReflag = model::reflagIssue) }
-                        }
-
-                        // Progress section (always visible while job is open or recently completed)
                         item {
-                            ProgressSection(
-                                percent = state.progressPercent,
-                                isSaving = state.isSavingProgress,
-                                onValueChange = model::setProgressPercent,
-                                onSave = model::saveProgress,
-                            )
-                        }
-
-                        // Invite card (shown without an email too, so one can be added later)
-                        item {
-                            InviteCard(
-                                job = job,
-                                isSending = state.isSendingInvite,
-                                onSend = model::sendInvite,
-                                onSaveEmail = model::updateClientEmail,
-                            )
-                        }
-
-                        if (job.status == "open") {
-                            item {
-                                JobTimerCard(
-                                    job = job,
-                                    onStart = model::startTimer,
-                                    onStop = model::stopTimer,
-                                    onReset = model::resetTimer,
-                                    onUseAsLabor = model::useTimerForLabor,
-                                )
-                            }
-                        }
-
-                        item {
-                            EstimateCard(
-                                job = job,
-                                lineItems = state.lineItems,
-                                issues = state.issues,
-                                form = state.lineItemForm,
-                                isSaving = state.isSavingLineItem,
-                                error = state.lineItemError,
-                                isApproving = state.isApproving,
-                                taxRateInput = state.taxRateInput,
-                                isSavingTaxRate = state.isSavingTaxRate,
-                                onFormChange = model::updateLineItemForm,
-                                onTaxRateChange = model::setTaxRateInput,
-                                onSaveTaxRate = model::saveTaxRate,
-                                onAdd = model::addLineItem,
-                                onDelete = model::deleteLineItem,
-                                onApprove = { model.promptApproval(ApprovalPrompt.Estimate) },
-                                onUseSavedJob = { model.showCannedPicker(true) },
-                                onSaveAsJob = { model.showSaveCanned(true) },
-                                laborGuide = state.laborGuide,
-                                isLookingUpLabor = state.isLookingUpLabor,
-                                onSuggestLabor = model::suggestLaborTime,
-                                laborNeedsPro = state.laborNeedsPro,
-                                onSeePro = { navigator.push(SubscribeScreen()) },
-                                suggestedParts = state.suggestedParts,
-                                onUseSuggestedPart = model::useSuggestedPart,
-                                lastCharged = state.lastCharged,
-                                onUseLastCharged = model::useLastCharged,
-                                onCopyPastJob = { model.showPastJobPicker(true) },
-                                onSendEstimate = if (job.clientEmail.isNullOrBlank()) null else model::sendEstimate,
-                            )
-                        }
-
-                        // Cost of service & payment
-                        item {
-                            PaymentCard(
-                                job = job,
-                                costInput = state.totalCostInput,
-                                lineItems = state.lineItems,
-                                logsTotal = state.logs.mapNotNull { it.cost }.sum(),
-                                isSaving = state.isSavingPayment,
-                                onCostChange = model::setTotalCostInput,
-                                onSave = { model.savePayment(job.paymentReceived) },
-                                onPaymentReceivedChange = model::savePayment,
-                            )
-                        }
-
-                        // Complete job button
-                        if (job.status == "open") {
-                            item {
-                                CompleteJobCard(
-                                    canComplete = state.canComplete,
-                                    pendingIssueCount = state.pendingIssueCount,
-                                    isCompleting = state.isCompleting,
-                                    onComplete = { model.completeJob(job.id) },
-                                )
-                            }
-                        }
-
-                        // Issues section
-                        item {
-                            IssuesSectionHeader(
-                                issueCount = state.issues.size,
-                                pendingCount = state.pendingIssueCount,
-                                onFlagIssue = model::showIssueForm,
-                            )
-                        }
-                        if (state.issues.isEmpty()) {
-                            item {
-                                Text(
-                                    "No issues flagged.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        } else {
-                            items(state.issues, key = { it.id }) { issue ->
-                                IssueCard(
-                                    issue = issue,
-                                    onDelete = { model.deleteIssue(issue.id) },
-                                    onRespond = { approved -> model.promptApproval(ApprovalPrompt.Issue(issue.id, approved)) },
-                                )
-                            }
-                        }
-
-                        // Media section
-                        item {
-                            MediaSectionHeader(
-                                count = state.mediaItems.size,
-                                isUploading = state.isUploadingMedia,
-                                onUpload = { mediaPicker.launch() },
-                            )
-                        }
-                        state.mediaError?.let { error ->
-                            item { Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
-                        }
-                        if (state.mediaItems.isNotEmpty()) {
-                            item {
-                                MediaGrid(
-                                    items = state.mediaItems,
-                                    onDelete = model::deleteMedia,
-                                )
-                            }
-                        }
-
-                        // Service logs
-                        item {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    "Service Logs (${state.logs.size})",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                if (job.status == "open") {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        FilledTonalIconButton(onClick = { navigator.push(RecordImportScreen(job)) }) {
-                                            Icon(Icons.Default.Upload, contentDescription = "Import Records")
-                                        }
-                                        TextButton(onClick = model::showAddLog) { Text("+ Add Log") }
-                                    }
+                            TabRow(selectedTabIndex = stage.ordinal) {
+                                JobStageTab.entries.forEach { tab ->
+                                    Tab(selected = stage == tab, onClick = { stage = tab }, text = { Text(tab.label) })
                                 }
                             }
                         }
-                        if (state.logs.isEmpty()) {
-                            item {
-                                Text(
-                                    "No service logs yet. Tap + to add work done.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+
+                        when (stage) {
+                            JobStageTab.CHECK_IN -> {
+                                if (job.status == "open" && state.previouslyDeclined.isNotEmpty()) {
+                                    item { PreviouslyDeclinedCard(state.previouslyDeclined, onReflag = model::reflagIssue) }
+                                }
+
+                                // Invite card (shown without an email too, so one can be added later)
+                                item {
+                                    InviteCard(
+                                        job = job,
+                                        isSending = state.isSendingInvite,
+                                        onSend = model::sendInvite,
+                                        onSaveEmail = model::updateClientEmail,
+                                    )
+                                }
+                                item {
+                                    Button(onClick = { stage = JobStageTab.ESTIMATE }, modifier = Modifier.fillMaxWidth()) {
+                                        Text("Continue to estimate")
+                                    }
+                                }
                             }
-                        } else {
-                            items(state.logs, key = { it.id }) { log ->
-                                JobLogCard(
-                                    log = log,
-                                    editable = job.status == "open",
-                                    onEdit = { model.showEditLog(log) },
-                                    onDelete = { model.deleteLog(log.id) },
-                                )
+                            JobStageTab.ESTIMATE -> {
+                                if (job.status == "open") {
+                                    item {
+                                        JobTimerCard(
+                                            job = job,
+                                            onStart = model::startTimer,
+                                            onStop = model::stopTimer,
+                                            onReset = model::resetTimer,
+                                            onUseAsLabor = model::useTimerForLabor,
+                                        )
+                                    }
+                                }
+
+                                item {
+                                    EstimateCard(
+                                        job = job,
+                                        lineItems = state.lineItems,
+                                        issues = state.issues,
+                                        form = state.lineItemForm,
+                                        isSaving = state.isSavingLineItem,
+                                        error = state.lineItemError,
+                                        isApproving = state.isApproving,
+                                        taxRateInput = state.taxRateInput,
+                                        isSavingTaxRate = state.isSavingTaxRate,
+                                        onFormChange = model::updateLineItemForm,
+                                        onTaxRateChange = model::setTaxRateInput,
+                                        onSaveTaxRate = model::saveTaxRate,
+                                        onAdd = model::addLineItem,
+                                        onDelete = model::deleteLineItem,
+                                        onApprove = { model.promptApproval(ApprovalPrompt.Estimate) },
+                                        onUseSavedJob = { model.showCannedPicker(true) },
+                                        onSaveAsJob = { model.showSaveCanned(true) },
+                                        laborGuide = state.laborGuide,
+                                        isLookingUpLabor = state.isLookingUpLabor,
+                                        onSuggestLabor = { model.suggestLaborTime() },
+                                        laborNeedsPro = state.laborNeedsPro,
+                                        onSeePro = { navigator.push(SubscribeScreen()) },
+                                        suggestedParts = state.suggestedParts,
+                                        onUseSuggestedPart = model::useSuggestedPart,
+                                        lastCharged = state.lastCharged,
+                                        onUseLastCharged = model::useLastCharged,
+                                        onCopyPastJob = { model.showPastJobPicker(true) },
+                                        onSendEstimate = if (job.clientEmail.isNullOrBlank()) null else model::sendEstimate,
+                                    )
+                                }
+
+                                // Issues section
+                                item {
+                                    IssuesSectionHeader(
+                                        issueCount = state.issues.size,
+                                        pendingCount = state.pendingIssueCount,
+                                        onFlagIssue = model::showIssueForm,
+                                    )
+                                }
+                                if (state.issues.isEmpty()) {
+                                    item {
+                                        Text(
+                                            "No issues flagged.",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                } else {
+                                    items(state.issues, key = { it.id }) { issue ->
+                                        IssueCard(
+                                            issue = issue,
+                                            onDelete = { model.deleteIssue(issue.id) },
+                                            onRespond = { approved -> model.promptApproval(ApprovalPrompt.Issue(issue.id, approved)) },
+                                        )
+                                    }
+                                }
+
+                                // Media section
+                                item {
+                                    MediaSectionHeader(
+                                        count = state.mediaItems.size,
+                                        isUploading = state.isUploadingMedia,
+                                        onUpload = { mediaPicker.launch() },
+                                    )
+                                }
+                                state.mediaError?.let { error ->
+                                    item { Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                                }
+                                if (state.mediaItems.isNotEmpty()) {
+                                    item {
+                                        MediaGrid(
+                                            items = state.mediaItems,
+                                            onDelete = model::deleteMedia,
+                                        )
+                                    }
+                                }
+                                item {
+                                    Button(onClick = { stage = JobStageTab.INVOICE }, modifier = Modifier.fillMaxWidth()) {
+                                        Text("Continue to invoice")
+                                    }
+                                }
+                            }
+                            JobStageTab.INVOICE -> {
+                                // Progress section (always visible while job is open or recently completed)
+                                item {
+                                    ProgressSection(
+                                        percent = state.progressPercent,
+                                        isSaving = state.isSavingProgress,
+                                        onValueChange = model::setProgressPercent,
+                                        onSave = model::saveProgress,
+                                    )
+                                }
+
+                                // Service logs
+                                item {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            "Service Logs (${state.logs.size})",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                        )
+                                        if (job.status == "open") {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                FilledTonalIconButton(onClick = { navigator.push(RecordImportScreen(job)) }) {
+                                                    Icon(Icons.Default.Upload, contentDescription = "Import Records")
+                                                }
+                                                TextButton(onClick = model::showAddLog) { Text("+ Add Log") }
+                                            }
+                                        }
+                                    }
+                                }
+                                if (state.logs.isEmpty()) {
+                                    item {
+                                        Text(
+                                            "No service logs yet. Tap + to add work done.",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                } else {
+                                    items(state.logs, key = { it.id }) { log ->
+                                        JobLogCard(
+                                            log = log,
+                                            editable = job.status == "open",
+                                            onEdit = { model.showEditLog(log) },
+                                            onDelete = { model.deleteLog(log.id) },
+                                        )
+                                    }
+                                }
+                                // Cost of service & payment
+                                item {
+                                    PaymentCard(
+                                        job = job,
+                                        costInput = state.totalCostInput,
+                                        lineItems = state.lineItems,
+                                        logsTotal = state.logs.mapNotNull { it.cost }.sum(),
+                                        isSaving = state.isSavingPayment,
+                                        onCostChange = model::setTotalCostInput,
+                                        onSave = { model.savePayment(job.paymentReceived) },
+                                        onPaymentReceivedChange = model::savePayment,
+                                    )
+                                }
+
+                                // Complete job button
+                                if (job.status == "open") {
+                                    item {
+                                        CompleteJobCard(
+                                            canComplete = state.canComplete,
+                                            pendingIssueCount = state.pendingIssueCount,
+                                            isCompleting = state.isCompleting,
+                                            onComplete = { model.completeJob(job.id) },
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -430,6 +465,8 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
     }
 }
 
+private enum class JobStageTab(val label: String) { CHECK_IN("Check-in"), ESTIMATE("Estimate"), INVOICE("Invoice") }
+
 // ── Job Info Card ─────────────────────────────────────────────────────────────
 
 @Composable
@@ -466,6 +503,7 @@ private fun JobInfoCard(job: MechanicJob) {
             job.mileageIn?.let { Text("Mileage in: $it", style = MaterialTheme.typography.bodySmall) }
             job.description?.let {
                 Spacer(modifier = Modifier.height(8.dp))
+                Text("Customer states", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -543,13 +581,13 @@ private fun PaymentCard(
                 TotalRow("Sales tax (${job.taxRate}% on parts)", lineItems.taxAmount(job.taxRate), bold = false)
                 TotalRow("Total", lineItems.jobTotal(job.taxRate) ?: 0.0, bold = true)
                 Text(
-                    "Adds up every line in the estimate above. Edit the lines to change it.",
+                    "Adds up every line on the Estimate tab. Edit the lines there to change it.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
                 Text(
-                    "No line items yet. Add lines to the estimate above to have the total add up for you, or type a flat total here.",
+                    "No line items yet. Add lines on the Estimate tab to have the total add up for you, or type a flat total here.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

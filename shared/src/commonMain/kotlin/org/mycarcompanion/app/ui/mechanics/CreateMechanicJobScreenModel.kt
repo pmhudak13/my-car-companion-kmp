@@ -22,6 +22,7 @@ data class CreateJobForm(
     val vehicleColor: String = "",
     val vehicleLicensePlate: String = "",
     val mileageIn: String = "",
+    val diagnosticFee: String = "",
     val description: String = "",
     val notes: String = "",
 )
@@ -76,6 +77,11 @@ class CreateMechanicJobScreenModel(
             _state.value = _state.value.copy(error = "Mileage in is required for the invoice")
             return
         }
+        val diagnosticFee = form.diagnosticFee.trim().ifBlank { "0" }.toDoubleOrNull()
+        if (diagnosticFee == null || diagnosticFee < 0) {
+            _state.value = _state.value.copy(error = "Enter the diagnostic fee as a number, or leave it blank")
+            return
+        }
 
         screenModelScope.launch {
             _state.value = _state.value.copy(isSaving = true, error = null)
@@ -98,6 +104,10 @@ class CreateMechanicJobScreenModel(
                     val vin = form.vehicleVin.trim()
                     if (vin.isNotBlank()) {
                         jobRepository.linkJobByVin(job.id, vin)
+                    }
+                    if (diagnosticFee > 0) {
+                        // same as the labor line below: the job exists, so a failed line can be re-added on the job
+                        lineItemRepository.add(JobLineItemInsert(job.id, "", "fee", "Diagnostic fee", 1.0, diagnosticFee))
                     }
                     val hours = _state.value.laborHours
                     val rate = _state.value.laborRate

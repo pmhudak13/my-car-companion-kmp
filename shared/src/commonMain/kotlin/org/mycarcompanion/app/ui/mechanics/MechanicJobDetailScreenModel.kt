@@ -3,6 +3,7 @@ package org.mycarcompanion.app.ui.mechanics
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -194,11 +195,28 @@ class MechanicJobDetailScreenModel(
         // a suggestion is for one repair; drop it once the mechanic changes what it was for
         val guide = _state.value.laborGuide.takeIf { form.kind == old.kind && form.description == old.description }
         _state.value = _state.value.copy(lineItemForm = form, lineItemError = null, laborGuide = guide)
+
+        // Fill hours as he types: look up once he pauses, unless he set hours himself or has his own price history
+        autoLaborLookup?.cancel()
+        val untouchedHours = form.quantity.isBlank() || form.quantity == LineItemForm().quantity
+        if (form.kind == "labor" && form.description != old.description && form.description.trim().length >= 6 &&
+            untouchedHours && _state.value.lastCharged == null
+        ) {
+            // shortcut: each pause can be a fresh AI lookup against the monthly cap; repeats are cached server-side
+            autoLaborLookup = screenModelScope.launch {
+                delay(1500)
+                suggestLaborTime(quiet = true)
+            }
+        }
     }
 
-    fun suggestLaborTime() {
+    private var autoLaborLookup: kotlinx.coroutines.Job? = null
+
+    /** quiet = started by typing: failures (no data, needs Pro) stay silent instead of showing an error. */
+    fun suggestLaborTime(quiet: Boolean = false) {
         val job = _state.value.job ?: return
         val form = _state.value.lineItemForm
+        if (quiet && _state.value.isLookingUpLabor) return
         if (form.description.isBlank()) {
             _state.value = _state.value.copy(lineItemError = "Describe the repair first, e.g. \"Front brake pads and rotors\"")
             return
@@ -207,6 +225,11 @@ class MechanicJobDetailScreenModel(
             _state.value = _state.value.copy(isLookingUpLabor = true, lineItemError = null, laborGuide = null, suggestedParts = emptyList(), laborNeedsPro = false)
             lineItemRepository.lookupLaborTime(job.vehicleYear, job.vehicleMake, job.vehicleModel, form.description.trim())
                 .onSuccess { result ->
+                    // He kept typing during the lookup; this answer is for an older description
+                    if (_state.value.lineItemForm.description != form.description) {
+                        _state.value = _state.value.copy(isLookingUpLabor = false)
+                        return@onSuccess
+                    }
                     val rate = form.unitPrice.ifBlank { _state.value.mechanicHourlyRate?.let(::formatQty).orEmpty() }
                     _state.value = _state.value.copy(
                         isLookingUpLabor = false,
@@ -216,11 +239,15 @@ class MechanicJobDetailScreenModel(
                     )
                 }
                 .onFailure { e ->
-                    _state.value = _state.value.copy(
-                        isLookingUpLabor = false,
-                        lineItemError = e.message ?: "Labor lookup failed",
-                        laborNeedsPro = e is LaborGuideUpgradeRequired,
-                    )
+                    _state.value = if (quiet) {
+                        _state.value.copy(isLookingUpLabor = false)
+                    } else {
+                        _state.value.copy(
+                            isLookingUpLabor = false,
+                            lineItemError = e.message ?: "Labor lookup failed",
+                            laborNeedsPro = e is LaborGuideUpgradeRequired,
+                        )
+                    }
                 }
         }
     }
