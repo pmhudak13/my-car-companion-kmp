@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Notifications
@@ -58,6 +59,7 @@ import org.mycarcompanion.app.platform.topBarWindowInsets
 import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.help.HelpScreen
 import org.mycarcompanion.app.ui.mechanics.JobHistoryImportScreen
+import org.mycarcompanion.app.ui.mechanics.MechanicSetupScreen
 import org.mycarcompanion.app.ui.subscription.SubscribeScreen
 import org.mycarcompanion.app.ui.notifications.NotificationsScreen
 import org.mycarcompanion.app.ui.profile.ProfileScreen
@@ -189,6 +191,11 @@ class SettingsScreen : Screen {
                         onClick = { navigator.push(ReceiveTransferScreen()) },
                     )
                     if (state.isMechanic) {
+                        SettingsRow(
+                            icon = Icons.Default.Edit,
+                            label = "Edit Shop Profile",
+                            onClick = { navigator.push(MechanicSetupScreen()) },
+                        )
                         SettingsRow(
                             icon = Icons.Default.Upload,
                             label = "Import Past Jobs",

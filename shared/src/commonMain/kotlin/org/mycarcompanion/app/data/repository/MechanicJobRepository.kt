@@ -130,10 +130,10 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         triggerJobUpdatePush(clientEmail, title, body)
 
     /** Tells the customer an estimate is waiting for their approval (push + email, best-effort). */
-    /** True only when the email actually went out; the function skips customers with no app account. */
-    suspend fun sendEstimateToClient(clientEmail: String, body: String): Boolean {
+    /** True only when the email actually went out. jobId lets it reach a customer with no app account. */
+    suspend fun sendEstimateToClient(jobId: String, clientEmail: String, body: String): Boolean {
         triggerJobUpdatePush(clientEmail, "Estimate Ready", body)
-        return triggerJobUpdateEmail(clientEmail, "Estimate Ready", body)
+        return triggerJobUpdateEmail(clientEmail, "Estimate Ready", body, jobId)
     }
 
     /** Best-effort push to a known user, e.g. the job's mechanic when the owner approves. */
@@ -170,7 +170,7 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         }
     }
 
-    private suspend fun triggerJobUpdateEmail(clientEmail: String?, title: String, body: String): Boolean {
+    private suspend fun triggerJobUpdateEmail(clientEmail: String?, title: String, body: String, jobId: String? = null): Boolean {
         if (clientEmail == null) return false
         return try {
             client.functions.invoke(
@@ -180,6 +180,7 @@ class MechanicJobRepository(private val client: SupabaseClient) {
                     put("title", title)
                     put("body", body)
                     put("type", "mechanic_update")
+                    jobId?.let { put("mechanic_job_id", it) }
                 },
             ).bodyAsText().contains("\"success\"")
         } catch (_: Exception) {

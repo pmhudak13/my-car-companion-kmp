@@ -60,6 +60,7 @@ import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.home.HomeScreen
 import org.mycarcompanion.app.ui.home.HomeScreenModel
 import org.mycarcompanion.app.ui.messaging.MessagesListScreen
+import org.mycarcompanion.app.ui.settings.SettingsScreen
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -108,6 +109,13 @@ class MechanicDashboardScreen : Screen {
                                 onClick = {
                                     menuExpanded = false
                                     navigator.push(MechanicSetupScreen())
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Settings") },
+                                onClick = {
+                                    menuExpanded = false
+                                    navigator.push(SettingsScreen())
                                 },
                             )
                             DropdownMenuItem(

@@ -16,6 +16,8 @@ interface EmailPayload {
   title: string;        // becomes the email subject
   body: string;         // becomes the plain-text body content
   type?: string;        // used for preference check
+  // Lets a mechanic email their own job's customer who has no app account yet (estimates).
+  mechanic_job_id?: string;
 }
 
 const corsHeaders = {
@@ -31,7 +33,7 @@ function jsonResponse(body: unknown, status: number): Response {
   });
 }
 
-function buildEmailHtml(title: string, body: string): string {
+function buildEmailHtml(title: string, body: string, guest = false): string {
   return `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff;">
       <div style="margin-bottom: 24px;">
@@ -46,6 +48,9 @@ function buildEmailHtml(title: string, body: string): string {
       <p style="color: #444444; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
         ${escapeHtml(body)}
       </p>
+      ${guest ? `<p style="color: #444444; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
+        Create a free account with this email address to see the details and approve it.
+      </p>` : ""}
       <div style="text-align: center; margin: 32px 0;">
         <a
           href="https://www.mycarcompanion.org/app/"
@@ -57,12 +62,41 @@ function buildEmailHtml(title: string, body: string): string {
       </div>
       <hr style="border: none; border-top: 1px solid #eeeeee; margin: 32px 0;" />
       <p style="color: #999999; font-size: 12px; text-align: center; margin: 0;">
-        You're receiving this because you have email notifications enabled in My Car Companion.
+        ${guest
+          ? "You're receiving this because your mechanic uses My Car Companion for your vehicle. If you weren't expecting it, you can ignore it."
+          : `You're receiving this because you have email notifications enabled in My Car Companion.
         <br />
-        <a href="https://www.mycarcompanion.org/app/" style="color: #6BBCDE;">Manage preferences</a>
+        <a href="https://www.mycarcompanion.org/app/" style="color: #6BBCDE;">Manage preferences</a>`}
       </p>
     </div>
   `;
+}
+
+async function sendEmail(to: string, title: string, body: string, guest = false): Promise<Response> {
+  const resendApiKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendApiKey) throw new Error("RESEND_API_KEY secret not set");
+
+  const emailRes = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "My Car Companion <noreply@mycarcompanion.org>",
+      to: [to],
+      subject: title,
+      html: buildEmailHtml(title, body, guest),
+    }),
+  });
+
+  if (!emailRes.ok) {
+    const errText = await emailRes.text();
+    console.error("Resend error:", errText);
+    return jsonResponse({ error: "Failed to send email" }, 500);
+  }
+
+  return jsonResponse({ success: true }, 200);
 }
 
 function escapeHtml(text: string): string {
@@ -119,6 +153,20 @@ Deno.serve(async (req) => {
   }
 
   if (!recipient_id) {
+    // Customer has no account. Only the job's own mechanic may email the address on that job,
+    // so this can't be used to mail arbitrary addresses.
+    if (payload.mechanic_job_id && payload.client_email) {
+      const { data: job } = await supabase
+        .from("mechanic_jobs")
+        .select("client_email")
+        .eq("id", payload.mechanic_job_id)
+        .eq("mechanic_user_id", user.id)
+        .maybeSingle();
+      const jobEmail = job?.client_email?.trim();
+      if (jobEmail && jobEmail.toLowerCase() === payload.client_email.trim().toLowerCase()) {
+        return await sendEmail(jobEmail, title, body, true);
+      }
+    }
     return jsonResponse({ skipped: "no recipient resolved" }, 200);
   }
 
@@ -159,28 +207,5 @@ Deno.serve(async (req) => {
     return jsonResponse({ skipped: "no email address on file" }, 200);
   }
 
-  const resendApiKey = Deno.env.get("RESEND_API_KEY");
-  if (!resendApiKey) throw new Error("RESEND_API_KEY secret not set");
-
-  const emailRes = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: "My Car Companion <noreply@mycarcompanion.org>",
-      to: [profile.email],
-      subject: title,
-      html: buildEmailHtml(title, body),
-    }),
-  });
-
-  if (!emailRes.ok) {
-    const errText = await emailRes.text();
-    console.error("Resend error:", errText);
-    return jsonResponse({ error: "Failed to send email" }, 500);
-  }
-
-  return jsonResponse({ success: true }, 200);
+  return await sendEmail(profile.email, title, body);
 });

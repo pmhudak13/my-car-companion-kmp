@@ -71,6 +71,11 @@ class CreateMechanicJobScreenModel(
             _state.value = _state.value.copy(error = "Enter a valid vehicle year")
             return
         }
+        val mileageIn = form.mileageIn.toIntOrNull()
+        if (mileageIn == null) {
+            _state.value = _state.value.copy(error = "Mileage in is required for the invoice")
+            return
+        }
 
         screenModelScope.launch {
             _state.value = _state.value.copy(isSaving = true, error = null)
@@ -84,7 +89,7 @@ class CreateMechanicJobScreenModel(
                 vehicleVin = form.vehicleVin.trim().ifBlank { null },
                 vehicleColor = form.vehicleColor.trim().ifBlank { null },
                 vehicleLicensePlate = form.vehicleLicensePlate.trim().ifBlank { null },
-                mileageIn = form.mileageIn.toIntOrNull(),
+                mileageIn = mileageIn,
                 description = form.description.trim().ifBlank { null },
                 notes = form.notes.trim().ifBlank { null },
             )

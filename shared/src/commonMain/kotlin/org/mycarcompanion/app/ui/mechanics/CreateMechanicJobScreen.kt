@@ -185,7 +185,7 @@ data class CreateMechanicJobScreen(
                 OutlinedTextField(
                     value = state.form.mileageIn,
                     onValueChange = { model.updateForm(state.form.copy(mileageIn = it.filter(Char::isDigit))) },
-                    label = { Text("Mileage in") },
+                    label = { Text("Mileage in *") },
                     supportingText = { Text("Odometer reading at drop-off. Shown on the invoice.") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
