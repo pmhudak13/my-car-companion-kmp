@@ -136,6 +136,19 @@ class MechanicJobRepository(private val client: SupabaseClient) {
         return triggerJobUpdateEmail(clientEmail, "Estimate Ready", body, jobId)
     }
 
+    /** Emails the customer a link to the job's invoice page. Fails with a readable message (e.g. no email on the job). */
+    suspend fun emailInvoice(jobId: String): Result<Unit> = runCatching {
+        val body = client.functions.invoke(
+            "invoice",
+            body = buildJsonObject { put("job_id", jobId) },
+        ).bodyAsText()
+        if (!body.contains("\"success\"")) error("Could not send the invoice")
+    }.recoverCatching { e ->
+        // Non-2xx arrives as an exception whose message holds the function's JSON error
+        val msg = e.message.orEmpty()
+        error(if ("customer's email" in msg) "Add the customer's email to the job first" else "Could not send the invoice. Please try again.")
+    }
+
     /** Best-effort push to a known user, e.g. the job's mechanic when the owner approves. */
     suspend fun notifyUser(recipientId: String, title: String, body: String) {
         try {

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Invoice</title>
+  <link rel="icon" href="/favicon.ico">
+  <style>
+    @font-face { font-family: Inter; src: url(/assets/fonts/inter-latin.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
+    :root { --ink: #1B2B50; --muted: #5b6475; --line: #dfe3ea; --accent: #6BBCDE; --bg: #f4f6f9; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; color: #1f2430; background: var(--bg); font-size: 15px; line-height: 1.45; }
+    .sheet { max-width: 820px; margin: 24px auto; background: #fff; padding: 40px; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .toolbar { max-width: 820px; margin: 16px auto 0; display: flex; gap: 8px; justify-content: flex-end; padding: 0 16px; }
+    .btn { display: inline-block; border: 0; border-radius: 8px; padding: 10px 16px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; background: var(--ink); color: #fff; }
+    .btn.alt { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+    header { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; border-bottom: 3px solid var(--ink); padding-bottom: 20px; }
+    .shop img { max-height: 72px; max-width: 220px; display: block; margin-bottom: 10px; }
+    .shop h1 { font-size: 20px; margin: 0 0 4px; color: var(--ink); }
+    .muted { color: var(--muted); }
+    .title { text-align: right; }
+    .title h2 { font-size: 30px; letter-spacing: .08em; margin: 0 0 6px; color: var(--ink); }
+    .meta { display: grid; grid-template-columns: auto auto; gap: 2px 12px; justify-content: end; font-size: 14px; }
+    .meta dt { color: var(--muted); text-transform: uppercase; font-size: 12px; letter-spacing: .05em; align-self: center; }
+    .meta dd { margin: 0; font-weight: 600; text-align: right; }
+    .paid { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px; background: #e3f5ea; color: #19703f; font-weight: 700; font-size: 13px; }
+    .blocks { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 24px 0; }
+    .blocks h3, section h3 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th { text-align: left; font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: #fff; background: var(--ink); padding: 8px 10px; }
+    td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .num { text-align: right; white-space: nowrap; }
+    .kind { font-size: 12px; color: var(--muted); }
+    .totals { margin-left: auto; width: min(320px, 100%); margin-top: 16px; }
+    .totals div { display: flex; justify-content: space-between; padding: 4px 0; }
+    .totals .due { border-top: 2px solid var(--ink); margin-top: 6px; padding-top: 8px; font-size: 18px; font-weight: 700; color: var(--ink); }
+    section { margin-top: 28px; }
+    .pay { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+    .pay a { background: var(--accent); color: var(--ink); }
+    .sig { margin-top: 36px; display: flex; gap: 24px; }
+    .sig div { flex: 1; border-top: 1px solid #999; padding-top: 6px; font-size: 13px; color: var(--muted); }
+    .pre { white-space: pre-line; }
+    footer { text-align: center; color: var(--muted); font-size: 12px; margin: 16px 0 32px; }
+    #state { max-width: 820px; margin: 80px auto; text-align: center; color: var(--muted); }
+    @media (max-width: 640px) {
+      .sheet { margin: 12px; padding: 20px; }
+      header, .blocks { display: block; }
+      .title { text-align: left; margin-top: 16px; }
+      .meta { justify-content: start; }
+      .meta dd { text-align: left; }
+      .blocks > div { margin-bottom: 16px; }
+      table { font-size: 13px; }
+      th, td { padding: 8px 4px; }
+      th { font-size: 10px; letter-spacing: .02em; }
+    }
+    @media print {
+      body { background: #fff; }
+      .toolbar, footer, .pay { display: none; }
+      .sheet { box-shadow: none; margin: 0; max-width: none; padding: 0; }
+      th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div id="state">Loading invoice…</div>
+  <div class="toolbar" hidden>
+    <button class="btn alt" type="button" onclick="window.print()">Print or save as PDF</button>
+  </div>
+  <main class="sheet" hidden></main>
+  <footer hidden>Sent with <a href="/">My Car Companion</a></footer>
+
+  <script>
+  (function () {
+    var FN = "https://eoqycogokelfmgwqydkj.supabase.co/functions/v1/invoice";
+    var token = new URLSearchParams(location.search).get("t") || "";
+    var stateEl = document.getElementById("state");
+    var sheet = document.querySelector(".sheet");
+
+    // Build with textContent only: every value here was typed by a mechanic or customer.
+    function el(tag, attrs, kids) {
+      var n = document.createElement(tag);
+      for (var k in attrs || {}) {
+        if (k === "text") n.textContent = attrs[k];
+        else if (k === "class") n.className = attrs[k];
+        else n.setAttribute(k, attrs[k]);
+      }
+      (kids || []).forEach(function (c) { if (c) n.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+      return n;
+    }
+    function usd(v) { return "$" + Number(v || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function qty(v) { return String(Math.round(Number(v) * 100) / 100); }
+    function day(s) { return s ? new Date(s).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : ""; }
+    function lines(arr) { return arr.filter(Boolean).map(function (t) { return el("div", { text: t }); }); }
+
+    function render(d) {
+      var job = d.job, shop = d.shop || {}, items = d.lines || [];
+      document.title = "Invoice #" + job.invoice_number + (shop.shop_name ? " from " + shop.shop_name : "");
+
+      var cityLine = [shop.city, [shop.state, shop.zip_code].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+      var shopBlock = el("div", { class: "shop" }, [
+        shop.logo_url ? el("img", { src: shop.logo_url, alt: (shop.shop_name || "Shop") + " logo" }) : null,
+        el("h1", { text: shop.shop_name || "Invoice" }),
+      ].concat(lines([shop.address, cityLine, shop.phone, shop.email]).map(function (n) { n.className = "muted"; return n; })));
+
+      var meta = el("dl", { class: "meta" }, [
+        el("dt", { text: "Invoice #" }), el("dd", { text: String(job.invoice_number) }),
+        el("dt", { text: "Date" }), el("dd", { text: day(job.completed_at || job.created_at) }),
+      ]);
+      var title = el("div", { class: "title" }, [el("h2", { text: "INVOICE" }), meta,
+        job.payment_received ? el("span", { class: "paid", text: "PAID" }) : null]);
+      sheet.appendChild(el("header", {}, [shopBlock, title]));
+
+      var vehicle = [job.vehicle_year, job.vehicle_make, job.vehicle_model].filter(Boolean).join(" ");
+      sheet.appendChild(el("div", { class: "blocks" }, [
+        el("div", {}, [el("h3", { text: "Bill to" })].concat(lines([job.client_name, job.client_email]))),
+        el("div", {}, [el("h3", { text: "Vehicle" })].concat(lines([
+          vehicle + (job.vehicle_color ? " (" + job.vehicle_color + ")" : ""),
+          job.vehicle_vin && "VIN: " + job.vehicle_vin,
+          job.vehicle_license_plate && "Plate: " + job.vehicle_license_plate,
+          job.mileage_in != null && "Mileage in: " + Number(job.mileage_in).toLocaleString("en-US"),
+        ]))),
+      ]));
+
+      if (job.description) {
+        sheet.appendChild(el("section", {}, [el("h3", { text: "Customer states" }), el("div", { class: "pre", text: job.description })]));
+      }
+
+      var labels = { labor: "Labor", part: "Part", fee: "Fee" };
+      var rows = items.length ? items.map(function (it) {
+        return el("tr", {}, [
+          el("td", {}, [el("div", { text: it.description }), el("div", { class: "kind", text: labels[it.kind] || it.kind })]),
+          el("td", { class: "num", text: qty(it.quantity) + (it.kind === "labor" ? " hr" : "") }),
+          el("td", { class: "num", text: usd(it.unit_price) }),
+          el("td", { class: "num", text: usd(it.quantity * it.unit_price) }),
+        ]);
+      }) : [el("tr", {}, [el("td", { text: "Service" }), el("td", { class: "num", text: "1" }),
+        el("td", { class: "num", text: usd(job.total_cost) }), el("td", { class: "num", text: usd(job.total_cost) })])];
+      sheet.appendChild(el("table", {}, [
+        el("thead", {}, [el("tr", {}, [el("th", { text: "Description" }), el("th", { class: "num", text: "Qty / Hrs" }),
+          el("th", { class: "num", text: "Rate" }), el("th", { class: "num", text: "Amount" })])]),
+        el("tbody", {}, rows),
+      ]));
+
+      // total_cost is the DB's figure (mechanic_job_total), so the page never disagrees with the app
+      var total = Number(job.total_cost || 0);
+      var subtotal = items.length ? items.reduce(function (s, it) { return s + it.quantity * it.unit_price; }, 0) : total;
+      var tax = Math.max(0, Math.round((total - subtotal) * 100) / 100);
+      sheet.appendChild(el("div", { class: "totals" }, [
+        el("div", {}, [el("span", { text: "Subtotal" }), el("span", { text: usd(subtotal) })]),
+        el("div", {}, [el("span", { text: "Sales tax (" + qty(job.tax_rate) + "% on parts)" }), el("span", { text: usd(tax) })]),
+        el("div", {}, [el("span", { text: "Total" }), el("span", { text: usd(total) })]),
+        el("div", { class: "due" }, [el("span", { text: "Balance due" }), el("span", { text: usd(job.payment_received ? 0 : total) })]),
+      ]));
+
+      var payButtons = [];
+      if (shop.pay_card_link && /^https:\/\//i.test(shop.pay_card_link)) payButtons.push(["Pay by card", shop.pay_card_link]);
+      if (shop.pay_venmo) payButtons.push(["Venmo @" + shop.pay_venmo, "https://venmo.com/u/" + encodeURIComponent(shop.pay_venmo)]);
+      if (shop.pay_cashapp) payButtons.push(["Cash App $" + shop.pay_cashapp, "https://cash.app/$" + encodeURIComponent(shop.pay_cashapp)]);
+      if (shop.pay_paypal) payButtons.push(["PayPal", "https://paypal.me/" + encodeURIComponent(shop.pay_paypal)]);
+      var payText = lines([
+        shop.pay_zelle && "Zelle: " + shop.pay_zelle,
+        shop.pay_venmo && "Venmo: @" + shop.pay_venmo,
+        shop.pay_cashapp && "Cash App: $" + shop.pay_cashapp,
+        shop.pay_paypal && "PayPal: paypal.me/" + shop.pay_paypal,
+      ]);
+      if (!job.payment_received && (payButtons.length || payText.length || shop.payment_notes)) {
+        sheet.appendChild(el("section", {}, [el("h3", { text: "How to pay" }),
+          payButtons.length ? el("div", { class: "pay" }, payButtons.map(function (b) {
+            return el("a", { class: "btn", href: b[1], target: "_blank", rel: "noopener noreferrer", text: b[0] });
+          })) : null,
+        ].concat(payText, shop.payment_notes ? [el("div", { class: "pre", text: shop.payment_notes })] : [])));
+      }
+      if (shop.invoice_terms) {
+        sheet.appendChild(el("section", {}, [el("h3", { text: "Terms" }), el("div", { class: "pre muted", text: shop.invoice_terms })]));
+      }
+
+      sheet.appendChild(el("div", { class: "sig" }, [
+        el("div", { text: job.estimate_signed_name
+          ? "Approved by " + job.estimate_signed_name + " on " + day(job.estimate_approved_at)
+          : "Customer signature" }),
+        el("div", { text: "Date" }),
+      ]));
+
+      stateEl.hidden = true;
+      sheet.hidden = false;
+      document.querySelector(".toolbar").hidden = false;
+      document.querySelector("footer").hidden = false;
+    }
+
+    if (!/^[0-9a-f-]{36}$/i.test(token)) { stateEl.textContent = "This invoice link is not valid."; return; }
+    fetch(FN + "?t=" + encodeURIComponent(token))
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(render)
+      .catch(function (status) {
+        stateEl.textContent = status === 404 ? "This invoice could not be found." : "Could not load the invoice. Please try again.";
+      });
+  })();
+  </script>
+</body>
+</html>

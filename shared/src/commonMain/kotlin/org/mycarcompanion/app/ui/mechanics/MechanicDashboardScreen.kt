@@ -112,6 +112,13 @@ class MechanicDashboardScreen : Screen {
                                 },
                             )
                             DropdownMenuItem(
+                                text = { Text("Invoices & payments") },
+                                onClick = {
+                                    menuExpanded = false
+                                    navigator.push(InvoiceSettingsScreen())
+                                },
+                            )
+                            DropdownMenuItem(
                                 text = { Text("Settings") },
                                 onClick = {
                                     menuExpanded = false

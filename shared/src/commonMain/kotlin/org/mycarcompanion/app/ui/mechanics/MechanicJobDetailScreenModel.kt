@@ -85,6 +85,7 @@ data class MechanicJobDetailState(
     val isSavingPayment: Boolean = false,
     // invite
     val isSendingInvite: Boolean = false,
+    val isEmailingInvoice: Boolean = false,
     val inviteMessage: String? = null,
     val mechanicShopName: String? = null,
     // line items + estimate approval
@@ -411,6 +412,18 @@ class MechanicJobDetailScreenModel(
             _state.value = _state.value.copy(
                 inviteMessage = if (sent) "Estimate sent to $email"
                 else "Estimate not emailed. $email has job emails turned off, or the send failed. Get approval in person or by phone.",
+            )
+        }
+    }
+
+    fun emailInvoice() {
+        val job = _state.value.job ?: return
+        screenModelScope.launch {
+            _state.value = _state.value.copy(isEmailingInvoice = true)
+            val result = jobRepository.emailInvoice(job.id)
+            _state.value = _state.value.copy(
+                isEmailingInvoice = false,
+                inviteMessage = result.fold({ "Invoice sent to ${job.clientEmail}" }, { it.message ?: "Could not send the invoice" }),
             )
         }
     }

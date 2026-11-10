@@ -26,6 +26,34 @@ data class MechanicProfile(
     @SerialName("total_jobs") val totalJobs: Int? = null,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = "",
+    val phone: String? = null,
+    val address: String? = null,
+    @SerialName("zip_code") val zipCode: String? = null,
+    @SerialName("logo_path") val logoPath: String? = null,
+    @SerialName("pay_zelle") val payZelle: String? = null,
+    @SerialName("pay_venmo") val payVenmo: String? = null,
+    @SerialName("pay_cashapp") val payCashapp: String? = null,
+    @SerialName("pay_paypal") val payPaypal: String? = null,
+    @SerialName("pay_card_link") val payCardLink: String? = null,
+    @SerialName("payment_notes") val paymentNotes: String? = null,
+    @SerialName("invoice_terms") val invoiceTerms: String? = null,
+)
+
+/** What a shop puts on its invoices: contact details for the header, how it gets paid, and its terms. */
+@Serializable
+data class InvoiceSettings(
+    val phone: String? = null,
+    val address: String? = null,
+    val city: String? = null,
+    val state: String? = null,
+    @SerialName("zip_code") val zipCode: String? = null,
+    @SerialName("pay_zelle") val payZelle: String? = null,
+    @SerialName("pay_venmo") val payVenmo: String? = null,
+    @SerialName("pay_cashapp") val payCashapp: String? = null,
+    @SerialName("pay_paypal") val payPaypal: String? = null,
+    @SerialName("pay_card_link") val payCardLink: String? = null,
+    @SerialName("payment_notes") val paymentNotes: String? = null,
+    @SerialName("invoice_terms") val invoiceTerms: String? = null,
 )
 
 @Serializable
@@ -87,6 +115,8 @@ data class MechanicJob(
     @SerialName("mileage_in") val mileageIn: Int? = null,
     /** Per-mechanic, assigned by the DB on insert. 0 only before the row exists. */
     @SerialName("invoice_number") val invoiceNumber: Int = 0,
+    /** Unguessable key for the customer's invoice link; anyone holding it can view the invoice. */
+    @SerialName("invoice_token") val invoiceToken: String = "",
     /** Brought in from the mechanic's old records via job history import, not worked in the app. */
     val imported: Boolean = false,
 )

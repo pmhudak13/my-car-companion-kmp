@@ -60,6 +60,7 @@ import org.mycarcompanion.app.ui.auth.LoginScreen
 import org.mycarcompanion.app.ui.help.HelpScreen
 import org.mycarcompanion.app.ui.mechanics.JobHistoryImportScreen
 import org.mycarcompanion.app.ui.mechanics.MechanicSetupScreen
+import org.mycarcompanion.app.ui.mechanics.InvoiceSettingsScreen
 import org.mycarcompanion.app.ui.subscription.SubscribeScreen
 import org.mycarcompanion.app.ui.notifications.NotificationsScreen
 import org.mycarcompanion.app.ui.profile.ProfileScreen
@@ -195,6 +196,11 @@ class SettingsScreen : Screen {
                             icon = Icons.Default.Edit,
                             label = "Edit Shop Profile",
                             onClick = { navigator.push(MechanicSetupScreen()) },
+                        )
+                        SettingsRow(
+                            icon = Icons.Default.Description,
+                            label = "Invoices & Payments",
+                            onClick = { navigator.push(InvoiceSettingsScreen()) },
                         )
                         SettingsRow(
                             icon = Icons.Default.Upload,

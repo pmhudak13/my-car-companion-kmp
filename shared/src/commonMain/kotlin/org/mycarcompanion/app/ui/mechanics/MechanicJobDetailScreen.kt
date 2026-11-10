@@ -66,6 +66,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -352,6 +353,17 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                         )
                                     }
                                 }
+                                item {
+                                    val uriHandler = LocalUriHandler.current
+                                    InvoiceActionsCard(
+                                        hasEmail = !job.clientEmail.isNullOrBlank(),
+                                        isEmailing = state.isEmailingInvoice,
+                                        onPreview = { uriHandler.openUri(invoiceUrl(job)) },
+                                        onEmail = model::emailInvoice,
+                                        onSetUp = { navigator.push(InvoiceSettingsScreen()) },
+                                    )
+                                }
+
                                 // Cost of service & payment
                                 item {
                                     PaymentCard(
@@ -461,6 +473,39 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                     )
                 }
             }
+        }
+    }
+}
+
+private fun invoiceUrl(job: MechanicJob) = "https://www.mycarcompanion.org/invoice/?t=${job.invoiceToken}"
+
+@Composable
+private fun InvoiceActionsCard(
+    hasEmail: Boolean,
+    isEmailing: Boolean,
+    onPreview: () -> Unit,
+    onEmail: () -> Unit,
+    onSetUp: () -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Invoice", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onPreview, modifier = Modifier.weight(1f)) { Text("Preview / PDF") }
+                if (isEmailing) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                } else {
+                    Button(onClick = onEmail, enabled = hasEmail, modifier = Modifier.weight(1f)) { Text("Email invoice") }
+                }
+            }
+            Text(
+                if (hasEmail) "The customer gets a link to view, pay and save the invoice. No app needed."
+                else "Add the customer's email on the Check-in tab to email the invoice.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TextButton(onClick = onSetUp) { Text("Logo, payment methods and terms") }
         }
     }
 }

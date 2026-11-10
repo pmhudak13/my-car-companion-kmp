@@ -38,6 +38,7 @@ import org.mycarcompanion.app.ui.mechanics.JobBoardScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicDirectoryScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicJobDetailScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicSetupScreenModel
+import org.mycarcompanion.app.ui.mechanics.InvoiceSettingsScreenModel
 import org.mycarcompanion.app.ui.mechanics.MechanicVehicleViewScreenModel
 import org.mycarcompanion.app.ui.mechanics.RecordImportScreenModel
 import org.mycarcompanion.app.ui.messaging.MessagesListScreenModel
@@ -94,6 +95,7 @@ val appModule = module {
     factoryOf(::CreateMechanicJobScreenModel)
     factory { MechanicJobDetailScreenModel(get(), get(), get(), get(), get(), get()) }
     factoryOf(::MechanicSetupScreenModel)
+    factoryOf(::InvoiceSettingsScreenModel)
     factoryOf(::MessagesListScreenModel)
     factoryOf(::MessagingScreenModel)
     factoryOf(::MileageTrackerScreenModel)

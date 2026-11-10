@@ -4,11 +4,17 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.storage.storage
+import io.ktor.http.ContentType
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.time.Duration.Companion.hours
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.mycarcompanion.app.data.models.AdminUserEntry
 import org.mycarcompanion.app.data.models.GiftedSubscription
+import org.mycarcompanion.app.data.models.InvoiceSettings
 import org.mycarcompanion.app.data.models.MechanicProfile
 import org.mycarcompanion.app.data.models.MechanicProfileInsert
 import org.mycarcompanion.app.data.models.UserProfile
@@ -254,4 +260,32 @@ class ProfileRepository(private val client: SupabaseClient) {
             )
         }
     }
+
+    suspend fun updateInvoiceSettings(settings: InvoiceSettings): Result<Unit> = runCatching {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
+        client.postgrest["mechanic_profiles"].update(settings) {
+            filter { eq("user_id", userId) }
+        }
+    }
+
+    /** Replaces the shop logo. One file per shop, so re-uploading overwrites it. */
+    @OptIn(ExperimentalEncodingApi::class)
+    suspend fun uploadShopLogo(base64Data: String, mimeType: String): Result<String> = runCatching {
+        val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
+        if (!mimeType.startsWith("image/")) error("Pick an image file for the logo")
+        val bytes = Base64.decode(base64Data)
+        if (bytes.size > 2_000_000) error("Logo must be under 2 MB")
+        val path = "$userId/logo"
+        client.storage["shop-logos"].upload(path, bytes) {
+            upsert = true
+            contentType = ContentType.parse(mimeType)
+        }
+        client.postgrest["mechanic_profiles"].update({ set("logo_path", path) }) {
+            filter { eq("user_id", userId) }
+        }
+        path
+    }
+
+    suspend fun shopLogoUrl(path: String): String? =
+        runCatching { client.storage["shop-logos"].createSignedUrl(path, 1.hours) }.getOrNull()
 }
