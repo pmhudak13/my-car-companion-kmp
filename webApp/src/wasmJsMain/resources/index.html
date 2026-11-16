@@ -6,6 +6,9 @@
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
+        // Consent Mode: no analytics cookies until the visitor accepts (banner in /assets/app.js)
+        var mccConsent = null; try { mccConsent = localStorage.getItem('mcc-analytics-consent'); } catch (e) {}
+        gtag('consent', 'default', { analytics_storage: mccConsent === 'granted' ? 'granted' : 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
         gtag('js', new Date());
         gtag('config', 'G-GF4JRQKMSQ');
         // Fetch gtag.js after the page loads so it doesn't compete with page assets; calls above queue in dataLayer
