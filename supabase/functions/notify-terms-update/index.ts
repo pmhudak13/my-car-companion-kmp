@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // One-off blast: notify all users that the Terms of Service and Privacy Policy
-// were updated on July 6, 2026. Gated by CRON_SECRET so it can't be triggered
+// were updated on November 16, 2026. Gated by CRON_SECRET so it can't be triggered
 // publicly. Invoke with {"dryRun": true} first to see the recipient count.
 
 const corsHeaders = {
@@ -23,27 +23,27 @@ const EMAIL_HTML = `
   <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
     <h2 style="color: #1a1a1a;">We've updated our Terms &amp; Privacy Policy</h2>
     <p style="color: #444; font-size: 16px; line-height: 1.5;">
-      Hi there — we've made some updates to the My Car Companion
+      Hi there. We've made some updates to the My Car Companion
       <a href="https://www.mycarcompanion.org/terms.html" style="color: #4F46E5;">Terms of Service</a>
       and
       <a href="https://www.mycarcompanion.org/privacy.html" style="color: #4F46E5;">Privacy Policy</a>,
-      effective <strong>July 6, 2026</strong>. Here's a summary of what changed:
+      effective <strong>November 16, 2026</strong>. Here's a summary of what changed:
     </p>
     <ul style="color: #444; font-size: 15px; line-height: 1.7;">
-      <li><strong>AI features:</strong> We explain how the AI invoice-scanning feature works,
-        that scanned documents are processed by our AI provider (Anthropic), and that you
-        should review AI-extracted records before saving them.</li>
-      <li><strong>Dispute resolution:</strong> We added a standard arbitration agreement with a
-        class action waiver. <strong>You can opt out</strong> by emailing
-        <a href="mailto:paul@thecooconsultant.com?subject=Arbitration%20Opt-Out" style="color: #4F46E5;">paul@thecooconsultant.com</a>
-        with the subject "Arbitration Opt-Out" within 30 days of this notice.</li>
-      <li><strong>Copyright (DMCA):</strong> We added a process for reporting content that
-        infringes copyright.</li>
-      <li><strong>User content:</strong> We clarified responsibility for content that users
-        submit, and added a standard indemnification section.</li>
+      <li><strong>Privacy details:</strong> We now describe website analytics and the new cookie choice,
+        trip location in the mileage tracker (collected only when you start or end a trip),
+        recall lookups with NHTSA, Google Play billing, uploaded photos and files, and estimate approvals.</li>
+      <li><strong>AI features:</strong> The labor guide and fair-price check send vehicle and repair
+        details to our AI provider (Anthropic). Their results are estimates, not quotes.</li>
+      <li><strong>Subscriptions:</strong> We explain auto-renewal, renewal reminders, and how to cancel,
+        including for subscriptions bought through Google Play.</li>
+      <li><strong>Mechanics:</strong> Mechanics are responsible for any license or registration their
+        state requires and for following state rules on estimates and invoices.</li>
+      <li><strong>People without an account:</strong> If a mechanic added your details, you can unsubscribe
+        or ask us to remove them.</li>
     </ul>
     <p style="color: #444; font-size: 16px; line-height: 1.5;">
-      No action is needed — continuing to use My Car Companion after July 6, 2026 means you
+      No action is needed. Continuing to use My Car Companion after November 16, 2026 means you
       accept the updated terms. If you have questions, just reply to this email.
     </p>
     <p style="color: #888; font-size: 13px; margin-top: 32px;">

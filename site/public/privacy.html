@@ -97,7 +97,7 @@
   <div class="container">
     <span class="section-label">Legal</span>
     <h1>Privacy Policy</h1>
-    <p>Last updated: July 6, 2026 · Effective: July 6, 2026</p>
+    <p>Last updated: November 16, 2026 · Effective: November 16, 2026</p>
   </div>
 </section>
 
@@ -145,19 +145,26 @@
           <li><strong>Mechanic profile (mechanics only):</strong> Shop name, location, specialties, contact information, and professional details.</li>
           <li><strong>Messages:</strong> Content of messages you send to or receive from other users through the in-app messaging feature.</li>
           <li><strong>Reviews:</strong> Ratings and reviews you submit for mechanics.</li>
+          <li><strong>Photos and files:</strong> Images and documents you upload, such as job photos, shop logos, invoices, receipts, and other vehicle documents.</li>
+          <li><strong>Estimate approvals:</strong> When you approve a repair estimate, we store the name you type, the time of approval, the approved total, and how it was approved (in the app, in person, or by phone).</li>
+          <li><strong>Trip location (mileage tracker):</strong> When you tap to start or end a trip, the app reads your device's GPS position once and stores that start and end latitude and longitude with the trip, along with the miles, purpose, and notes you enter. Location is collected only when you start or end a trip, only if you grant location permission, and never in the background.</li>
         </ul>
+
+        <h3>Information About People Who Do Not Have an Account</h3>
+        <p>Mechanics can enter or import their customers' names, email addresses, and vehicle details (including VIN) to keep service records and send estimates, invoices, and invitations to join. If a mechanic added your information and you do not have an account, you can ask us to remove it by emailing <a href="mailto:paul@thecooconsultant.com">paul@thecooconsultant.com</a>. Every email sent to you through My Car Companion includes an unsubscribe link, and once you unsubscribe we will not email that address again through the Service.</p>
 
         <h3>Information Collected Automatically</h3>
         <ul>
           <li><strong>Device tokens:</strong> A unique device identifier used to send you push notifications. Collected when you grant notification permission.</li>
           <li><strong>Usage data:</strong> Information about how you interact with the app, such as features used and pages visited (aggregated and anonymized).</li>
+          <li><strong>Website and web app analytics:</strong> Our website and web app use Google Analytics 4, which sets cookies and collects pages viewed, approximate location derived from IP address, browser, and device type. Analytics cookies are only set after you choose Accept in the cookie banner. If you choose Decline, Google Analytics sets no cookies under Google Consent Mode. The Android app uses Firebase Analytics for aggregated usage statistics and does not collect your device's advertising ID.</li>
           <li><strong>Log data:</strong> Standard server log information including your IP address, browser type, and access times, collected by our hosting infrastructure.</li>
         </ul>
 
         <h3>Information from Third Parties</h3>
         <ul>
           <li><strong>Google Sign-In:</strong> If you choose to sign in with Google, we receive your name and email address from Google.</li>
-          <li><strong>Payment processors:</strong> If you subscribe, our payment processor (Stripe) handles your payment information. We receive only a confirmation of your subscription status — we never see or store your full credit card number.</li>
+          <li><strong>Payment processors:</strong> If you subscribe, our payment processor (Stripe on the web, or Google Play on Android) handles your payment information. We receive only a confirmation of your subscription status — we never see or store your full credit card number.</li>
         </ul>
 
         <h2 id="how-we-use">2. How We Use Your Information</h2>
@@ -195,6 +202,9 @@
           <li><strong>Stripe</strong> — payment processing (your full payment details are handled directly by Stripe)</li>
           <li><strong>Firebase (Google)</strong> — push notification delivery via Firebase Cloud Messaging</li>
           <li><strong>Resend</strong> — transactional email delivery</li>
+          <li><strong>Google Analytics</strong>: website and web app analytics</li>
+          <li><strong>Anthropic</strong>: AI processing for invoice scanning, the labor guide, and fair-price checks</li>
+          <li><strong>NHTSA</strong>: the vehicle's VIN is sent to the U.S. National Highway Traffic Safety Administration's public recall API to look up open recalls</li>
         </ul>
         <p>All service providers are contractually obligated to use your data only to provide their services to us and not for any other purpose.</p>
 
@@ -245,7 +255,9 @@
         <p>We share data with the following service providers only as needed to operate the Service:</p>
         <ul>
           <li><strong>Supabase</strong> — database, authentication, and file storage</li>
-          <li><strong>Anthropic</strong> — AI processing for the invoice/record scanning feature. When you scan an invoice or document, the image is transmitted to Anthropic's API to extract maintenance information. Anthropic processes this data on our behalf and does not use it to train its models under our API usage.</li>
+          <li><strong>Anthropic</strong> — AI processing for the invoice/record scanning feature. When you scan an invoice or document, the image is transmitted to Anthropic's API to extract maintenance information. When you use the labor guide or "check fair price," the vehicle's year, make, and model, the repair or service described, and related job details are sent to Anthropic's API to generate an estimate. Anthropic processes this data on our behalf and does not use it to train its models under our API usage.</li>
+          <li><strong>Google Analytics</strong>: website and web app analytics (see Information Collected Automatically above)</li>
+          <li><strong>NHTSA</strong>: recall lookups. The VIN of a vehicle you view is sent to NHTSA's public recall API; no account information is sent with it.</li>
           <li><strong>Stripe and Google Play</strong> — payment processing (see Payments &amp; Billing below)</li>
           <li><strong>Firebase (Google)</strong> — push notifications and app analytics</li>
           <li><strong>Sentry</strong> — crash and error reporting</li>
@@ -253,7 +265,7 @@
         </ul>
 
         <h3>AI Features</h3>
-        <p>Data extracted by AI features is generated automatically and may contain errors. You review and confirm extracted information before it is saved to your account. Only the documents you explicitly choose to scan are sent for AI processing — we do not run AI over your account data in the background.</p>
+        <p>Data extracted by AI features is generated automatically and may contain errors. You review and confirm extracted information before it is saved to your account. Only the documents you explicitly choose to scan, and the labor guide and fair-price requests you make, are sent for AI processing. We do not run AI over your account data in the background. Labor guide and fair-price results are estimates, not quotes.</p>
 
         <h2 id="push-notifications">8. Push Notifications</h2>
 
@@ -268,11 +280,14 @@
 
         <h2 id="payments">9. Payments &amp; Billing</h2>
 
-        <p>Subscription payments are processed by <strong>Stripe</strong>. When you subscribe, you are entering into a payment relationship directly with Stripe. My Car Companion does not store your credit card number, CVV, or full billing information.</p>
+        <p>Subscriptions bought on the web are processed by <strong>Stripe</strong>. Subscriptions bought in the Android app are processed by <strong>Google Play</strong> billing. In both cases you are entering into a payment relationship directly with that provider. My Car Companion does not store your credit card number, CVV, or full billing information.</p>
 
-        <p>We receive from Stripe: your subscription status, plan type, and renewal dates. This information is used solely to manage your subscription access within the app.</p>
+        <p>We receive from Stripe or Google Play: your subscription status, plan type, renewal dates, and a customer ID or purchase token. This information is used solely to manage your subscription access within the app.</p>
 
-        <p>You can manage or cancel your subscription at any time from <strong>Settings → Manage Subscription</strong> in the app, which opens the Stripe customer portal.</p>
+        <p>You can manage or cancel your subscription at any time from <strong>Settings → Manage Subscription</strong> in the app, which opens the Stripe customer portal. Subscriptions bought through Google Play are managed and cancelled in the Google Play Store app under Payments and subscriptions.</p>
+
+        <h3 id="do-not-track">Do Not Track</h3>
+        <p>Our website does not respond to browser "Do Not Track" signals. You can control analytics cookies with the cookie banner on our website, and you can change your choice by clearing your browser's site data for mycarcompanion.org.</p>
 
         <h2 id="changes">10. Changes to This Policy</h2>
 
