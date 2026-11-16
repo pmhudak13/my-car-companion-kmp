@@ -103,6 +103,54 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     subscription_tier: tier,
     stripe_customer_id: session.customer as string,
   }).eq("user_id", userId);
+
+  // A failed confirmation email must not make Stripe retry the whole event.
+  try {
+    await sendSubscriptionConfirmation(session, tier, lineItems.data[0]?.price);
+  } catch (err) {
+    console.error("Subscription confirmation email failed:", err);
+  }
+}
+
+// California auto-renewal law: confirm plan, price, renewal terms, and how to cancel after sign-up.
+async function sendSubscriptionConfirmation(session: Stripe.Checkout.Session, tier: string, price?: Stripe.Price | null) {
+  const to = session.customer_details?.email;
+  const resendKey = Deno.env.get("RESEND_API_KEY");
+  if (!to || !resendKey) {
+    console.warn("Skipping subscription confirmation: missing email or RESEND_API_KEY");
+    return;
+  }
+  const plan = tier === "mechanic_pro" ? "Mechanic Pro" : "Premium";
+  const amount = price?.unit_amount != null ? `$${(price.unit_amount / 100).toFixed(2)}` : "the plan price";
+  const interval = price?.recurring?.interval === "year" ? "year" : "month";
+  const p = `style="color: #444; font-size: 16px; line-height: 1.6; margin: 0 0 16px;"`;
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: "My Car Companion <noreply@mycarcompanion.org>",
+      to: [to],
+      subject: `Your My Car Companion ${plan} subscription is active`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+          <h2 style="color: #1B2B50; margin: 0 0 12px;">Thanks for subscribing to ${plan}</h2>
+          <p ${p}>Here are the terms of your subscription:</p>
+          <ul style="color: #444; font-size: 16px; line-height: 1.7;">
+            <li><strong>Plan:</strong> ${plan}, billed every ${interval}</li>
+            <li><strong>Price:</strong> ${amount} per ${interval}, plus any applicable tax</li>
+            <li><strong>Renewal:</strong> Your subscription renews automatically at ${amount} every ${interval}
+              until you cancel. ${interval === "year" ? "We will email you about 30 days before each annual renewal." : ""}</li>
+            <li><strong>How to cancel:</strong> In the app, go to Settings, Manage Subscription. You can cancel
+              anytime; you keep access until the end of the period you paid for and are not charged again.</li>
+          </ul>
+          <p ${p}>Stripe will also send you a separate payment receipt.</p>
+          <p style="color: #888; font-size: 13px;">Questions? Email
+            <a href="mailto:paul@thecooconsultant.com" style="color: #1B2B50;">paul@thecooconsultant.com</a>.</p>
+        </div>`,
+    }),
+  });
+  if (!res.ok) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 300)}`);
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {

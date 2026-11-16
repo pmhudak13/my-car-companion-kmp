@@ -149,36 +149,30 @@ serve(async (req) => {
       auth: { persistSession: false }
     });
 
-    // Calculate the date range for renewals in 3 days (send reminder 3 days before)
+    // Monthly plans get a reminder 3 days out. Annual plans get one 30 days out: California law
+    // requires a notice 15 to 45 days before an annual renewal. Each window is one day wide and the
+    // cron runs daily, so each renewal gets one email.
     const now = Math.floor(Date.now() / 1000);
-    const threeDaysFromNow = now + (3 * 86400); // 3 days
-    const fourDaysFromNow = now + (4 * 86400); // 4 days (window to avoid duplicates)
-
-    logStep("Searching for subscriptions renewing soon", {
-      from: new Date(threeDaysFromNow * 1000).toISOString(),
-      to: new Date(fourDaysFromNow * 1000).toISOString()
-    });
-
-    // Get active subscriptions
-    const subscriptions = await stripe.subscriptions.list({
-      status: "active",
-      limit: 100,
-    });
-
-    logStep("Found active subscriptions", { count: subscriptions.data.length });
+    const DAY = 86400;
 
     let emailsSent = 0;
     let emailsSkipped = 0;
+    let checked = 0;
     const errors: string[] = [];
 
-    for (const subscription of subscriptions.data) {
-      // Skip if no renewal date or if it's a trial (trial reminders handled separately)
-      if (!subscription.current_period_end || subscription.status === "trialing") continue;
+    // Auto-paginate: a single list call stops at 100 subscriptions.
+    for await (const subscription of stripe.subscriptions.list({ status: "active", limit: 100 })) {
+      checked++;
+      const priceItem = subscription.items.data[0]?.price;
+      const interval = priceItem?.recurring?.interval || "month";
+      const isAnnual = interval === "year";
+      // Since Stripe API 2025-03-31.basil the period end lives on the subscription item.
+      const renewalTimestamp = subscription.items.data[0]?.current_period_end ??
+        (subscription as unknown as { current_period_end?: number }).current_period_end;
+      if (!renewalTimestamp || subscription.cancel_at_period_end) continue;
 
-      const renewalTimestamp = subscription.current_period_end;
-
-      // Check if renewal is within 3-4 days from now
-      if (renewalTimestamp >= threeDaysFromNow && renewalTimestamp <= fourDaysFromNow) {
+      const leadDays = isAnnual ? 30 : 3;
+      if (renewalTimestamp >= now + leadDays * DAY && renewalTimestamp < now + (leadDays + 1) * DAY) {
         try {
           // Get customer email
           const customer = await stripe.customers.retrieve(subscription.customer as string);
@@ -187,8 +181,8 @@ serve(async (req) => {
             continue;
           }
 
-          // Check user's email preference
-          const canSendEmail = await checkEmailPreference(
+          // The annual notice is legally required, so it ignores the opt-out preference.
+          const canSendEmail = isAnnual || await checkEmailPreference(
             supabaseClient,
             customer.email,
             "email_renewal_reminders"
@@ -203,10 +197,7 @@ serve(async (req) => {
           const renewalDate = new Date(renewalTimestamp * 1000);
           const daysUntilRenewal = Math.ceil((renewalTimestamp - now) / 86400);
 
-          // Get price info for the email
-          const priceItem = subscription.items.data[0]?.price;
           const amount = priceItem?.unit_amount ? `$${(priceItem.unit_amount / 100).toFixed(2)}` : "your subscription amount";
-          const interval = priceItem?.recurring?.interval || "month";
 
           logStep("Sending renewal reminder email", {
             email: customer.email,
@@ -244,7 +235,7 @@ serve(async (req) => {
 
                 <p>Hi there,</p>
 
-                <p>Just a heads up that your My Car Companion Premium subscription will automatically renew in ${daysUntilRenewal} days.</p>
+                <p>Just a heads up that your My Car Companion subscription will automatically renew in ${daysUntilRenewal} days, on ${renewalDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}, at ${amount} per ${interval}.</p>
 
                 <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin: 24px 0;">
                   <p style="margin: 0 0 8px 0;"><strong>Renewal Details:</strong></p>
@@ -254,7 +245,7 @@ serve(async (req) => {
 
                 <p>Your card on file will be charged automatically. No action is needed if you want to continue your subscription.</p>
 
-                <p>If you'd like to make changes to your subscription or update your payment method, you can do so from your account settings.</p>
+                <p><strong>How to cancel:</strong> open My Car Companion and go to Settings, Manage Subscription, or use the button below. If you cancel before the renewal date, you will not be charged again and you keep access until the end of the current period.</p>
 
                 <div style="text-align: center; margin: 32px 0;">
                   <a href="${APP_URL}/plans"
@@ -284,7 +275,7 @@ serve(async (req) => {
       }
     }
 
-    logStep("Completed", { emailsSent, emailsSkipped, errors: errors.length });
+    logStep("Completed", { checked, emailsSent, emailsSkipped, errors: errors.length });
 
     return new Response(JSON.stringify({
       success: true,

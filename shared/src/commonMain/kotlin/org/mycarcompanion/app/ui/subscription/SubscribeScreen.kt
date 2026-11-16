@@ -386,6 +386,11 @@ private fun PlanSection(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            RenewalNotice(
+                price = (if (selectedYearly) yearlyLabel else monthlyLabel).substringBefore(" /"),
+                yearly = selectedYearly,
+            )
+
             Button(
                 onClick = {
                     onCheckout(if (selectedYearly) yearlyPriceId else monthlyPriceId)
@@ -475,6 +480,7 @@ private fun PlayPlanSection(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 val selectedProduct = products.firstOrNull { it.basePlanId == selectedBasePlan } ?: products.first()
+                RenewalNotice(price = selectedProduct.displayPrice, yearly = selectedProduct.basePlanId == "yearly")
                 Button(
                     onClick = { onPurchase(productId, selectedProduct.basePlanId) },
                     enabled = !loading,
@@ -489,6 +495,17 @@ private fun PlayPlanSection(
             }
         }
     }
+}
+
+/** Auto-renewal disclosure shown directly above each Subscribe button (California auto-renewal law). */
+@Composable
+private fun RenewalNotice(price: String, yearly: Boolean) {
+    Text(
+        text = "Renews automatically at $price every ${if (yearly) "year" else "month"} until you cancel. " +
+            "Cancel anytime in Settings, Manage Subscription.",
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
 }
 
 @Composable
