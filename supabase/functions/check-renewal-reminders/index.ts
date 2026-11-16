@@ -65,7 +65,7 @@ async function generateEmailFooter(email: string, emailType: string): Promise<st
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
 
     <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-      You're receiving this email because you have an active AutoLog subscription.<br>
+      You're receiving this email because you have an active My Car Companion subscription.<br>
       <a href="${unsubscribeUrl}" style="color: #9ca3af;">Unsubscribe from these emails</a>
       &nbsp;|&nbsp;
       <a href="${unsubscribeAllUrl}" style="color: #9ca3af;">Unsubscribe from all</a>
@@ -232,7 +232,7 @@ serve(async (req) => {
               </head>
               <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
                 <div style="text-align: center; margin-bottom: 30px;">
-                  <h1 style="color: #2563eb; margin: 0;">AutoLog</h1>
+                  <h1 style="color: #2563eb; margin: 0;">My Car Companion</h1>
                 </div>
 
                 <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
@@ -244,7 +244,7 @@ serve(async (req) => {
 
                 <p>Hi there,</p>
 
-                <p>Just a heads up that your AutoLog Premium subscription will automatically renew in ${daysUntilRenewal} days.</p>
+                <p>Just a heads up that your My Car Companion Premium subscription will automatically renew in ${daysUntilRenewal} days.</p>
 
                 <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin: 24px 0;">
                   <p style="margin: 0 0 8px 0;"><strong>Renewal Details:</strong></p>
@@ -264,8 +264,8 @@ serve(async (req) => {
                 </div>
 
                 <p style="color: #6b7280; font-size: 14px;">
-                  Thank you for being a valued AutoLog customer! 🚗<br>
-                  — The AutoLog Team
+                  Thank you for being a valued My Car Companion customer! 🚗<br>
+                  — The My Car Companion Team
                 </p>
 
                 ${emailFooter}
