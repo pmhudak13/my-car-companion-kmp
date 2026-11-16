@@ -162,8 +162,11 @@ data class MechanicReviewsScreen(
                         }
                     },
                     actions = {
-                        TextButton(onClick = model::openReviewDialog) {
-                            Text(if (state.myReview != null) "Edit Review" else "Write Review")
+                        // Only real customers of this mechanic can write or edit a review.
+                        if (state.canReview) {
+                            TextButton(onClick = model::openReviewDialog) {
+                                Text(if (state.myReview != null) "Edit Review" else "Write Review")
+                            }
                         }
                     },
                     windowInsets = topBarWindowInsets(),

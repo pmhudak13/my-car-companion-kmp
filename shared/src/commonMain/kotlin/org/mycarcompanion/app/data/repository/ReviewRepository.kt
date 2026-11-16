@@ -9,6 +9,8 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import org.mycarcompanion.app.data.models.MechanicReview
 import org.mycarcompanion.app.data.models.MechanicReviewInsert
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 class ReviewRepository(private val client: SupabaseClient) {
 
@@ -29,6 +31,14 @@ class ReviewRepository(private val client: SupabaseClient) {
                 eq("reviewer_user_id", userId)
             }
         }.decodeList<MechanicReview>().firstOrNull()
+    }
+
+    /** True when the current user is a real customer of this mechanic (same rule as the insert RLS policy). */
+    suspend fun canReview(mechanicUserId: String): Result<Boolean> = runCatching {
+        client.postgrest.rpc(
+            "can_review_mechanic",
+            buildJsonObject { put("p_mechanic", mechanicUserId) },
+        ).data.trim() == "true"
     }
 
     suspend fun submitReview(mechanicUserId: String, rating: Int, comment: String?): Result<Unit> = runCatching {

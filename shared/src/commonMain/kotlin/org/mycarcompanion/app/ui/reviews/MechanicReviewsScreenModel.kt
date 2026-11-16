@@ -12,6 +12,7 @@ import org.mycarcompanion.app.data.repository.ReviewRepository
 data class MechanicReviewsState(
     val reviews: List<MechanicReview> = emptyList(),
     val myReview: MechanicReview? = null,
+    val canReview: Boolean = false,
     val loading: Boolean = true,
     val submitting: Boolean = false,
     val error: String? = null,
@@ -38,10 +39,12 @@ class MechanicReviewsScreenModel(
                     return@launch
                 }
             val myReview = reviewRepository.getMyReviewForMechanic(mechanicUserId).getOrNull()
+            val canReview = reviewRepository.canReview(mechanicUserId).getOrDefault(false)
             _state.value = _state.value.copy(
                 loading = false,
                 reviews = reviews,
                 myReview = myReview,
+                canReview = canReview,
                 draftRating = myReview?.rating ?: 5,
                 draftComment = myReview?.comment ?: "",
             )
@@ -75,7 +78,7 @@ class MechanicReviewsScreenModel(
                 .onFailure { e ->
                     _state.value = _state.value.copy(
                         submitting = false,
-                        submitError = e.message ?: "Failed to submit review",
+                        submitError = reviewErrorMessage(e),
                     )
                 }
         }
@@ -83,5 +86,15 @@ class MechanicReviewsScreenModel(
 
     fun clearSubmitSuccess() {
         _state.value = _state.value.copy(submitSuccess = false)
+    }
+}
+
+// The server rejects reviews from anyone this mechanic has not worked with; say that plainly.
+private fun reviewErrorMessage(e: Throwable): String {
+    val msg = e.message ?: return "Failed to submit review"
+    return if (msg.contains("row-level security", ignoreCase = true)) {
+        "Only customers this mechanic has worked on a vehicle for can leave a review."
+    } else {
+        msg
     }
 }
