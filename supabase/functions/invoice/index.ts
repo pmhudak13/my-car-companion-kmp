@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { complianceParts, isSuppressed } from "../_shared/email-compliance.ts";
 
 // GET ?t=<invoice_token>: invoice data for the public page at /invoice/ (no account needed; the
 //   token is an unguessable per-job UUID, like a "view invoice" link from any invoicing tool).
@@ -96,6 +97,14 @@ async function handlePost(req: Request): Promise<Response> {
 
   const resendKey = Deno.env.get("RESEND_API_KEY");
   if (!resendKey) return json(req, { error: "Email is not set up" }, 500);
+  if (await isSuppressed(supabase, to)) return json(req, { skipped: "unsubscribed" });
+  let compliance;
+  try {
+    compliance = await complianceParts(to, shopName);
+  } catch (e) {
+    console.error(e);
+    return json(req, { error: (e as Error).message }, 500);
+  }
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
@@ -103,6 +112,7 @@ async function handlePost(req: Request): Promise<Response> {
       from: `${shopName.replace(/[<>"]/g, "")} via My Car Companion <noreply@mycarcompanion.org>`,
       to: [to],
       ...(shop.email ? { reply_to: shop.email } : {}),
+      headers: compliance.headers,
       subject: `Invoice #${job.invoice_number} from ${shopName}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
@@ -116,6 +126,7 @@ async function handlePost(req: Request): Promise<Response> {
                border-radius: 8px; font-size: 15px; font-weight: bold;">View and pay invoice</a>
           </div>
           <p style="color: #999; font-size: 12px;">Questions? Reply to this email to reach ${esc(shopName)}.</p>
+          ${compliance.footer}
         </div>`,
     }),
   });

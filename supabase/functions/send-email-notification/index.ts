@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { complianceParts, isSuppressed } from "../_shared/email-compliance.ts";
 
 // Maps notification type to its email preference column
 const EMAIL_PREF_COLUMN: Record<string, string> = {
@@ -33,7 +34,7 @@ function jsonResponse(body: unknown, status: number): Response {
   });
 }
 
-function buildEmailHtml(title: string, body: string, guest = false): string {
+function buildEmailHtml(title: string, body: string, guest = false, guestFooter = ""): string {
   return `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff;">
       <div style="margin-bottom: 24px;">
@@ -63,7 +64,7 @@ function buildEmailHtml(title: string, body: string, guest = false): string {
       <hr style="border: none; border-top: 1px solid #eeeeee; margin: 32px 0;" />
       <p style="color: #999999; font-size: 12px; text-align: center; margin: 0;">
         ${guest
-          ? "You're receiving this because your mechanic uses My Car Companion for your vehicle. If you weren't expecting it, you can ignore it."
+          ? `You're receiving this because your mechanic uses My Car Companion for your vehicle. If you weren't expecting it, you can ignore it.${guestFooter}`
           : `You're receiving this because you have email notifications enabled in My Car Companion.
         <br />
         <a href="https://www.mycarcompanion.org/app/" style="color: #6BBCDE;">Manage preferences</a>`}
@@ -72,9 +73,20 @@ function buildEmailHtml(title: string, body: string, guest = false): string {
   `;
 }
 
-async function sendEmail(to: string, title: string, body: string, guest = false): Promise<Response> {
+// guest: recipient has no account, so the email needs CAN-SPAM footer + unsubscribe header.
+async function sendEmail(to: string, title: string, body: string, guest?: { sender: string }): Promise<Response> {
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
   if (!resendApiKey) throw new Error("RESEND_API_KEY secret not set");
+
+  let compliance: { footer: string; headers: Record<string, string> } | null = null;
+  if (guest) {
+    try {
+      compliance = await complianceParts(to, guest.sender);
+    } catch (e) {
+      console.error(e);
+      return jsonResponse({ error: (e as Error).message }, 500);
+    }
+  }
 
   const emailRes = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -86,7 +98,8 @@ async function sendEmail(to: string, title: string, body: string, guest = false)
       from: "My Car Companion <noreply@mycarcompanion.org>",
       to: [to],
       subject: title,
-      html: buildEmailHtml(title, body, guest),
+      html: buildEmailHtml(title, body, !!guest, compliance?.footer ?? ""),
+      ...(compliance ? { headers: compliance.headers } : {}),
     }),
   });
 
@@ -164,7 +177,15 @@ Deno.serve(async (req) => {
         .maybeSingle();
       const jobEmail = job?.client_email?.trim();
       if (jobEmail && jobEmail.toLowerCase() === payload.client_email.trim().toLowerCase()) {
-        return await sendEmail(jobEmail, title, body, true);
+        if (await isSuppressed(supabase, jobEmail)) {
+          return jsonResponse({ skipped: "unsubscribed" }, 200);
+        }
+        const { data: shop } = await supabase
+          .from("mechanic_profiles")
+          .select("shop_name")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        return await sendEmail(jobEmail, title, body, { sender: shop?.shop_name || "Your mechanic" });
       }
     }
     return jsonResponse({ skipped: "no recipient resolved" }, 200);

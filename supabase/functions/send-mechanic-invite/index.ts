@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { complianceParts, isSuppressed, normalizeEmail } from "../_shared/email-compliance.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -56,7 +57,8 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Invalid JSON body" }, 400);
   }
 
-  const { jobId, clientEmail, clientName, mechanicName, vehicleInfo } = body;
+  const { jobId, clientName, mechanicName, vehicleInfo } = body;
+  const clientEmail = body.clientEmail ? normalizeEmail(body.clientEmail) : "";
 
   if (!jobId || !clientEmail || !clientName || !mechanicName || !vehicleInfo) {
     return jsonResponse({ error: "Missing required fields" }, 400);
@@ -74,6 +76,23 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Job not found or access denied" }, 403);
   }
 
+  if (await isSuppressed(supabase, clientEmail)) {
+    return jsonResponse({ skipped: "unsubscribed" }, 200);
+  }
+
+  const { data: shop } = await supabase
+    .from("mechanic_profiles")
+    .select("shop_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+  let compliance;
+  try {
+    compliance = await complianceParts(clientEmail, shop?.shop_name || mechanicName);
+  } catch (e) {
+    console.error(e);
+    return jsonResponse({ error: (e as Error).message }, 500);
+  }
+
   // Send invite email via Resend
   const emailRes = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -84,6 +103,7 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       from: "My Car Companion <noreply@mycarcompanion.org>",
       to: [clientEmail],
+      headers: compliance.headers,
       subject: `${mechanicName} invited you to track your ${vehicleInfo}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
@@ -110,6 +130,7 @@ Deno.serve(async (req) => {
           <p style="color: #888; font-size: 13px; margin-top: 32px;">
             If you weren't expecting this email, you can safely ignore it.
           </p>
+          ${compliance.footer}
         </div>
       `,
     }),
