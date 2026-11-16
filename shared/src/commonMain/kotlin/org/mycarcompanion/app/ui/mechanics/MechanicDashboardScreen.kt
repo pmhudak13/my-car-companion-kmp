@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
@@ -30,6 +31,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -173,6 +175,11 @@ class MechanicDashboardScreen : Screen {
                         text = { Text("My Jobs") },
                     )
                     Tab(
+                        selected = state.selectedTab == MechanicDashboardTab.PAST_JOBS,
+                        onClick = { model.selectTab(MechanicDashboardTab.PAST_JOBS) },
+                        text = { Text("Past Jobs") },
+                    )
+                    Tab(
                         selected = state.selectedTab == MechanicDashboardTab.CLIENT_JOBS,
                         onClick = { model.selectTab(MechanicDashboardTab.CLIENT_JOBS) },
                         text = { Text("Client Jobs") },
@@ -213,10 +220,18 @@ class MechanicDashboardScreen : Screen {
                         }
                         state.selectedTab == MechanicDashboardTab.MY_JOBS -> {
                             MyJobsTab(
-                                jobs = state.myJobs,
+                                jobs = state.myJobs.filter { it.status == "open" },
                                 onJobClick = { job -> navigator.push(MechanicJobDetailScreen(job.id)) },
                                 onCreateJob = { navigator.push(CreateMechanicJobScreen()) },
                                 onImportHistory = { navigator.push(JobHistoryImportScreen()) },
+                            )
+                        }
+                        state.selectedTab == MechanicDashboardTab.PAST_JOBS -> {
+                            PastJobsTab(
+                                jobs = filterPastJobs(state.myJobs, state.pastJobsQuery),
+                                query = state.pastJobsQuery,
+                                onQueryChange = model::setPastJobsQuery,
+                                onJobClick = { job -> navigator.push(MechanicJobDetailScreen(job.id)) },
                             )
                         }
                     }
@@ -277,7 +292,7 @@ private fun MyJobsTab(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(48.dp)) {
                 Text(
-                    text = "No jobs yet.",
+                    text = "No open jobs.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -303,6 +318,54 @@ private fun MyJobsTab(
         ) {
             items(jobs, key = { it.id }) { job ->
                 MyJobCard(job = job, onClick = { onJobClick(job) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun PastJobsTab(
+    jobs: List<MechanicJob>,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onJobClick: (MechanicJob) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp),
+            placeholder = { Text("Search name, email, VIN or plate") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = { onQueryChange("") }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                    }
+                }
+            },
+            singleLine = true,
+        )
+        if (jobs.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = if (query.isBlank()) "Completed jobs will show up here." else "No past jobs match \"$query\".",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(48.dp),
+                )
+            }
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(16.dp),
+            ) {
+                items(jobs, key = { it.id }) { job ->
+                    MyJobCard(job = job, onClick = { onJobClick(job) })
+                }
             }
         }
     }

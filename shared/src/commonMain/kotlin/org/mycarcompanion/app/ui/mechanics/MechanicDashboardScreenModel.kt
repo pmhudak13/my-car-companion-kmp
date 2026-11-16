@@ -14,7 +14,22 @@ import org.mycarcompanion.app.data.repository.MechanicAssignmentRepository
 import org.mycarcompanion.app.data.repository.MechanicJobRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
 
-enum class MechanicDashboardTab { MY_JOBS, CLIENT_JOBS }
+// Order matches the TabRow (selectedTabIndex = ordinal)
+enum class MechanicDashboardTab { MY_JOBS, PAST_JOBS, CLIENT_JOBS }
+
+/** Lowercased with spaces and dashes dropped, so "1HG-CM 826" matches "1hgcm826". */
+private fun String.searchKey() = lowercase().filterNot { it == ' ' || it == '-' }
+
+/** Completed and imported jobs whose client name, email, VIN or plate contain [query], newest first. */
+fun filterPastJobs(jobs: List<MechanicJob>, query: String): List<MechanicJob> {
+    val q = query.searchKey()
+    return jobs.filter { it.status != "open" }
+        .filter { job ->
+            q.isEmpty() || listOfNotNull(job.clientName, job.clientEmail, job.vehicleVin, job.vehicleLicensePlate)
+                .any { q in it.searchKey() }
+        }
+        .sortedByDescending { it.completedAt ?: it.createdAt }
+}
 
 data class MechanicDashboardState(
     val selectedTab: MechanicDashboardTab = MechanicDashboardTab.MY_JOBS,
@@ -25,6 +40,7 @@ data class MechanicDashboardState(
     val isRefreshing: Boolean = false,
     val error: String? = null,
     val completingId: String? = null,
+    val pastJobsQuery: String = "",
 )
 
 class MechanicDashboardScreenModel(
@@ -38,6 +54,10 @@ class MechanicDashboardScreenModel(
 
     fun selectTab(tab: MechanicDashboardTab) {
         _state.value = _state.value.copy(selectedTab = tab, error = null)
+    }
+
+    fun setPastJobsQuery(query: String) {
+        _state.value = _state.value.copy(pastJobsQuery = query)
     }
 
     // Re-triggered from Content() on every return; silent once data is loaded
