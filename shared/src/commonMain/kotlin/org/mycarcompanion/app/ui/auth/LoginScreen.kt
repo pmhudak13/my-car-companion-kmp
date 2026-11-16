@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import mycarcompanion.shared.generated.resources.Res
 import mycarcompanion.shared.generated.resources.ic_launcher
@@ -168,6 +169,15 @@ class LoginScreen : Screen {
             HorizontalDivider()
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "By continuing with Google you agree to our",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            LegalLinks()
 
             OutlinedButton(
                 onClick = model::signInWithGoogle,
