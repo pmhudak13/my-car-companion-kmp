@@ -35,7 +35,7 @@ function buildApprovedHtml(firstName: string | null, shopName: string): string {
       </div>
       <h2 style="color: #1B2B50; margin: 0 0 12px;">You're approved${firstName ? `, ${esc(firstName)}` : ""}!</h2>
       <p ${p}>
-        Your mechanic profile for <strong>${esc(shopName)}</strong> has been verified. You now show up in the
+        Your mechanic profile for <strong>${esc(shopName)}</strong> has been approved. You now show up in the
         mechanic directory, and your full dashboard is unlocked.
       </p>
       <h3 style="color: #1B2B50; margin: 24px 0 8px;">Next step: bring in your past customers</h3>

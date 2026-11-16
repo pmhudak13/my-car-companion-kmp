@@ -74,7 +74,7 @@ private val faqs = listOf(
     ),
     FaqItem(
         "How does mechanic verification work?",
-        "After completing your mechanic profile, an admin will review and approve your account. Once verified, you'll appear in the mechanic directory for customers to find.",
+        "After completing your mechanic profile, an admin will review and approve your account. Once approved, you'll appear in the mechanic directory for customers to find.",
     ),
     FaqItem(
         "I'm a mechanic — how do I bring in my past customers?",

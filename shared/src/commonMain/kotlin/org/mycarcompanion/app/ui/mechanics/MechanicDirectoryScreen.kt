@@ -133,7 +133,7 @@ data class MechanicDirectoryScreen(val vehicleId: String? = null) : Screen, Comm
                     }
                     state.mechanics.isEmpty() -> {
                         Text(
-                            if (state.searchQuery.isBlank()) "No verified mechanics available yet."
+                            if (state.searchQuery.isBlank()) "No mechanics listed yet."
                             else "No mechanics match \"${state.searchQuery}\".",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
