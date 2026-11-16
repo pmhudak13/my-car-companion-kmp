@@ -297,6 +297,7 @@
   </script>
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 
 <!-- Navigation -->
 <nav class="nav">
@@ -321,7 +322,7 @@
   </div>
 </nav>
 
-<main>
+<main id="main" tabindex="-1">
 
 <!-- Hero -->
 <section class="hero">
@@ -401,32 +402,32 @@
     </div>
     <div class="feature-grid">
       <div class="feature-card">
-        <div class="feature-icon">🚗</div>
+        <div class="feature-icon" aria-hidden="true">🚗</div>
         <h3>Vehicle Tracking</h3>
         <p>Add all your vehicles. Track mileage, maintenance history, and service documents in one organized place.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔔</div>
+        <div class="feature-icon" aria-hidden="true">🔔</div>
         <h3>Maintenance Reminders</h3>
         <p>Never miss an oil change again. Set reminders by mileage or date and get push notifications before they're due.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔧</div>
+        <div class="feature-icon" aria-hidden="true">🔧</div>
         <h3>Find a Mechanic</h3>
         <p>Browse local mechanics. Read real reviews, message directly in the app, and book with confidence.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📋</div>
+        <div class="feature-icon" aria-hidden="true">📋</div>
         <h3>Service History</h3>
         <p>Every oil change, tire rotation, and repair — logged and searchable. Know exactly what's been done and when.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">💬</div>
+        <div class="feature-icon" aria-hidden="true">💬</div>
         <h3>Direct Messaging</h3>
         <p>Talk to your mechanic directly in the app. No more phone tag — get updates and ask questions in real time.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">📱</div>
+        <div class="feature-icon" aria-hidden="true">📱</div>
         <h3>Android &amp; Web</h3>
         <p>Use the Android app on the go or access everything from your browser. Your data syncs automatically.</p>
       </div>
@@ -444,17 +445,17 @@
     </div>
     <div class="feature-grid">
       <div class="feature-card">
-        <div class="feature-icon">📂</div>
+        <div class="feature-icon" aria-hidden="true">📂</div>
         <h3>Job Management</h3>
         <p>Create jobs, attach vehicles, and track status from intake to completion. Stay organized without the paperwork.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">💬</div>
+        <div class="feature-icon" aria-hidden="true">💬</div>
         <h3>Client Messaging</h3>
         <p>Message car owners directly in the app. No phone tag, no missed calls — just clear communication.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">⭐</div>
+        <div class="feature-icon" aria-hidden="true">⭐</div>
         <h3>Reviews &amp; Reputation</h3>
         <p>Collect reviews from your customers and build your reputation. Share your profile link to attract new customers.</p>
       </div>
@@ -596,7 +597,8 @@
     function animateCount(el, target) {
       if (!el || target == null) return;
       var start = 0;
-      var duration = 1200;
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var duration = reduceMotion ? 1 : 1200; // 1 ms: lands on the final value on the next frame
       var startTime = null;
       function step(ts) {
         if (!startTime) startTime = ts;

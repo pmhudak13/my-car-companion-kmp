@@ -49,9 +49,38 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         #loading p { color: #6BBCDE; font-size: 14px; letter-spacing: 0.5px; }
+        /* Accessibility note: the web app draws to a canvas that screen readers cannot read yet. */
+        #a11y-note {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 10000;
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 16px;
+            padding: 10px 16px; background: #FFFFFF; color: #1B2B50;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.5;
+        }
+        #a11y-note a { color: #1B2B50; font-weight: 600; text-decoration: underline; }
+        #a11y-note button {
+            padding: 6px 14px; border: 1px solid #1B2B50; border-radius: 6px;
+            background: #1B2B50; color: #FFFFFF; font-size: 14px; cursor: pointer;
+        }
+        #a11y-note:focus, #a11y-note a:focus-visible, #a11y-note button:focus-visible { outline: 3px solid #6BBCDE; outline-offset: 2px; }
     </style>
 </head>
 <body>
+    <div id="a11y-note" role="note" tabindex="0">
+        <p>This web app does not yet work with screen readers. For an accessible version, use the
+            <a href="https://play.google.com/store/apps/details?id=org.mycarcompanion.app">Android app</a>,
+            or email <a href="mailto:paul@thecooconsultant.com">paul@thecooconsultant.com</a> and we will help.</p>
+        <button type="button" id="a11y-note-close">Dismiss</button>
+    </div>
+    <script>
+        (function () {
+            var note = document.getElementById('a11y-note');
+            try { if (localStorage.getItem('mcc-a11y-note') === 'dismissed') { note.remove(); return; } } catch (e) {}
+            document.getElementById('a11y-note-close').addEventListener('click', function () {
+                try { localStorage.setItem('mcc-a11y-note', 'dismissed'); } catch (e) {}
+                note.remove();
+            });
+        })();
+    </script>
     <div id="loading">
         <div class="spinner"></div>
         <p>Loading My Car Companion…</p>
