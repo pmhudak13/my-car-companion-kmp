@@ -125,7 +125,7 @@ class MessagingScreenModel(
                     loadConversation(recipientId)
                 }
                 .onFailure { e ->
-                    _state.value = _state.value.copy(isSending = false, sendError = e.message ?: "Failed to send photo")
+                    _state.value = _state.value.copy(isSending = false, sendError = sendErrorText(e, "Failed to send photo"))
                 }
         }
     }
@@ -150,8 +150,14 @@ class MessagingScreenModel(
                     onSent()
                 }
                 .onFailure { e ->
-                    _state.value = _state.value.copy(isSending = false, sendError = e.message ?: "Failed to send")
+                    _state.value = _state.value.copy(isSending = false, sendError = sendErrorText(e, "Failed to send"))
                 }
         }
     }
+
+    // Server only lets verified mechanics start chats; everyone else can only reply.
+    private fun sendErrorText(e: Throwable, fallback: String): String =
+        if (e.message?.contains("row-level security", ignoreCase = true) == true)
+            "You can reply once a mechanic messages you first."
+        else e.message ?: fallback
 }

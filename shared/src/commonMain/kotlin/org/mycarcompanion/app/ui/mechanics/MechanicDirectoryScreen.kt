@@ -44,7 +44,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.MechanicProfile
 import org.mycarcompanion.app.data.models.shopTypeLabels
 import org.mycarcompanion.app.platform.CommonParcelable
-import org.mycarcompanion.app.ui.messaging.MessagingScreen
 import org.mycarcompanion.app.ui.reviews.MechanicReviewsScreen
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
 import org.mycarcompanion.app.ui.formatUsd
@@ -152,7 +151,6 @@ data class MechanicDirectoryScreen(val vehicleId: String? = null) : Screen, Comm
                                     isAssigning = state.assigningMechanicId == mechanic.userId,
                                     isAssigned = mechanic.userId in state.assignedMechanicIds,
                                     onAssign = { vehicleId?.let { vid -> model.assignMechanic(vid, mechanic.userId) } },
-                                    onMessage = { navigator.push(MessagingScreen(recipientId = mechanic.userId)) },
                                     onReviews = {
                                         navigator.push(
                                             MechanicReviewsScreen(
@@ -178,7 +176,6 @@ fun MechanicCard(
     isAssigning: Boolean = false,
     isAssigned: Boolean = false,
     onAssign: () -> Unit = {},
-    onMessage: () -> Unit = {},
     onReviews: () -> Unit = {},
 ) {
     Card(
@@ -253,12 +250,6 @@ fun MechanicCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                OutlinedButton(
-                    onClick = onMessage,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text("Message", style = MaterialTheme.typography.labelMedium)
-                }
                 OutlinedButton(
                     onClick = onReviews,
                     modifier = Modifier.weight(1f),
