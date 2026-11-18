@@ -34,6 +34,12 @@ class MyApp : Application() {
         } catch (_: Exception) {}
         FirebaseApp.initializeApp(this)
 
+        // Play pre-launch robots run on Firebase Test Lab and launch ProxyBillingActivity cold
+        // (no PendingIntent), crashing inside the billing library. Official Test Lab flag.
+        val isTestLab = android.provider.Settings.System.getString(
+            contentResolver, "firebase.test.lab"
+        ) == "true"
+
         if (BuildConfig.SENTRY_DSN.isNotEmpty()) {
             SentryAndroid.init(this) { options ->
                 options.dsn = BuildConfig.SENTRY_DSN
@@ -43,6 +49,7 @@ class MyApp : Application() {
                 // Drop ANRs from sideloaded installs — these come from PairIP's license check,
                 // not our code. Background ANRs have no viewNames so we check both signals.
                 options.beforeSend = io.sentry.SentryOptions.BeforeSendCallback { event, _ ->
+                    if (isTestLab) return@BeforeSendCallback null
                     val isSideloaded = event.tags?.get("isSideLoaded") == "true"
                     val isAnr = event.exceptions?.any {
                         it.type == "ApplicationNotResponding"
