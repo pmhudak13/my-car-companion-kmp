@@ -349,7 +349,7 @@
 </div>
 
 <!-- Community Stats -->
-<section class="stats-band">
+<section class="stats-band" id="stats-band" hidden>
   <div class="container stats-inner">
     <div class="stat-item">
       <div class="stat-number" id="stat-users">—</div>
@@ -602,6 +602,10 @@
     .then(function(r) { return r.ok ? r.json() : null; })
     .then(function(data) {
       if (!data) return;
+      // Small counts read as "nobody uses this", so the band stays hidden until these are met.
+      var MIN = { users: 100, mechanics: 25, logs: 500 };
+      if (!(data.users >= MIN.users && data.mechanics >= MIN.mechanics && data.logs >= MIN.logs)) return;
+      document.getElementById('stats-band').hidden = false;
       animateCount(document.getElementById('stat-users'),     Number(data.users)     || 0);
       animateCount(document.getElementById('stat-mechanics'), Number(data.mechanics) || 0);
       animateCount(document.getElementById('stat-logs'),      Number(data.logs)      || 0);
