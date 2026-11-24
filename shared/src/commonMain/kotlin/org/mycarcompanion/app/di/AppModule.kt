@@ -18,6 +18,8 @@ import org.mycarcompanion.app.data.repository.JobRequestRepository
 import org.mycarcompanion.app.data.repository.MessageRepository
 import org.mycarcompanion.app.data.repository.MileageTripRepository
 import org.mycarcompanion.app.data.repository.RecallRepository
+import org.mycarcompanion.app.data.repository.VehicleLookupRepository
+import org.mycarcompanion.app.data.repository.JobNotesRepository
 import org.mycarcompanion.app.data.repository.ProfileRepository
 import org.mycarcompanion.app.data.repository.ReminderRepository
 import org.mycarcompanion.app.data.repository.ReviewRepository
@@ -75,6 +77,8 @@ val appModule = module {
     single { JobRequestRepository(get()) }
     single { MileageTripRepository(get()) }
     single { RecallRepository() }
+    single { VehicleLookupRepository(get()) }
+    single { JobNotesRepository(get()) }
     single { ProfileRepository(get()) }
     single { ReviewRepository(get()) }
     single { SubscriptionRepository(get()) }

@@ -275,6 +275,46 @@ data class MechanicJobMedia(
     @SerialName("file_name") val fileName: String = "",
     val caption: String? = null,
     @SerialName("created_at") val createdAt: String = "",
+    val category: String = "general",
+)
+
+/** Photo/PDF tags; each non-general one is its own section on the invoice. Mirrors the DB check. */
+val mediaCategoryLabels = linkedMapOf(
+    "general" to "General",
+    "pre_existing" to "Pre-existing damage",
+    "pre_scan" to "Pre-scan (before work)",
+    "post_scan" to "Post-scan (after work)",
+)
+
+/** A note added at any stage that the customer acknowledges (in app, or the mechanic records how). */
+@Serializable
+data class MechanicJobNote(
+    val id: String = "",
+    @SerialName("mechanic_job_id") val mechanicJobId: String = "",
+    @SerialName("mechanic_user_id") val mechanicUserId: String = "",
+    val body: String = "",
+    @SerialName("created_at") val createdAt: String = "",
+    @SerialName("acknowledged_at") val acknowledgedAt: String? = null,
+    @SerialName("acknowledge_method") val acknowledgeMethod: String? = null,
+)
+
+@Serializable
+data class MechanicJobNoteInsert(
+    @SerialName("mechanic_job_id") val mechanicJobId: String,
+    @SerialName("mechanic_user_id") val mechanicUserId: String,
+    val body: String,
+)
+
+/** "Check the CV boot in 90 days": reminds the mechanic, and the customer when the job is on their car. */
+@Serializable
+data class MechanicFollowUp(
+    val id: String = "",
+    @SerialName("mechanic_job_id") val mechanicJobId: String = "",
+    val title: String = "",
+    @SerialName("due_date") val dueDate: String = "",
+    @SerialName("discount_percent") val discountPercent: Int? = null,
+    @SerialName("reminder_id") val reminderId: String? = null,
+    @SerialName("done_at") val doneAt: String? = null,
 )
 
 @Serializable
@@ -285,6 +325,7 @@ data class MechanicJobMediaInsert(
     @SerialName("media_type") val mediaType: String = "image",
     @SerialName("file_name") val fileName: String,
     val caption: String? = null,
+    val category: String = "general",
 )
 
 @Serializable

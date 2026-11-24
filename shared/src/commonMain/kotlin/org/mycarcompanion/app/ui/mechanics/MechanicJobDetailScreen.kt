@@ -88,6 +88,7 @@ import org.mycarcompanion.app.data.models.stage
 import org.mycarcompanion.app.data.models.MechanicJobIssue
 import org.mycarcompanion.app.data.models.MechanicJobLog
 import org.mycarcompanion.app.data.models.MechanicJobMedia
+import org.mycarcompanion.app.data.models.mediaCategoryLabels
 import org.mycarcompanion.app.data.models.maintenanceCategories
 import org.mycarcompanion.app.platform.CommonParcelable
 import org.mycarcompanion.app.platform.scaffoldContentWindowInsets
@@ -108,8 +109,11 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
         val snackbarHostState = remember { SnackbarHostState() }
         val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+        // the mechanic picks what the photo/PDF is first, so it lands in the right invoice section
+        var mediaCategory by remember { mutableStateOf("general") }
+        var askMediaCategory by remember { mutableStateOf(false) }
         val mediaPicker = rememberBinaryFilePickerLauncher { fileName, base64, mimeType ->
-            model.uploadMedia(jobId, fileName, base64, mimeType)
+            model.uploadMedia(jobId, fileName, base64, mimeType, category = mediaCategory)
         }
 
         LaunchedEffect(jobId) { model.load(jobId) }
@@ -282,7 +286,7 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                     MediaSectionHeader(
                                         count = state.mediaItems.size,
                                         isUploading = state.isUploadingMedia,
-                                        onUpload = { mediaPicker.launch() },
+                                        onUpload = { askMediaCategory = true },
                                     )
                                 }
                                 state.mediaError?.let { error ->
@@ -391,6 +395,9 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                                 }
                             }
                         }
+
+                        // Notes and follow-ups apply at any stage, so they sit below every tab
+                        item { JobNotesSection(jobId = job.id, isMechanic = true, clientEmail = job.clientEmail) }
                     }
                 }
             }
@@ -426,6 +433,29 @@ data class MechanicJobDetailScreen(val jobId: String) : Screen, CommonParcelable
                         onCancel = model::hideEditLog,
                     )
                 }
+            }
+
+            if (askMediaCategory) {
+                AlertDialog(
+                    onDismissRequest = { askMediaCategory = false },
+                    title = { Text("What are you adding?") },
+                    text = {
+                        Column {
+                            Text(
+                                "Pre-existing damage and scan reports get their own sections on the invoice. Scan reports can be a PDF or a photo of the scanner.",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            mediaCategoryLabels.forEach { (key, label) ->
+                                OutlinedButton(
+                                    onClick = { mediaCategory = key; askMediaCategory = false; mediaPicker.launch() },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) { Text(label) }
+                            }
+                        }
+                    },
+                    confirmButton = {},
+                    dismissButton = { TextButton(onClick = { askMediaCategory = false }) { Text("Cancel") } },
+                )
             }
 
             state.approvalPrompt?.let { prompt ->
@@ -956,18 +986,24 @@ private fun MediaThumbnailCard(
     val url = "${org.mycarcompanion.app.data.supabase.SupabaseConfig.url}/storage/v1/object/public/mechanic-job-media/${media.storagePath}"
     Card(modifier = modifier) {
         Box {
-            AsyncImage(
-                model = url,
-                contentDescription = media.caption ?: media.fileName,
-                modifier = Modifier.fillMaxWidth().aspectRatio(1f),
-            )
+            if (media.mediaType == "document") {
+                Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f), contentAlignment = Alignment.Center) {
+                    Text("PDF", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+            } else {
+                AsyncImage(
+                    model = url,
+                    contentDescription = media.caption ?: media.fileName,
+                    modifier = Modifier.fillMaxWidth().aspectRatio(1f),
+                )
+            }
             Box(modifier = Modifier.align(Alignment.TopEnd)) {
                 IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
                     Text("✕", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
                 }
             }
         }
-        media.caption?.let {
+        (media.caption ?: mediaCategoryLabels[media.category]?.takeIf { media.category != "general" })?.let {
             Text(
                 it,
                 style = MaterialTheme.typography.labelSmall,
@@ -992,7 +1028,7 @@ private fun MediaFileRow(media: MechanicJobMedia, onDelete: () -> Unit) {
                     Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                 }
                 Text(
-                    "${media.mediaType} · ${media.createdAt.take(10)}",
+                    "${mediaCategoryLabels[media.category] ?: media.mediaType} · ${media.createdAt.take(10)}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline,
                 )

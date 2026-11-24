@@ -60,13 +60,20 @@ async function handleGet(req: Request): Promise<Response> {
   const { data: job } = await supabase.from("mechanic_jobs").select(JOB_COLUMNS).eq("invoice_token", token).maybeSingle();
   if (!job) return json(req, { error: "Invoice not found" }, 404);
 
-  const [{ data: lines }, shop] = await Promise.all([
+  const [{ data: lines }, shop, { data: media }, { data: notes }] = await Promise.all([
     supabase.from("mechanic_job_line_items").select("kind, description, quantity, unit_price")
       .eq("mechanic_job_id", job.id).order("created_at"),
     shopFor(job.mechanic_user_id),
+    // only tagged evidence goes on the invoice: pre-existing damage and before/after scans
+    supabase.from("mechanic_job_media").select("storage_path, file_name, caption, category, media_type, created_at")
+      .eq("mechanic_job_id", job.id).neq("category", "general").order("created_at"),
+    supabase.from("mechanic_job_notes").select("body, created_at, acknowledged_at, acknowledge_method")
+      .eq("mechanic_job_id", job.id).order("created_at"),
   ]);
+  const base = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/mechanic-job-media/`;
+  const evidence = (media ?? []).map(({ storage_path, ...m }) => ({ ...m, url: base + storage_path.split("/").map(encodeURIComponent).join("/") }));
   const { id: _id, mechanic_user_id: _m, invoice_token: _t, ...publicJob } = job;
-  return json(req, { job: publicJob, lines: lines ?? [], shop });
+  return json(req, { job: publicJob, lines: lines ?? [], shop, media: evidence, notes: notes ?? [] });
 }
 
 async function handlePost(req: Request): Promise<Response> {

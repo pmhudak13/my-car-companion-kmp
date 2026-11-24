@@ -20,3 +20,11 @@ expect fun rememberTextFilePickerLauncher(
 expect fun rememberBinaryFilePickerLauncher(
     onResult: (fileName: String, base64: String, mimeType: String) -> Unit,
 ): FilePickerLauncher
+
+/** Scans a VIN barcode with the camera and delivers the raw text. Null where there is no scanner (web). */
+@Composable
+expect fun rememberVinBarcodeScanner(onResult: (String) -> Unit, onError: (String) -> Unit): FilePickerLauncher?
+
+/** Takes a photo (camera on Android, camera-or-file on web) and delivers it as base64 + MIME type. */
+@Composable
+expect fun rememberCameraPhotoLauncher(onResult: (base64: String, mimeType: String) -> Unit): FilePickerLauncher

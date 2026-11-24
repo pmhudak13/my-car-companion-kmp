@@ -24,6 +24,17 @@
             android:authorities="${applicationId}.SentryInitProvider"
             tools:node="remove" />
 
+        <!-- Camera app writes plate/VIN photos here (rememberCameraPhotoLauncher) -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.photos"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/photo_paths" />
+        </provider>
+
         <!-- Disable Firebase auto-init provider. On OEM devices (OnePlus OxygenOS)
              FirebaseInitProvider can run in a broken/partial state that leaves
              getApps() non-empty but getInstance() still throwing. We init manually

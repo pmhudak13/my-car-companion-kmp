@@ -219,12 +219,18 @@ class MechanicDashboardScreen : Screen {
                             )
                         }
                         state.selectedTab == MechanicDashboardTab.MY_JOBS -> {
-                            MyJobsTab(
-                                jobs = state.myJobs.filter { it.status == "open" },
-                                onJobClick = { job -> navigator.push(MechanicJobDetailScreen(job.id)) },
-                                onCreateJob = { navigator.push(CreateMechanicJobScreen()) },
-                                onImportHistory = { navigator.push(JobHistoryImportScreen()) },
-                            )
+                            Column {
+                                FollowUpsDueCard(
+                                    jobs = state.myJobs,
+                                    onOpenJob = { id -> navigator.push(MechanicJobDetailScreen(id)) },
+                                )
+                                MyJobsTab(
+                                    jobs = state.myJobs.filter { it.status == "open" },
+                                    onJobClick = { job -> navigator.push(MechanicJobDetailScreen(job.id)) },
+                                    onCreateJob = { navigator.push(CreateMechanicJobScreen()) },
+                                    onImportHistory = { navigator.push(JobHistoryImportScreen()) },
+                                )
+                            }
                         }
                         state.selectedTab == MechanicDashboardTab.PAST_JOBS -> {
                             PastJobsTab(

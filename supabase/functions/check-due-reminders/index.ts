@@ -31,6 +31,8 @@ serve(async (req) => {
     const today = new Date().toISOString().split('T')[0];
     console.log(`[Reminder Check] Checking reminders due on or before: ${today}`);
 
+    const mechanicFollowUpsSent = await notifyMechanicFollowUps(supabase, today);
+
     // Get all active reminders that are due (by date or mileage)
     // We'll focus on date-based reminders for push notifications
     const { data: dueReminders, error: remindersError } = await supabase
@@ -66,7 +68,7 @@ serve(async (req) => {
 
     if (!dueReminders || dueReminders.length === 0) {
       return new Response(
-        JSON.stringify({ message: 'No due reminders found', processed: 0 }),
+        JSON.stringify({ message: 'No due reminders found', processed: 0, mechanicFollowUpsSent }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -186,6 +188,7 @@ serve(async (req) => {
         message: 'Reminder check completed',
         totalDueReminders: dueReminders.length,
         ownersNotified: notificationsSent,
+        mechanicFollowUpsSent,
         errors: errors.length > 0 ? errors : undefined,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -199,3 +202,44 @@ serve(async (req) => {
     );
   }
 });
+
+// Mechanic follow-ups ("check the CV boot in 90 days"): one push to the mechanic on the due date so
+// they can reach out. The customer's side is an ordinary reminder row, handled above.
+// deno-lint-ignore no-explicit-any
+async function notifyMechanicFollowUps(supabase: any, today: string): Promise<number> {
+  try {
+    const { data: due, error } = await supabase
+      .from('mechanic_follow_ups')
+      .select('id, mechanic_user_id, title, discount_percent, mechanic_jobs!inner(client_name, vehicle_year, vehicle_make, vehicle_model)')
+      .is('done_at', null)
+      .is('notified_at', null)
+      .lte('due_date', today);
+    if (error) {
+      console.error('[Reminder Check] Follow-up query failed:', error);
+      return 0;
+    }
+    let sent = 0;
+    for (const f of due ?? []) {
+      const job = f.mechanic_jobs as { client_name: string; vehicle_year: number; vehicle_make: string; vehicle_model: string };
+      // claim it first so a retry or overlapping run never double-sends
+      const { data: claimed } = await supabase.from('mechanic_follow_ups')
+        .update({ notified_at: new Date().toISOString() }).eq('id', f.id).is('notified_at', null).select('id');
+      if (!claimed?.length) continue;
+      const { error: pushError } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          recipient_id: f.mechanic_user_id,
+          title: `Follow up with ${job.client_name || 'your customer'}`,
+          body: `${f.title} on their ${job.vehicle_year} ${job.vehicle_make} ${job.vehicle_model}` +
+            (f.discount_percent ? ` (you offered ${f.discount_percent}% off)` : '') + '.',
+          type: 'mechanic_update',
+        },
+      });
+      if (pushError) console.error(`[Reminder Check] Follow-up push failed for ${f.id}:`, pushError);
+      else sent++;
+    }
+    return sent;
+  } catch (e) {
+    console.error('[Reminder Check] Follow-up check crashed:', e);
+    return 0;
+  }
+}

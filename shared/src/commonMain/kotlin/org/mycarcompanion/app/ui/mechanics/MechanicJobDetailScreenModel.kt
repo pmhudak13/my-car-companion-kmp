@@ -821,10 +821,11 @@ class MechanicJobDetailScreenModel(
         base64Data: String,
         mimeType: String,
         caption: String? = null,
+        category: String = "general",
     ) {
         screenModelScope.launch {
             _state.value = _state.value.copy(isUploadingMedia = true, mediaError = null)
-            mediaRepository.uploadMedia(jobId, fileName, base64Data, mimeType, caption)
+            mediaRepository.uploadMedia(jobId, fileName, base64Data, mimeType, caption, category)
                 .onSuccess { media ->
                     _state.value = _state.value.copy(
                         isUploadingMedia = false,

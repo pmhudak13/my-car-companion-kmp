@@ -152,3 +152,13 @@ actual fun rememberBinaryFilePickerLauncher(
         }
     }
 }
+
+@Composable
+actual fun rememberVinBarcodeScanner(onResult: (String) -> Unit, onError: (String) -> Unit): FilePickerLauncher? = null
+
+// shortcut: no downscaling on web, so a full-size phone photo over 5 MB is rejected by the AI; resize via canvas if mechanics hit it
+@Composable
+actual fun rememberCameraPhotoLauncher(onResult: (base64: String, mimeType: String) -> Unit): FilePickerLauncher {
+    val callback = rememberUpdatedState(onResult)
+    return rememberBinaryFilePickerLauncher { _, base64, mime -> callback.value(base64, mime) }
+}

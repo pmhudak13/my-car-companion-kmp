@@ -23,6 +23,7 @@ class MechanicJobMediaRepository(private val client: SupabaseClient) {
         base64Data: String,
         mimeType: String,
         caption: String?,
+        category: String = "general",
     ): Result<MechanicJobMedia> = runCatching {
         val userId = client.auth.currentUserOrNull()?.id ?: error("Not authenticated")
         val bytes = Base64.decode(base64Data)
@@ -32,9 +33,14 @@ class MechanicJobMediaRepository(private val client: SupabaseClient) {
             mechanicJobId = jobId,
             mechanicUserId = userId,
             storagePath = storagePath,
-            mediaType = if (mimeType.startsWith("video")) "video" else "image",
+            mediaType = when {
+                mimeType.startsWith("video") -> "video"
+                mimeType == "application/pdf" -> "document"
+                else -> "image"
+            },
             fileName = fileName,
             caption = caption?.ifBlank { null },
+            category = category,
         )
         table.insert(insert) { select() }.decodeSingle<MechanicJobMedia>()
     }

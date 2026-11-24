@@ -44,6 +44,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.platform.CommonParcelable
+import org.mycarcompanion.app.ui.components.VehicleIdFields
 import org.mycarcompanion.app.ui.formatUsd
 
 /** Optional prefill comes from a Labor Guide result: the car, the repair, and its hours as the first labor line. */
@@ -162,23 +163,21 @@ data class CreateMechanicJobScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = state.form.vehicleLicensePlate,
-                    onValueChange = { model.updateForm(state.form.copy(vehicleLicensePlate = it)) },
-                    label = { Text("License Plate") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = state.form.vehicleVin,
-                    onValueChange = { model.updateForm(state.form.copy(vehicleVin = it)) },
-                    label = { Text("VIN") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-                    modifier = Modifier.fillMaxWidth(),
+                VehicleIdFields(
+                    vin = state.form.vehicleVin,
+                    plate = state.form.vehicleLicensePlate,
+                    onVinChange = { model.updateForm(model.state.value.form.copy(vehicleVin = it)) },
+                    onPlateChange = { model.updateForm(model.state.value.form.copy(vehicleLicensePlate = it)) },
+                    onDecoded = { d ->
+                        val f = model.state.value.form
+                        model.updateForm(
+                            f.copy(
+                                vehicleYear = d.year?.toString() ?: f.vehicleYear,
+                                vehicleMake = d.make,
+                                vehicleModel = d.model.ifBlank { f.vehicleModel },
+                            ),
+                        )
+                    },
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 

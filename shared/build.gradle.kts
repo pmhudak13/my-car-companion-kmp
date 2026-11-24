@@ -65,6 +65,7 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.koin.android)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.play.services.code.scanner)
         }
 
         iosMain.dependencies {

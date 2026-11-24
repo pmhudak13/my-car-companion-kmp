@@ -1,5 +1,6 @@
 ﻿package org.mycarcompanion.app.ui.vehicles
 
+import org.mycarcompanion.app.ui.mechanics.JobNotesSection
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -725,6 +726,10 @@ private fun MechanicJobCard(
                 Spacer(modifier = Modifier.height(12.dp))
                 OwnerMediaSection(media = media)
             }
+
+            // shortcut: each job card loads its own notes (one query per job); batch if owners get many jobs
+            Spacer(modifier = Modifier.height(8.dp))
+            JobNotesSection(jobId = job.id, isMechanic = false)
         }
     }
 }
@@ -824,7 +829,7 @@ private fun OwnerMediaSection(media: List<MechanicJobMedia>) {
                                 Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                             }
                             Text(
-                                "${item.mediaType} · ${item.createdAt.take(10)}",
+                                "${org.mycarcompanion.app.data.models.mediaCategoryLabels[item.category] ?: item.mediaType} · ${item.createdAt.take(10)}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.outline,
                             )

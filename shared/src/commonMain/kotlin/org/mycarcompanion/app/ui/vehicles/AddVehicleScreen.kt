@@ -40,6 +40,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import org.mycarcompanion.app.data.models.carMakes
+import org.mycarcompanion.app.ui.components.VehicleIdFields
 import org.mycarcompanion.app.data.models.carModelsByMake
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -199,21 +200,16 @@ class AddVehicleScreen : Screen {
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
-                OutlinedTextField(
-                    value = state.form.licensePlate,
-                    onValueChange = { model.updateForm(state.form.copy(licensePlate = it)) },
-                    label = { Text("License Plate") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = state.form.vin,
-                    onValueChange = { model.updateForm(state.form.copy(vin = it)) },
-                    label = { Text("VIN") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                VehicleIdFields(
+                    vin = state.form.vin,
+                    plate = state.form.licensePlate,
+                    onVinChange = { model.updateForm(model.state.value.form.copy(vin = it)) },
+                    onPlateChange = { model.updateForm(model.state.value.form.copy(licensePlate = it)) },
+                    onDecoded = { d ->
+                        val f = model.state.value.form
+                        model.updateForm(f.copy(year = d.year?.toString() ?: f.year, make = d.make, model = d.model.ifBlank { f.model }))
+                    },
+                    allowPhoto = false,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
