@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- No advertising: strip the AD_ID permission that Firebase libraries merge in. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+    <!-- A library activity locks portrait, which Play turns into a required feature; keep the app installable on landscape-only devices. -->
+    <uses-feature android:name="android.hardware.screen.portrait" android:required="false" />
+    <uses-feature android:name="android.hardware.screen.landscape" android:required="false" />
     <application
         android:name="org.mycarcompanion.app.MyApp"
         android:allowBackup="true"
