@@ -57,6 +57,19 @@ class VehicleRepository(private val client: SupabaseClient) {
         updated
     }
 
+    /** Fills the VIN only while the car has none, so a scan never overwrites one the owner set. */
+    suspend fun fillVinIfBlank(vehicleId: String, vin: String): Result<Unit> = runCatching {
+        table.update({ set("vin", vin) }) {
+            filter {
+                eq("id", vehicleId)
+                or {
+                    exact("vin", null)
+                    eq("vin", "")
+                }
+            }
+        }
+    }
+
     suspend fun updateOdometer(vehicleId: String, odometer: Int): Result<Unit> = runCatching {
         table.update({ set("odometer", odometer) }) {
             filter { eq("id", vehicleId) }

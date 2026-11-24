@@ -1,11 +1,14 @@
 ﻿package org.mycarcompanion.app.ui.vehicles
 
+import org.mycarcompanion.app.ui.maintenance.ScanInvoicesScreen
 import org.mycarcompanion.app.ui.mechanics.JobNotesSection
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -234,11 +237,20 @@ data class VehicleDetailScreen(val vehicleId: String) : Screen, CommonParcelable
 
                         // --- Maintenance Section ---
                         item {
-                            Text(
-                                "Maintenance History",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "Maintenance History",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                TextButton(onClick = { navigator.push(ScanInvoicesScreen(vehicleId)) }) {
+                                    Text("Scan old invoices")
+                                }
+                            }
                         }
                         if (state.logs.isEmpty()) {
                             item {
@@ -476,6 +488,10 @@ fun MaintenanceLogCard(log: MaintenanceLog, onDelete: () -> Unit) {
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.tertiary,
                         )
+                    }
+                    log.invoiceScanId?.let { scanId ->
+                        Spacer(modifier = Modifier.width(8.dp))
+                        InvoiceOnFileLink(scanId)
                     }
                 }
                 Text(
@@ -839,4 +855,20 @@ private fun OwnerMediaSection(media: List<MechanicJobMedia>) {
             }
         }
     }
+}
+
+/** "Invoice on file": the record came from a scanned invoice; tapping opens the stored file. */
+@Composable
+private fun InvoiceOnFileLink(scanId: String) {
+    val repo: org.mycarcompanion.app.data.repository.MaintenanceRepository = org.koin.compose.koinInject()
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    Text(
+        "Invoice on file",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.clickable {
+            scope.launch { repo.invoiceUrl(scanId)?.let(uriHandler::openUri) }
+        },
+    )
 }

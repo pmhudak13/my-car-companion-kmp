@@ -3,7 +3,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
-const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
+// the project secret was saved as "Anthropic_API_Key"; accept either spelling
+const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY") || Deno.env.get("Anthropic_API_Key") || "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://www.mycarcompanion.org",

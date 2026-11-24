@@ -20,6 +20,8 @@ data class MaintenanceLog(
     @SerialName("edit_notes") val editNotes: String? = null,
     @SerialName("labor_hours") val laborHours: Double? = null,
     @SerialName("parts_used") val partsUsed: List<String>? = null,
+    /** Set when the owner created this from a scanned invoice; the file is kept as proof. */
+    @SerialName("invoice_scan_id") val invoiceScanId: String? = null,
     @SerialName("created_at") val createdAt: String = "",
     @SerialName("updated_at") val updatedAt: String = "",
 )

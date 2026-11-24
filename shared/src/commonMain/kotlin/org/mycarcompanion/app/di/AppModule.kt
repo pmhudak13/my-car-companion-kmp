@@ -1,5 +1,6 @@
 package org.mycarcompanion.app.di
 
+import org.mycarcompanion.app.ui.maintenance.ScanInvoicesScreenModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -92,6 +93,7 @@ val appModule = module {
     factoryOf(::AddVehicleScreenModel)
     factory { VehicleDetailScreenModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factoryOf(::AddMaintenanceScreenModel)
+    factoryOf(::ScanInvoicesScreenModel)
     factoryOf(::AddReminderScreenModel)
     factoryOf(::MechanicDashboardScreenModel)
     factoryOf(::MechanicDirectoryScreenModel)
