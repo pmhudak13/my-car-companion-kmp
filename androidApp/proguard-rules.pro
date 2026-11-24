@@ -49,6 +49,12 @@
 # ---------- androidx.startup (reflection-based initializers) ----------
 -keep class androidx.startup.** { *; }
 
+# ---------- Firebase / ML Kit component registrars ----------
+# Registrars are created by reflection from manifest meta-data. R8 full mode stripped the ML Kit
+# registrars' no-arg constructors, so the VIN scanner's SharedPrefManager was never registered and
+# GmsBarcodeScanning.getClient() NPE'd on every New Job / Add Vehicle screen (Sentry ANDROID-F, ANDROID-E).
+-keep class * implements com.google.firebase.components.ComponentRegistrar { <init>(); }
+
 # ---------- Coroutines ----------
 -dontwarn kotlinx.coroutines.**
 # Keep the Android main-thread dispatcher factory which is loaded via ServiceLoader.
