@@ -33,12 +33,13 @@ import org.koin.compose.koinInject
 import org.mycarcompanion.app.data.repository.DecodedVin
 import org.mycarcompanion.app.data.repository.VehicleLookupRepository
 import org.mycarcompanion.app.data.repository.normalizeVin
+import org.mycarcompanion.app.data.repository.vinCheckDigitOk
 import org.mycarcompanion.app.platform.rememberCameraPhotoLauncher
 import org.mycarcompanion.app.platform.rememberVinBarcodeScanner
 
 /**
  * License plate + VIN fields with the shortcuts Bryan asked for: scan the VIN barcode (Android),
- * read a plate or VIN from a photo (AI), and decode the VIN into year/make/model (NHTSA).
+ * read the plate from a photo (AI), and decode the VIN into year/make/model (NHTSA).
  */
 @Composable
 fun VehicleIdFields(
@@ -55,10 +56,13 @@ fun VehicleIdFields(
     var busy by remember { mutableStateOf<String?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
     var isError by remember { mutableStateOf(false) }
+    // photo results belong under the plate field, scan/decode results under the VIN field
+    var messageForPlate by remember { mutableStateOf(false) }
 
     fun decode(raw: String) {
         scope.launch {
             busy = "Decoding VIN…"
+            messageForPlate = false
             lookup.decodeVin(raw)
                 .onSuccess { d ->
                     onDecoded(d)
@@ -73,8 +77,13 @@ fun VehicleIdFields(
     val scanner = rememberVinBarcodeScanner(
         onResult = { raw ->
             val clean = normalizeVin(raw)
+            messageForPlate = false
             if (clean == null) {
                 message = "That barcode isn't a VIN. Try the one on the door jamb or windshield."
+                isError = true
+            } else if (!vinCheckDigitOk(clean)) {
+                // a scratched or angled label can misread one character; don't fill in a wrong VIN
+                message = "The barcode didn't scan cleanly. Hold steady and scan again, or type the VIN."
                 isError = true
             } else {
                 onVinChange(clean)
@@ -86,17 +95,16 @@ fun VehicleIdFields(
 
     val camera = rememberCameraPhotoLauncher { base64, mime ->
         scope.launch {
-            busy = "Reading photo…"
-            lookup.readPhoto(base64, mime)
-                .onSuccess { r ->
-                    r.plate?.let(onPlateChange)
-                    r.vin?.let(onVinChange)
-                    message = "Read ${listOfNotNull(r.plate?.let { "plate $it" }, r.vin?.let { "VIN $it" }).joinToString(" and ")}. Double-check it."
+            busy = "Reading plate…"
+            messageForPlate = true
+            lookup.readPlatePhoto(base64, mime)
+                .onSuccess { plate ->
+                    onPlateChange(plate)
+                    message = "Read plate $plate. Double-check it."
                     isError = false
-                    r.vin?.let(::decode)
                 }
                 .onFailure { message = it.message; isError = true }
-            if (busy == "Reading photo…") busy = null
+            busy = null
         }
     }
 
@@ -110,12 +118,13 @@ fun VehicleIdFields(
             trailingIcon = if (!allowPhoto) null else {
                 {
                     IconButton(onClick = camera::launch, enabled = busy == null) {
-                        Icon(Icons.Default.PhotoCamera, contentDescription = "Read plate or VIN from a photo")
+                        Icon(Icons.Default.PhotoCamera, contentDescription = "Read plate from a photo")
                     }
                 }
             },
             modifier = Modifier.fillMaxWidth(),
         )
+        if (messageForPlate) StatusLine(busy, message, isError)
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = vin,
@@ -132,21 +141,26 @@ fun VehicleIdFields(
             },
             modifier = Modifier.fillMaxWidth(),
         )
+        OutlinedButton(onClick = { decode(vin) }, enabled = busy == null && vin.isNotBlank()) {
+            Text("Decode VIN")
+        }
+        if (!messageForPlate) StatusLine(busy, message, isError)
+    }
+}
+
+@Composable
+private fun StatusLine(busy: String?, message: String?, isError: Boolean) {
+    busy?.let {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedButton(onClick = { decode(vin) }, enabled = busy == null && vin.isNotBlank()) {
-                Text("Decode VIN")
-            }
-            busy?.let {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                Text(it, style = MaterialTheme.typography.bodySmall)
-            }
+            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            Text(it, style = MaterialTheme.typography.bodySmall)
         }
-        message?.let {
-            Text(
-                it,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+    }
+    message?.takeIf { busy == null }?.let {
+        Text(
+            it,
+            style = MaterialTheme.typography.bodySmall,
+            color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

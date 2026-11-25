@@ -1,5 +1,5 @@
-// Reads a license plate and/or VIN from one photo so mechanics don't type them.
-// Mechanics only: every call is a paid AI request.
+// Reads a license plate from a photo so mechanics don't type it. VINs come from the barcode scanner,
+// where the check digit catches misreads. Mechanics and admins only: every call is a paid AI request.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
@@ -28,9 +28,9 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7));
   if (authError || !user) return jsonResponse({ error: "Unauthorized" }, 401);
 
-  const { data: mechanicRole } = await supabase
-    .from("user_roles").select("role").eq("user_id", user.id).eq("role", "mechanic").maybeSingle();
-  if (!mechanicRole) return jsonResponse({ error: "Photo reading is for mechanics." }, 403);
+  const { data: roles } = await supabase
+    .from("user_roles").select("role").eq("user_id", user.id).in("role", ["mechanic", "admin"]);
+  if (!roles?.length) return jsonResponse({ error: "Photo reading is for mechanics." }, 403);
 
   let body: { image_base64?: string; mime_type?: string };
   try {
@@ -57,9 +57,9 @@ Deno.serve(async (req) => {
           { type: "image", source: { type: "base64", media_type: mime_type, data: image_base64 } },
           {
             type: "text",
-            text: `This photo shows a vehicle's license plate, VIN plate/sticker, or both.
-Return ONLY JSON: {"plate": "<plate characters, no spaces or dashes, or null>", "vin": "<17-character VIN, or null>"}.
-Ignore state names, slogans, dealer frames and registration stickers. Use null for anything you can't read with confidence.`,
+            text: `Read the vehicle license plate in this photo.
+Return ONLY JSON: {"plate": "<plate characters, no spaces or dashes, or null>"}.
+Ignore state names, slogans, dealer frames, registration stickers and any VIN. Use null if you can't read a plate with confidence.`,
           },
         ],
       }],
@@ -71,15 +71,14 @@ Ignore state names, slogans, dealer frames and registration stickers. Use null f
   }
 
   const raw: string = (await claudeRes.json())?.content?.[0]?.text ?? "{}";
-  let parsed: { plate?: unknown; vin?: unknown };
+  let parsed: { plate?: unknown };
   try {
     parsed = JSON.parse(raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim());
   } catch {
     console.error("Unparseable AI reply:", raw);
-    return jsonResponse({ error: "Couldn't read a plate or VIN in that photo. Try a closer, sharper shot." }, 200);
+    return jsonResponse({ error: "Couldn't read a plate in that photo. Try a closer, sharper shot." }, 200);
   }
 
   const plate = typeof parsed.plate === "string" ? parsed.plate.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10) : "";
-  const vin = typeof parsed.vin === "string" ? parsed.vin.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, "") : "";
-  return jsonResponse({ plate: plate || null, vin: vin.length === 17 ? vin : null }, 200);
+  return jsonResponse({ plate: plate || null }, 200);
 });
