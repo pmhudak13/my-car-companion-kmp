@@ -167,6 +167,8 @@ Example: {"vin":null,"records":[{"date":"2024-01-15","category":"Oil Change","de
 
   if (!claudeRes.ok) {
     console.error("Claude API error:", await claudeRes.text());
+    // a rejected request isn't billed, so don't spend one of the owner's free scans on it
+    if (scanId) await supabase.from("owner_invoice_scans").delete().eq("id", scanId);
     return jsonResponse({ error: "AI analysis failed. Please try again." }, 500);
   }
 
