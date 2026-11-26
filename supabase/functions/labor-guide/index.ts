@@ -130,10 +130,10 @@ Deno.serve(async (req) => {
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 600,
-      // ponytail: temperature 0 keeps repeat lookups steady; cache answers in a table if they still drift
-      temperature: 0,
+      // Haiku 5.5 rejects temperature; labor_guide_ai_cache keeps repeat lookups steady instead
+      model: "claude-haiku-5-5",
+      // thinking counts toward max_tokens
+      max_tokens: 4096,
       messages: [{
         role: "user",
         content: `You are an automotive flat-rate labor guide. Estimate the standard labor time a professional technician would bill for this repair, and the parts it usually needs.
@@ -152,7 +152,8 @@ List at most 6 parts, each one the shop would buy for this job. Use an empty lis
     return jsonResponse({ error: "Labor lookup failed. Please try again." }, 500);
   }
 
-  const raw: string = (await claudeRes.json())?.content?.[0]?.text ?? "";
+  // the reply can start with thinking blocks, so take the text block
+  const raw: string = (await claudeRes.json())?.content?.find((b: { type: string }) => b.type === "text")?.text ?? "";
   // the call cost money whether or not the answer parses, so it counts toward the cap
   const { error: logError } = await supabase.from("labor_guide_ai_lookups").insert({ user_id: user.id });
   if (logError) console.error("labor_guide_ai_lookups insert failed:", logError.message);
