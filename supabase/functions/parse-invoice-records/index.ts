@@ -159,8 +159,9 @@ Example: {"vin":null,"records":[{"date":"2024-01-15","category":"Oil Change","de
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 4096,
+      model: "claude-haiku-5-5",
+      // thinking counts toward max_tokens, and a multi-visit invoice can list many records
+      max_tokens: 16000,
       messages: [{ role: "user", content: contentBlocks }],
     }),
   });
@@ -173,7 +174,8 @@ Example: {"vin":null,"records":[{"date":"2024-01-15","category":"Oil Change","de
   }
 
   const claudeData = await claudeRes.json();
-  const rawText: string = claudeData?.content?.[0]?.text ?? "{}";
+  // the reply can start with thinking blocks, so take the text block
+  const rawText: string = claudeData?.content?.find((b: { type: string }) => b.type === "text")?.text ?? "{}";
   const cleaned = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
 
   let records: unknown[];

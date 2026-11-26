@@ -49,8 +49,10 @@ Deno.serve(async (req) => {
     method: "POST",
     headers: { "x-api-key": anthropicApiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 200,
+      model: "claude-haiku-5-5",
+      // thinking counts toward max_tokens; low effort keeps it short for a one-line answer
+      max_tokens: 1024,
+      output_config: { effort: "low" },
       messages: [{
         role: "user",
         content: [
@@ -70,7 +72,8 @@ Ignore state names, slogans, dealer frames, registration stickers and any VIN. U
     return jsonResponse({ error: "Couldn't read that photo. Please try again." }, 500);
   }
 
-  const raw: string = (await claudeRes.json())?.content?.[0]?.text ?? "{}";
+  // the reply can start with thinking blocks, so take the text block
+  const raw: string = (await claudeRes.json())?.content?.find((b: { type: string }) => b.type === "text")?.text ?? "{}";
   let parsed: { plate?: unknown };
   try {
     parsed = JSON.parse(raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim());
